@@ -21,26 +21,24 @@ const Navbar = () => {
         </Link>
       </motion.div>
 
-      {/* Left navigation */}
+      {/* Left navigation - fixed at top */}
       <motion.nav 
-        className="fixed left-8 md:left-12 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-5"
+        className="fixed left-8 md:left-12 top-8 z-50 hidden md:flex flex-row items-center gap-6"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.4 }}
       >
         <Link 
           to="/learn" 
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           Learn
-          <span className="absolute -left-5 top-1/2 -translate-y-1/2 w-3 h-px bg-warm-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
         </Link>
         <Link 
           to="/pricing" 
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           Pricing
-          <span className="absolute -left-5 top-1/2 -translate-y-1/2 w-3 h-px bg-warm-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
         </Link>
       </motion.nav>
 
