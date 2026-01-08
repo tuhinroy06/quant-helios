@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Shield, BarChart3 } from "lucide-react";
 
@@ -19,9 +20,9 @@ const features = [
   },
 ];
 
-const FeaturesSection = () => {
+const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section className="py-32 md:py-48 px-6 bg-background relative overflow-hidden">
+    <section ref={ref} className="py-32 md:py-48 px-6 bg-background relative overflow-hidden">
       {/* Subtle gradient accent */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/[0.01] to-transparent" />
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -76,6 +77,8 @@ const FeaturesSection = () => {
       </div>
     </section>
   );
-};
+});
+
+FeaturesSection.displayName = "FeaturesSection";
 
 export default FeaturesSection;
