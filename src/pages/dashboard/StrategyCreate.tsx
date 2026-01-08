@@ -186,11 +186,30 @@ const StrategyCreate = () => {
           position_sizing: parsedStrategy.position_sizing ? JSON.parse(JSON.stringify(parsedStrategy.position_sizing)) : null,
           risk_limits: parsedStrategy.risk_limits ? JSON.parse(JSON.stringify(parsedStrategy.risk_limits)) : null,
           status: "draft",
+          version: 1,
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Create initial version snapshot
+      await supabase.from("strategy_versions").insert({
+        strategy_id: data.id,
+        version: 1,
+        config_snapshot: {
+          name: data.name,
+          market_type: data.market_type,
+          timeframe: data.timeframe,
+          entry_rules: data.entry_rules,
+          exit_rules: data.exit_rules,
+          position_sizing: data.position_sizing,
+          risk_limits: data.risk_limits,
+          config: data.config,
+        },
+        change_summary: "Initial strategy creation",
+      });
+
       toast.success("Strategy created!");
       navigate(`/dashboard/strategies/${data.id}/review`);
     } catch (error) {
@@ -250,11 +269,30 @@ const StrategyCreate = () => {
           entry_rules: JSON.parse(JSON.stringify(entryRules)),
           exit_rules: JSON.parse(JSON.stringify(exitRules)),
           status: "draft",
+          version: 1,
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Create initial version snapshot
+      await supabase.from("strategy_versions").insert({
+        strategy_id: data.id,
+        version: 1,
+        config_snapshot: {
+          name: data.name,
+          market_type: data.market_type,
+          timeframe: data.timeframe,
+          entry_rules: data.entry_rules,
+          exit_rules: data.exit_rules,
+          position_sizing: data.position_sizing,
+          risk_limits: data.risk_limits,
+          config: data.config,
+        },
+        change_summary: "Initial strategy creation",
+      });
+
       toast.success("Strategy created!");
       navigate(`/dashboard/strategies/${data.id}/review`);
     } catch (error) {
