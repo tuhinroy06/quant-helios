@@ -1,23 +1,57 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Will be connected to Supabase auth later
-    console.log(isLogin ? "Login" : "Signup", { email, password });
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        navigate("/dashboard");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              display_name: displayName,
+            },
+          },
+        });
+        if (error) throw error;
+        toast.success("Account created successfully!");
+        navigate("/dashboard");
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An error occurred";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-radial flex items-center justify-center px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
       {/* Subtle glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-white/[0.02] rounded-full blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -35,12 +69,12 @@ const Auth = () => {
         </Link>
 
         {/* Logo */}
-        <h1 className="font-display text-2xl font-medium text-foreground mb-2">
+        <h1 className="font-display text-2xl font-light text-foreground mb-2">
           AlgoTrade Pro
         </h1>
 
         {/* Heading */}
-        <h2 className="font-display text-4xl md:text-5xl font-medium text-foreground mb-4">
+        <h2 className="font-display text-4xl md:text-5xl font-light text-foreground mb-4">
           {isLogin ? "Welcome back" : "Create account"}
         </h2>
 
@@ -59,13 +93,24 @@ const Auth = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <div>
+              <input
+                type="text"
+                placeholder="Display name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full bg-secondary border border-border rounded-full px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
+              />
+            </div>
+          )}
           <div>
             <input
               type="email"
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-full px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
+              className="w-full bg-secondary border border-border rounded-full px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
               required
             />
           </div>
@@ -75,16 +120,18 @@ const Auth = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-full px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
+              className="w-full bg-secondary border border-border rounded-full px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
               required
+              minLength={6}
             />
           </div>
 
           <button
             type="submit"
-            className="group w-full flex items-center justify-center gap-3 bg-foreground text-background px-8 py-4 rounded-full text-base font-medium hover-lift mt-6"
+            disabled={loading}
+            className="group w-full flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-full text-base font-medium hover:bg-white/90 transition-colors mt-6 disabled:opacity-50"
           >
-            {isLogin ? "Sign In" : "Create Account"}
+            {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </button>
         </form>
@@ -94,7 +141,7 @@ const Auth = () => {
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-foreground hover:text-accent transition-colors"
+            className="text-foreground hover:text-white/70 transition-colors"
           >
             {isLogin ? "Sign up" : "Sign in"}
           </button>
