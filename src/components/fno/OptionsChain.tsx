@@ -89,7 +89,7 @@ export const OptionsChain = ({
             <th className="py-2 px-2 text-right bg-green-500/5">Bid</th>
             <th className="py-2 px-2 text-right bg-green-500/5">Ask</th>
             <th className="py-2 px-2 text-center bg-green-500/5">Select</th>
-            <th className="py-2 px-2 text-center bg-white/5 font-bold text-foreground">$</th>
+            <th className="py-2 px-2 text-center bg-white/5 font-bold text-foreground">₹</th>
             <th className="py-2 px-2 text-center bg-red-500/5">Select</th>
             <th className="py-2 px-2 text-right bg-red-500/5">Bid</th>
             <th className="py-2 px-2 text-right bg-red-500/5">Ask</th>
@@ -121,10 +121,10 @@ export const OptionsChain = ({
                   </span>
                 </td>
                 <td className={`py-2 px-2 text-right ${row.isITM.call ? "bg-green-500/10" : ""}`}>
-                  ${callBid}
+                  ₹{callBid}
                 </td>
                 <td className={`py-2 px-2 text-right font-medium ${row.isITM.call ? "bg-green-500/10" : ""}`}>
-                  ${callAsk}
+                  ₹{callAsk}
                 </td>
                 <td className={`py-2 px-2 text-center ${row.isITM.call ? "bg-green-500/10" : ""}`}>
                   <button
@@ -141,7 +141,7 @@ export const OptionsChain = ({
 
                 {/* Strike */}
                 <td className={`py-2 px-2 text-center font-bold ${row.isATM ? "text-yellow-500" : "text-foreground"}`}>
-                  ${row.strike}
+                  ₹{row.strike}
                   {row.isATM && <span className="text-xs ml-1">(ATM)</span>}
                 </td>
 
@@ -159,10 +159,10 @@ export const OptionsChain = ({
                   </button>
                 </td>
                 <td className={`py-2 px-2 text-right font-medium ${row.isITM.put ? "bg-red-500/10" : ""}`}>
-                  ${putAsk}
+                  ₹{putAsk}
                 </td>
                 <td className={`py-2 px-2 text-right ${row.isITM.put ? "bg-red-500/10" : ""}`}>
-                  ${putBid}
+                  ₹{putBid}
                 </td>
                 <td className={`py-2 px-2 text-right ${row.isITM.put ? "bg-red-500/10" : ""}`}>
                   <span className={row.put.delta <= -0.5 ? "text-red-500" : "text-muted-foreground"}>

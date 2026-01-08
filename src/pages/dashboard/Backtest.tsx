@@ -239,7 +239,7 @@ const Backtest = () => {
                     <YAxis 
                       stroke="hsl(0 0% 30%)" 
                       tick={{ fill: "hsl(0 0% 50%)", fontSize: 12 }} 
-                      tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`}
+                      tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`}
                       axisLine={false} 
                       tickLine={false} 
                     />
@@ -250,7 +250,7 @@ const Backtest = () => {
                         borderRadius: "12px",
                         boxShadow: "0 8px 30px -10px rgba(0,0,0,0.5)"
                       }} 
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, "Portfolio Value"]} 
+                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, "Portfolio Value"]} 
                     />
                     <Area 
                       type="monotone" 
