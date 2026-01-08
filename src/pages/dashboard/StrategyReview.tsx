@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { VersionHistory } from "@/components/strategy/VersionHistory";
+import { useStrategyVersions } from "@/hooks/useStrategyVersions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
@@ -14,7 +16,11 @@ interface Strategy {
   timeframe: string;
   entry_rules: Json;
   exit_rules: Json;
+  position_sizing: Json | null;
+  risk_limits: Json | null;
+  config: Json;
   status: string;
+  version: number | null;
 }
 
 interface Rule {
@@ -30,28 +36,37 @@ const StrategyReview = () => {
   const [showTechnical, setShowTechnical] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const { versions, isLoading: versionsLoading, restoreVersion, refetch } = useStrategyVersions(id);
+
+  const fetchStrategy = async () => {
+    if (!id) return;
+    
+    const { data, error } = await supabase
+      .from("strategies")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      toast.error("Strategy not found");
+      navigate("/dashboard/strategies");
+      return;
+    }
+
+    setStrategy(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchStrategy = async () => {
-      if (!id) return;
-      
-      const { data, error } = await supabase
-        .from("strategies")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        toast.error("Strategy not found");
-        navigate("/dashboard/strategies");
-        return;
-      }
-
-      setStrategy(data);
-      setLoading(false);
-    };
-
     fetchStrategy();
   }, [id, navigate]);
+
+  const handleRestoreVersion = async (version: { id: string; version: number; created_at: string; change_summary: string | null; config_snapshot: Json }) => {
+    const success = await restoreVersion(version);
+    if (success) {
+      await fetchStrategy();
+    }
+  };
 
   const handleBacktest = async () => {
     if (!strategy) return;
@@ -190,8 +205,17 @@ const StrategyReview = () => {
             )}
           </div>
 
+          {/* Version History */}
+          <VersionHistory
+            strategyId={id || ""}
+            versions={versions}
+            currentVersion={strategy.version || 1}
+            onRestore={handleRestoreVersion}
+            isLoading={versionsLoading}
+          />
+
           {/* Warning */}
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-8">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-8 mt-6">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
               <div>
