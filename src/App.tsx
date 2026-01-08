@@ -20,9 +20,12 @@ import StrategyReview from "./pages/dashboard/StrategyReview";
 import Backtest from "./pages/dashboard/Backtest";
 import ResultsExplanation from "./pages/dashboard/ResultsExplanation";
 import PaperTrading from "./pages/dashboard/PaperTrading";
-import FNO from "./pages/dashboard/FNO";
+import FNOSimulator from "./pages/dashboard/FNOSimulator";
 import Settings from "./pages/dashboard/Settings";
 import LearnDashboard from "./pages/dashboard/LearnDashboard";
+import StockRanking from "./pages/dashboard/StockRanking";
+import LiveTrading from "./pages/dashboard/LiveTrading";
+import Organization from "./pages/dashboard/Organization";
 
 const queryClient = new QueryClient();
 
@@ -117,7 +120,31 @@ const App = () => (
               path="/dashboard/fno"
               element={
                 <ProtectedRoute>
-                  <FNO />
+                  <FNOSimulator />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/stock-ranking"
+              element={
+                <ProtectedRoute>
+                  <StockRanking />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/live-trading"
+              element={
+                <ProtectedRoute>
+                  <LiveTrading />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/organization"
+              element={
+                <ProtectedRoute>
+                  <Organization />
                 </ProtectedRoute>
               }
             />
