@@ -115,6 +115,48 @@ export type Database = {
           },
         ]
       }
+      broker_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          api_key_encrypted: string | null
+          broker_name: string
+          connected_at: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          token_expiry: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          api_key_encrypted?: string | null
+          broker_name: string
+          connected_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          token_expiry?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          api_key_encrypted?: string | null
+          broker_name?: string
+          connected_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          token_expiry?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       fno_simulations: {
         Row: {
           breakeven_points: Json | null
@@ -181,6 +223,295 @@ export type Database = {
           underlying?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      live_orders: {
+        Row: {
+          average_price: number | null
+          broker_connection_id: string | null
+          broker_order_id: string | null
+          created_at: string | null
+          error_message: string | null
+          executed_at: string | null
+          filled_quantity: number | null
+          id: string
+          order_type: string
+          placed_at: string | null
+          price: number | null
+          quantity: number
+          side: string
+          status: string | null
+          strategy_id: string | null
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          average_price?: number | null
+          broker_connection_id?: string | null
+          broker_order_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          filled_quantity?: number | null
+          id?: string
+          order_type: string
+          placed_at?: string | null
+          price?: number | null
+          quantity: number
+          side: string
+          status?: string | null
+          strategy_id?: string | null
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          average_price?: number | null
+          broker_connection_id?: string | null
+          broker_order_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          filled_quantity?: number | null
+          id?: string
+          order_type?: string
+          placed_at?: string | null
+          price?: number | null
+          quantity?: number
+          side?: string
+          status?: string | null
+          strategy_id?: string | null
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_orders_broker_connection_id_fkey"
+            columns: ["broker_connection_id"]
+            isOneToOne: false
+            referencedRelation: "broker_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_orders_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_trading_configs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          broker_connection_id: string | null
+          created_at: string | null
+          daily_loss_limit: number | null
+          id: string
+          is_enabled: boolean | null
+          max_position_size: number | null
+          risk_acknowledged: boolean | null
+          risk_acknowledged_at: string | null
+          strategy_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          broker_connection_id?: string | null
+          created_at?: string | null
+          daily_loss_limit?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          max_position_size?: number | null
+          risk_acknowledged?: boolean | null
+          risk_acknowledged_at?: string | null
+          strategy_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          broker_connection_id?: string | null
+          created_at?: string | null
+          daily_loss_limit?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          max_position_size?: number | null
+          risk_acknowledged?: boolean | null
+          risk_acknowledged_at?: string | null
+          strategy_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_trading_configs_broker_connection_id_fkey"
+            columns: ["broker_connection_id"]
+            isOneToOne: false
+            referencedRelation: "broker_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_trading_configs_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          role?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_strategies: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          permissions: Json | null
+          shared_by: string
+          strategy_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          permissions?: Json | null
+          shared_by: string
+          strategy_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          permissions?: Json | null
+          shared_by?: string
+          strategy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_strategies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_strategies_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          max_members: number | null
+          name: string
+          settings: Json | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          max_members?: number | null
+          name: string
+          settings?: Json | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          max_members?: number | null
+          name?: string
+          settings?: Json | null
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -322,6 +653,60 @@ export type Database = {
           preferences?: Json | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      stock_rankings: {
+        Row: {
+          ai_analysis: string | null
+          company_name: string | null
+          created_at: string | null
+          id: string
+          last_updated: string | null
+          market_cap_tier: string | null
+          model_version: string | null
+          momentum_score: number | null
+          quality_score: number | null
+          rank_score: number | null
+          sector: string | null
+          symbol: string
+          user_id: string
+          value_score: number | null
+          volatility_score: number | null
+        }
+        Insert: {
+          ai_analysis?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          market_cap_tier?: string | null
+          model_version?: string | null
+          momentum_score?: number | null
+          quality_score?: number | null
+          rank_score?: number | null
+          sector?: string | null
+          symbol: string
+          user_id: string
+          value_score?: number | null
+          volatility_score?: number | null
+        }
+        Update: {
+          ai_analysis?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          market_cap_tier?: string | null
+          model_version?: string | null
+          momentum_score?: number | null
+          quality_score?: number | null
+          rank_score?: number | null
+          sector?: string | null
+          symbol?: string
+          user_id?: string
+          value_score?: number | null
+          volatility_score?: number | null
         }
         Relationships: []
       }
@@ -564,6 +949,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       owns_paper_account: { Args: { _account_id: string }; Returns: boolean }
