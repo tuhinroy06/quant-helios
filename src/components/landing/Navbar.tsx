@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import MobileNav from "./MobileNav";
 
 const Navbar = () => {
   return (
@@ -26,34 +27,39 @@ const Navbar = () => {
       >
         <Link 
           to="/learn" 
-          className="text-sm text-white/60 hover:text-white transition-colors"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
         >
           Learn
+          <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-px bg-foreground scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
         </Link>
         <Link 
           to="/pricing" 
-          className="text-sm text-white/60 hover:text-white transition-colors"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
         >
           Pricing
+          <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-px bg-foreground scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
         </Link>
       </motion.nav>
 
-      {/* Top-right CTA - micro1 style: arrow LEFT, text RIGHT */}
+      {/* Top-right CTA - hidden on mobile, shown on desktop */}
       <motion.div 
-        className="fixed top-8 right-8 z-50"
+        className="fixed top-8 right-8 z-50 hidden md:block"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.3 }}
       >
         <Link to="/auth">
-          <button className="group flex items-center gap-3 bg-white text-black pr-5 pl-2 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors">
-            <span className="flex items-center justify-center w-8 h-8 bg-black rounded-full">
-              <ArrowRight className="w-4 h-4 text-white transition-transform group-hover:translate-x-0.5" />
+          <button className="group flex items-center gap-3 bg-primary text-primary-foreground pl-2 pr-5 py-2 rounded-full text-sm font-medium hover:bg-primary/90 transition-all duration-300">
+            <span className="flex items-center justify-center w-8 h-8 bg-primary-foreground/10 rounded-full">
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </span>
             <span>Get Started</span>
           </button>
         </Link>
       </motion.div>
+
+      {/* Mobile Navigation */}
+      <MobileNav />
     </>
   );
 };
