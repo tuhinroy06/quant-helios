@@ -1,10 +1,9 @@
-import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 
-const Footer = forwardRef<HTMLElement>((_, ref) => {
+function Footer() {
   return (
-    <footer ref={ref} className="py-16 px-6 bg-background relative">
+    <footer className="py-16 px-6 bg-background relative">
       {/* Top border */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       
@@ -62,8 +61,6 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </footer>
   );
-});
-
-Footer.displayName = "Footer";
+}
 
 export default Footer;

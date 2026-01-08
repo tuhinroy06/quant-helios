@@ -1,11 +1,10 @@
-import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const CTASection = forwardRef<HTMLElement>((_, ref) => {
+function CTASection() {
   return (
-    <section ref={ref} className="py-32 md:py-48 px-6 bg-background relative overflow-hidden">
+    <section className="py-32 md:py-48 px-6 bg-background relative overflow-hidden">
       {/* Top border */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       
@@ -44,8 +43,6 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-});
-
-CTASection.displayName = "CTASection";
+}
 
 export default CTASection;
