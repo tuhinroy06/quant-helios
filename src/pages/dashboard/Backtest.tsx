@@ -63,58 +63,48 @@ const Backtest = () => {
     setProgress(0);
 
     const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+      setProgress(prev => Math.min(prev + 5, 90));
+    }, 200);
 
-    setTimeout(async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-backtest`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            strategyId: strategy.id,
+            startDate: '2024-01-01',
+            endDate: '2024-12-31',
+            symbol: 'NIFTY'
+          }),
+        }
+      );
+
       clearInterval(interval);
       setProgress(100);
 
-      const mockMetrics: BacktestMetrics = {
-        totalReturn: 23.4,
-        maxDrawdown: -12.8,
-        winRate: 58.3,
-        totalTrades: 47,
-        sharpeRatio: 1.42,
-        profitFactor: 1.85,
-      };
+      const data = await response.json();
 
-      const mockEquity: EquityPoint[] = Array.from({ length: 12 }, (_, i) => ({
-        date: `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i]}`,
-        value: 100000 + Math.random() * 30000 - 5000 + (i * 2000),
-      }));
-
-      try {
-        await supabase.from("backtest_results").insert({
-          strategy_id: strategy.id,
-          user_id: user.id,
-          strategy_version: 1,
-          status: "completed",
-          parameters: JSON.parse(JSON.stringify({ start_date: "2024-01-01", end_date: "2024-12-31" })),
-          metrics: JSON.parse(JSON.stringify(mockMetrics)),
-          equity_curve: JSON.parse(JSON.stringify(mockEquity)),
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        });
-
-        await supabase
-          .from("strategies")
-          .update({ status: "backtested" })
-          .eq("id", strategy.id);
-      } catch (error) {
-        console.error("Failed to save backtest results");
+      if (data.error) {
+        toast.error(data.error);
+        setIsRunning(false);
+        return;
       }
 
-      setResults(mockMetrics);
-      setEquityCurve(mockEquity);
-      setIsRunning(false);
-    }, 3500);
+      setResults(data.metrics);
+      setEquityCurve(data.equityCurve || []);
+      toast.success('Backtest completed successfully!');
+    } catch (error) {
+      clearInterval(interval);
+      console.error('Backtest error:', error);
+      toast.error('Failed to run backtest');
+    }
+    
+    setIsRunning(false);
   };
 
   const handleExplainResults = () => {

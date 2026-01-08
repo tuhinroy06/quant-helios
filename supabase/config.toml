@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.stock-ranker]
 verify_jwt = false
+
+[functions.run-backtest]
+verify_jwt = false
+
+[functions.fetch-prices]
+verify_jwt = false
