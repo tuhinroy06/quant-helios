@@ -2,10 +2,13 @@ import {
   LayoutDashboard, 
   FolderOpen, 
   Wallet, 
-  Lock, 
+  BarChart3, 
   GraduationCap, 
   Settings, 
-  LogOut 
+  LogOut,
+  Sparkles,
+  Zap,
+  Building2
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +30,10 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard/overview", icon: LayoutDashboard },
   { title: "Strategies", url: "/dashboard/strategies", icon: FolderOpen },
   { title: "Paper Trading", url: "/dashboard/paper-trading", icon: Wallet },
-  { title: "F&O (Locked)", url: "/dashboard/fno", icon: Lock, locked: true },
+  { title: "F&O Simulator", url: "/dashboard/fno", icon: BarChart3 },
+  { title: "Stock Ranking", url: "/dashboard/stock-ranking", icon: Sparkles },
+  { title: "Live Trading", url: "/dashboard/live-trading", icon: Zap },
+  { title: "Organization", url: "/dashboard/organization", icon: Building2 },
   { title: "Learn", url: "/dashboard/learn", icon: GraduationCap },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];

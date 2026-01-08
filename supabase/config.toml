@@ -2,3 +2,6 @@ project_id = "lzxtvtsvqybcpkagicnw"
 
 [functions.generate-strategy]
 verify_jwt = false
+
+[functions.stock-ranker]
+verify_jwt = false
