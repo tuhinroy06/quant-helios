@@ -71,9 +71,7 @@ export function DashboardSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/dashboard/overview"}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors ${
-                        item.locked ? "opacity-60" : ""
-                      }`}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       activeClassName="bg-muted text-foreground"
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
