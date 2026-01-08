@@ -97,11 +97,11 @@ const FNOSimulator = () => {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm text-muted-foreground mb-2">Stock Price ($)</label>
+                        <label className="block text-sm text-muted-foreground mb-2">Stock Price (₹)</label>
                         <input type="number" value={currentPrice} onChange={(e) => setCurrentPrice(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" />
                       </div>
                       <div>
-                        <label className="block text-sm text-muted-foreground mb-2">Strike Price ($)</label>
+                        <label className="block text-sm text-muted-foreground mb-2">Strike Price (₹)</label>
                         <input type="number" value={strike} onChange={(e) => setStrike(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" />
                       </div>
                     </div>

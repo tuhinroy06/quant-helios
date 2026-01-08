@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Lock, Activity } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, Plus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { INDIAN_STOCKS, getSimulatedPrice, formatINRSimple } from "@/lib/indian-stocks";
 
 interface PaperAccount {
   id: string;
@@ -33,66 +34,178 @@ const PaperTrading = () => {
   const [account, setAccount] = useState<PaperAccount | null>(null);
   const [trades, setTrades] = useState<PaperTrade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTradeForm, setShowTradeForm] = useState(false);
+  
+  // Trade form state
+  const [selectedSymbol, setSelectedSymbol] = useState("");
+  const [tradeSide, setTradeSide] = useState<"buy" | "sell">("buy");
+  const [quantity, setQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  const fetchData = async () => {
+    if (!user) return;
 
-      let { data: accountData, error: accountError } = await supabase
+    let { data: accountData, error: accountError } = await supabase
+      .from("paper_accounts")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (accountError && accountError.code === "PGRST116") {
+      const { data: newAccount, error: createError } = await supabase
         .from("paper_accounts")
-        .select("*")
-        .eq("user_id", user.id)
+        .insert({
+          user_id: user.id,
+          name: "Default Account",
+          initial_balance: 1000000,
+          current_balance: 1000000,
+          currency: "INR",
+        })
+        .select()
         .single();
 
-      if (accountError && accountError.code === "PGRST116") {
-        const { data: newAccount, error: createError } = await supabase
-          .from("paper_accounts")
-          .insert({
-            user_id: user.id,
-            name: "Default Account",
-            initial_balance: 100000,
-            current_balance: 100000,
-            currency: "USD",
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          toast.error("Failed to create paper account");
-          return;
-        }
-        accountData = newAccount;
+      if (createError) {
+        toast.error("Failed to create paper account");
+        return;
       }
+      accountData = newAccount;
+    }
 
-      setAccount(accountData);
+    setAccount(accountData);
 
-      if (accountData) {
-        const { data: tradesData } = await supabase
-          .from("paper_trades")
-          .select("*")
-          .eq("account_id", accountData.id)
-          .order("opened_at", { ascending: false })
-          .limit(10);
+    if (accountData) {
+      const { data: tradesData } = await supabase
+        .from("paper_trades")
+        .select("*")
+        .eq("account_id", accountData.id)
+        .order("opened_at", { ascending: false })
+        .limit(20);
 
-        setTrades((tradesData as PaperTrade[]) || []);
-      }
+      setTrades((tradesData as PaperTrade[]) || []);
+    }
 
-      setLoading(false);
-    };
+    setLoading(false);
+  };
 
+  useEffect(() => {
     fetchData();
   }, [user]);
 
+  const placeTrade = async () => {
+    if (!account || !selectedSymbol || quantity <= 0) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const stock = INDIAN_STOCKS.find(s => s.symbol === selectedSymbol);
+    if (!stock) {
+      toast.error("Invalid stock selected");
+      return;
+    }
+
+    const entryPrice = getSimulatedPrice(stock.price);
+    const tradeValue = entryPrice * quantity;
+
+    if (tradeSide === "buy" && tradeValue > account.current_balance) {
+      toast.error("Insufficient balance");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Insert trade
+      const { error: tradeError } = await supabase
+        .from("paper_trades")
+        .insert({
+          account_id: account.id,
+          symbol: selectedSymbol,
+          side: tradeSide,
+          quantity,
+          entry_price: entryPrice,
+          status: "open",
+          order_type: "market",
+        });
+
+      if (tradeError) throw tradeError;
+
+      // Update balance for buys
+      if (tradeSide === "buy") {
+        const newBalance = account.current_balance - tradeValue;
+        const { error: balanceError } = await supabase
+          .from("paper_accounts")
+          .update({ current_balance: newBalance })
+          .eq("id", account.id);
+
+        if (balanceError) throw balanceError;
+      }
+
+      toast.success(`${tradeSide.toUpperCase()} order placed for ${quantity} ${selectedSymbol} at ${formatINRSimple(entryPrice)}`);
+      setShowTradeForm(false);
+      setSelectedSymbol("");
+      setQuantity(1);
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to place trade");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const closeTrade = async (trade: PaperTrade) => {
+    if (!account || trade.status !== "open") return;
+
+    const stock = INDIAN_STOCKS.find(s => s.symbol === trade.symbol);
+    const exitPrice = stock ? getSimulatedPrice(stock.price, 0.03) : trade.entry_price * (1 + (Math.random() * 0.06 - 0.03));
+    
+    let pnl = 0;
+    if (trade.side === "buy") {
+      pnl = (exitPrice - trade.entry_price) * trade.quantity;
+    } else {
+      pnl = (trade.entry_price - exitPrice) * trade.quantity;
+    }
+
+    try {
+      // Update trade
+      const { error: tradeError } = await supabase
+        .from("paper_trades")
+        .update({
+          exit_price: exitPrice,
+          status: "closed",
+          pnl,
+          closed_at: new Date().toISOString(),
+        })
+        .eq("id", trade.id);
+
+      if (tradeError) throw tradeError;
+
+      // Update balance
+      const tradeValue = exitPrice * trade.quantity;
+      let newBalance = account.current_balance;
+      
+      if (trade.side === "buy") {
+        newBalance = account.current_balance + tradeValue;
+      } else {
+        newBalance = account.current_balance + pnl;
+      }
+
+      const { error: balanceError } = await supabase
+        .from("paper_accounts")
+        .update({ current_balance: newBalance })
+        .eq("id", account.id);
+
+      if (balanceError) throw balanceError;
+
+      toast.success(`Position closed with ${pnl >= 0 ? "profit" : "loss"} of ${formatINRSimple(Math.abs(pnl))}`);
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to close trade");
+    }
+  };
+
   const totalPnL = account ? account.current_balance - account.initial_balance : 0;
   const totalPnLPercent = account ? ((totalPnL / account.initial_balance) * 100).toFixed(2) : "0.00";
-
-  const sampleTrades: PaperTrade[] = [
-    { id: "1", symbol: "AAPL", side: "buy", quantity: 10, entry_price: 175.50, exit_price: 182.30, status: "closed", pnl: 68.00, opened_at: "2024-01-15T10:30:00Z", closed_at: "2024-01-18T14:45:00Z" },
-    { id: "2", symbol: "MSFT", side: "buy", quantity: 5, entry_price: 378.20, exit_price: null, status: "open", pnl: null, opened_at: "2024-01-20T09:15:00Z", closed_at: null },
-    { id: "3", symbol: "GOOGL", side: "sell", quantity: 8, entry_price: 142.80, exit_price: 138.50, status: "closed", pnl: 34.40, opened_at: "2024-01-12T11:00:00Z", closed_at: "2024-01-14T16:30:00Z" },
-  ];
-
-  const displayTrades = trades.length > 0 ? trades : sampleTrades;
+  const openPositions = trades.filter(t => t.status === "open");
 
   if (loading) {
     return (
@@ -147,10 +260,10 @@ const PaperTrading = () => {
               <span className="text-muted-foreground text-sm">Virtual Balance</span>
             </div>
             <p className="text-3xl font-light text-foreground mb-1">
-              ${account?.current_balance.toLocaleString() || "100,000"}
+              {formatINRSimple(account?.current_balance || 1000000)}
             </p>
             <p className="text-sm text-muted-foreground">
-              Started with ${account?.initial_balance.toLocaleString() || "100,000"}
+              Started with {formatINRSimple(account?.initial_balance || 1000000)}
             </p>
           </div>
 
@@ -166,7 +279,7 @@ const PaperTrading = () => {
               <span className="text-muted-foreground text-sm">Total P&L</span>
             </div>
             <p className={`text-3xl font-light ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
-              {totalPnL >= 0 ? "+" : ""}${totalPnL.toLocaleString()}
+              {totalPnL >= 0 ? "+" : ""}{formatINRSimple(totalPnL)}
             </p>
             <p className={`text-sm ${totalPnL >= 0 ? "text-green-500/70" : "text-red-500/70"}`}>
               {totalPnL >= 0 ? "+" : ""}{totalPnLPercent}%
@@ -181,77 +294,224 @@ const PaperTrading = () => {
               <span className="text-muted-foreground text-sm">Open Positions</span>
             </div>
             <p className="text-3xl font-light text-foreground mb-1">
-              {displayTrades.filter(t => t.status === "open").length}
+              {openPositions.length}
             </p>
             <p className="text-sm text-muted-foreground">
-              {displayTrades.filter(t => t.status === "closed").length} closed
+              {trades.filter(t => t.status === "closed").length} closed
             </p>
           </div>
         </motion.div>
+
+        {/* Trade Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+        >
+          <button
+            onClick={() => setShowTradeForm(!showTradeForm)}
+            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-medium hover:bg-primary/90 transition-colors"
+          >
+            {showTradeForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {showTradeForm ? "Cancel" : "Place New Trade"}
+          </button>
+        </motion.div>
+
+        {/* Trade Form */}
+        {showTradeForm && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card border border-border rounded-2xl p-6"
+          >
+            <h3 className="text-foreground font-medium mb-4">New Trade</h3>
+            <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-2">Stock Symbol</label>
+                <select
+                  value={selectedSymbol}
+                  onChange={(e) => setSelectedSymbol(e.target.value)}
+                  className="w-full bg-secondary border border-border rounded-lg px-4 py-3 text-foreground"
+                >
+                  <option value="">Select a stock</option>
+                  {INDIAN_STOCKS.map((stock) => (
+                    <option key={stock.symbol} value={stock.symbol}>
+                      {stock.symbol} - {stock.name} (≈{formatINRSimple(stock.price)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-2">Quantity</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  className="w-full bg-secondary border border-border rounded-lg px-4 py-3 text-foreground"
+                />
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm text-muted-foreground mb-2">Side</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTradeSide("buy")}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+                    tradeSide === "buy" ? "bg-green-500 text-white" : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  BUY
+                </button>
+                <button
+                  onClick={() => setTradeSide("sell")}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+                    tradeSide === "sell" ? "bg-red-500 text-white" : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  SELL
+                </button>
+              </div>
+            </div>
+            {selectedSymbol && (
+              <div className="p-4 bg-secondary/50 rounded-lg mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Estimated Value: <span className="text-foreground font-medium">
+                    {formatINRSimple((INDIAN_STOCKS.find(s => s.symbol === selectedSymbol)?.price || 0) * quantity)}
+                  </span>
+                </p>
+              </div>
+            )}
+            <button
+              onClick={placeTrade}
+              disabled={isSubmitting || !selectedSymbol}
+              className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {isSubmitting ? "Placing..." : `Place ${tradeSide.toUpperCase()} Order`}
+            </button>
+          </motion.div>
+        )}
+
+        {/* Open Positions */}
+        {openPositions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-card border border-border rounded-2xl overflow-hidden"
+          >
+            <div className="p-6 border-b border-border flex items-center gap-3">
+              <Activity className="w-5 h-5 text-blue-500" />
+              <h3 className="text-foreground font-medium">Open Positions</h3>
+            </div>
+            <div className="divide-y divide-border">
+              {openPositions.map((trade) => {
+                const stock = INDIAN_STOCKS.find(s => s.symbol === trade.symbol);
+                const currentPrice = stock ? getSimulatedPrice(stock.price, 0.01) : trade.entry_price;
+                const unrealizedPnL = trade.side === "buy" 
+                  ? (currentPrice - trade.entry_price) * trade.quantity
+                  : (trade.entry_price - currentPrice) * trade.quantity;
+
+                return (
+                  <div key={trade.id} className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{trade.symbol}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${trade.side === "buy" ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}`}>
+                          {trade.side.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {trade.quantity} @ {formatINRSimple(trade.entry_price)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-medium ${unrealizedPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
+                        {unrealizedPnL >= 0 ? "+" : ""}{formatINRSimple(unrealizedPnL)}
+                      </p>
+                      <button
+                        onClick={() => closeTrade(trade)}
+                        className="text-xs text-primary hover:underline mt-1"
+                      >
+                        Close Position
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Trade Log */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
           className="bg-card border border-border rounded-2xl overflow-hidden"
         >
           <div className="p-6 border-b border-border flex items-center gap-3">
             <Clock className="w-5 h-5 text-muted-foreground" />
             <h3 className="text-foreground font-medium">Trade Log</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-secondary/50">
-                <tr>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Symbol</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Side</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Qty</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Entry</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Exit</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">P&L</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {displayTrades.map((trade) => (
-                  <tr key={trade.id} className="hover:bg-secondary/30 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-foreground">{trade.symbol}</td>
-                    <td className="px-6 py-4">
-                      <span className={`text-sm font-medium ${trade.side === "buy" ? "text-green-500" : "text-red-500"}`}>
-                        {trade.side.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{trade.quantity}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">${trade.entry_price}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {trade.exit_price ? `$${trade.exit_price}` : "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {trade.pnl !== null ? (
-                        <span className={`text-sm font-medium ${trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
-                          {trade.pnl >= 0 ? "+" : ""}${trade.pnl.toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                        trade.status === "open"
-                          ? "bg-blue-500/10 text-blue-500"
-                          : trade.status === "closed"
-                          ? "bg-green-500/10 text-green-500"
-                          : "bg-secondary text-muted-foreground"
-                      }`}>
-                        {trade.status}
-                      </span>
-                    </td>
+          {trades.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              <p>No trades yet. Place your first trade above!</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-secondary/50">
+                  <tr>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Symbol</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Side</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Qty</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Entry</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Exit</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">P&L</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-6 py-4 uppercase tracking-wider">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {trades.map((trade) => (
+                    <tr key={trade.id} className="hover:bg-secondary/30 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-foreground">{trade.symbol}</td>
+                      <td className="px-6 py-4">
+                        <span className={`text-sm font-medium ${trade.side === "buy" ? "text-green-500" : "text-red-500"}`}>
+                          {trade.side.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{trade.quantity}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{formatINRSimple(trade.entry_price)}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
+                        {trade.exit_price ? formatINRSimple(trade.exit_price) : "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        {trade.pnl !== null ? (
+                          <span className={`text-sm font-medium ${trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
+                            {trade.pnl >= 0 ? "+" : ""}{formatINRSimple(trade.pnl)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                          trade.status === "open"
+                            ? "bg-blue-500/10 text-blue-500"
+                            : trade.status === "closed"
+                            ? "bg-green-500/10 text-green-500"
+                            : "bg-secondary text-muted-foreground"
+                        }`}>
+                          {trade.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </motion.div>
 
         {/* Actions */}
@@ -259,19 +519,13 @@ const PaperTrading = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="grid md:grid-cols-2 gap-4"
         >
-          <button className="group flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-2xl text-base font-medium hover:bg-primary/90 transition-all">
-            Continue Practicing
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
-
           <Link
             to="/dashboard/fno"
             className="group flex items-center justify-center gap-3 bg-secondary text-foreground px-8 py-4 rounded-2xl text-base font-medium hover:bg-secondary/80 transition-all"
           >
-            <Lock className="w-4 h-4" />
             View Advanced Markets (F&O)
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>
       </div>

@@ -46,19 +46,19 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
         <div className="p-3 bg-secondary rounded-lg">
           <p className="text-xs text-muted-foreground">Max Profit</p>
           <p className={`text-lg font-medium ${maxProfit >= 0 ? "text-green-500" : "text-red-500"}`}>
-            {maxProfit === Infinity ? "Unlimited" : `$${maxProfit.toFixed(2)}`}
+            {maxProfit === Infinity ? "Unlimited" : `₹${maxProfit.toFixed(2)}`}
           </p>
         </div>
         <div className="p-3 bg-secondary rounded-lg">
           <p className="text-xs text-muted-foreground">Max Loss</p>
           <p className={`text-lg font-medium ${maxLoss >= 0 ? "text-green-500" : "text-red-500"}`}>
-            {maxLoss === -Infinity ? "Unlimited" : `$${maxLoss.toFixed(2)}`}
+            {maxLoss === -Infinity ? "Unlimited" : `₹${maxLoss.toFixed(2)}`}
           </p>
         </div>
         <div className="p-3 bg-secondary rounded-lg">
           <p className="text-xs text-muted-foreground">Breakeven(s)</p>
           <p className="text-lg font-medium text-foreground">
-            {breakevens.length > 0 ? breakevens.map(b => `$${b}`).join(", ") : "N/A"}
+            {breakevens.length > 0 ? breakevens.map(b => `₹${b}`).join(", ") : "N/A"}
           </p>
         </div>
       </div>
@@ -82,13 +82,13 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
               dataKey="price"
               stroke="#666"
               tick={{ fill: "#888", fontSize: 12 }}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `₹${value}`}
             />
             <YAxis
               stroke="#666"
               tick={{ fill: "#888", fontSize: 12 }}
               domain={yAxisDomain}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `₹${value}`}
             />
             <Tooltip
               contentStyle={{
@@ -96,9 +96,9 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
                 border: "1px solid #333",
                 borderRadius: "8px",
               }}
-              labelFormatter={(value) => `Stock Price: $${value}`}
+              labelFormatter={(value) => `Stock Price: ₹${value}`}
               formatter={(value: number) => [
-                `$${value.toFixed(2)}`,
+                `₹${value.toFixed(2)}`,
                 "Net P/L"
               ]}
             />

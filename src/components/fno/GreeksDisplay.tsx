@@ -51,7 +51,7 @@ export const GreeksDisplay = ({ greeks, price }: GreeksDisplayProps) => {
       <div className="p-4 bg-white/5 rounded-xl border border-border">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Option Price</span>
-          <span className="text-2xl font-bold text-foreground">${price.toFixed(2)}</span>
+          <span className="text-2xl font-bold text-foreground">₹{price.toFixed(2)}</span>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export const GreeksDisplay = ({ greeks, price }: GreeksDisplayProps) => {
         <h4 className="text-foreground font-medium mb-3 text-sm">Understanding Greeks</h4>
         <ul className="space-y-2 text-xs text-muted-foreground">
           <li>
-            <strong className="text-foreground">Delta (Δ)</strong>: How much the option price moves for $1 move in stock
+            <strong className="text-foreground">Delta (Δ)</strong>: How much the option price moves for ₹1 move in stock
           </li>
           <li>
             <strong className="text-foreground">Gamma (Γ)</strong>: How fast Delta changes
