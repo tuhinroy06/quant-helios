@@ -94,17 +94,17 @@ const Backtest = () => {
 
       // Save results to database
       try {
-        await supabase.from("backtest_results").insert([{
+        await supabase.from("backtest_results").insert({
           strategy_id: strategy.id,
           user_id: user.id,
           strategy_version: 1,
           status: "completed",
-          parameters: { start_date: "2024-01-01", end_date: "2024-12-31" } as unknown as Record<string, unknown>,
-          metrics: mockMetrics as unknown as Record<string, unknown>,
-          equity_curve: mockEquity as unknown as Record<string, unknown>,
+          parameters: JSON.parse(JSON.stringify({ start_date: "2024-01-01", end_date: "2024-12-31" })),
+          metrics: JSON.parse(JSON.stringify(mockMetrics)),
+          equity_curve: JSON.parse(JSON.stringify(mockEquity)),
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),
-        }]);
+        });
 
         await supabase
           .from("strategies")

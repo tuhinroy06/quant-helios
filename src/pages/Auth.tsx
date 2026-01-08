@@ -24,7 +24,7 @@ const Auth = () => {
           password,
         });
         if (error) throw error;
-        navigate("/dashboard");
+        navigate("/dashboard/overview");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -38,7 +38,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Account created successfully!");
-        navigate("/dashboard");
+        navigate("/dashboard/onboarding");
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "An error occurred";

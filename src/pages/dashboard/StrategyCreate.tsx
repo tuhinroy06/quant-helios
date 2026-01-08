@@ -101,15 +101,15 @@ const StrategyCreate = () => {
     try {
       const { data, error } = await supabase
         .from("strategies")
-        .insert([{
+        .insert({
           user_id: user.id,
           name: strategyName,
           market_type: marketType,
           timeframe,
-          entry_rules: entryRules as unknown as Record<string, unknown>,
-          exit_rules: exitRules as unknown as Record<string, unknown>,
+          entry_rules: JSON.parse(JSON.stringify(entryRules)),
+          exit_rules: JSON.parse(JSON.stringify(exitRules)),
           status: "draft",
-        }])
+        })
         .select()
         .single();
 
@@ -127,15 +127,15 @@ const StrategyCreate = () => {
     try {
       const { data, error } = await supabase
         .from("strategies")
-        .insert([{
+        .insert({
           user_id: user.id,
           name: "RSI Mean Reversion",
           market_type: "cash",
           timeframe: "1d",
-          entry_rules: [{ indicator: "RSI", condition: "below", value: "30" }] as unknown as Record<string, unknown>,
-          exit_rules: [{ indicator: "RSI", condition: "above", value: "70" }] as unknown as Record<string, unknown>,
+          entry_rules: JSON.parse(JSON.stringify([{ indicator: "RSI", condition: "below", value: "30" }])),
+          exit_rules: JSON.parse(JSON.stringify([{ indicator: "RSI", condition: "above", value: "70" }])),
           status: "draft",
-        }])
+        })
         .select()
         .single();
 
