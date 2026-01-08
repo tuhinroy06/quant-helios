@@ -27,11 +27,11 @@ const CTASection = () => {
           </p>
 
           <Link to="/auth">
-            <button className="group flex items-center gap-3 bg-foreground text-background pl-8 pr-3 py-3 rounded-full text-base font-medium hover:bg-foreground/90 transition-colors mx-auto">
-              <span>Start Building</span>
-              <span className="flex items-center justify-center w-10 h-10 bg-background rounded-full">
-                <ArrowRight className="w-5 h-5 text-foreground transition-transform group-hover:translate-x-0.5" />
+            <button className="group flex items-center gap-3 bg-white text-black pr-8 pl-3 py-3 rounded-full text-base font-medium hover:bg-white/90 transition-colors mx-auto">
+              <span className="flex items-center justify-center w-10 h-10 bg-black rounded-full">
+                <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:translate-x-0.5" />
               </span>
+              <span>Start Building</span>
             </button>
           </Link>
         </motion.div>

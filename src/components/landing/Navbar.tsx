@@ -17,28 +17,28 @@ const Navbar = () => {
         </Link>
       </motion.div>
 
-      {/* Vertical left navigation */}
+      {/* Left navigation - micro1 style stacked links */}
       <motion.nav 
-        className="fixed left-8 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-6"
+        className="fixed left-8 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-4"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.4 }}
       >
         <Link 
           to="/learn" 
-          className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors vertical-text"
+          className="text-sm text-white/60 hover:text-white transition-colors"
         >
           Learn
         </Link>
         <Link 
           to="/pricing" 
-          className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors vertical-text"
+          className="text-sm text-white/60 hover:text-white transition-colors"
         >
           Pricing
         </Link>
       </motion.nav>
 
-      {/* Top-right CTA - micro1 style pill with arrow circle */}
+      {/* Top-right CTA - micro1 style: arrow LEFT, text RIGHT */}
       <motion.div 
         className="fixed top-8 right-8 z-50"
         initial={{ opacity: 0, x: 20 }}
@@ -46,11 +46,11 @@ const Navbar = () => {
         transition={{ duration: 0.8, delay: 0.3 }}
       >
         <Link to="/auth">
-          <button className="group flex items-center gap-3 bg-foreground text-background pl-5 pr-2 py-2 rounded-full text-sm font-medium hover:bg-foreground/90 transition-colors">
-            <span>Get Started</span>
-            <span className="flex items-center justify-center w-8 h-8 bg-background rounded-full">
-              <ArrowRight className="w-4 h-4 text-foreground transition-transform group-hover:translate-x-0.5" />
+          <button className="group flex items-center gap-3 bg-white text-black pr-5 pl-2 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors">
+            <span className="flex items-center justify-center w-8 h-8 bg-black rounded-full">
+              <ArrowRight className="w-4 h-4 text-white transition-transform group-hover:translate-x-0.5" />
             </span>
+            <span>Get Started</span>
           </button>
         </Link>
       </motion.div>
