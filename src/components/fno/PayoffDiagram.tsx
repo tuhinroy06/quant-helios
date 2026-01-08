@@ -136,6 +136,9 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
               stroke="#22c55e"
               fill="url(#profitGradient)"
               strokeWidth={2}
+              isAnimationActive={false}
+              dot={false}
+              activeDot={{ r: 4, fill: "#22c55e" }}
             />
           </AreaChart>
         </ResponsiveContainer>
