@@ -53,7 +53,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
       {/* Warm atmospheric background */}
       <div className="absolute inset-0 bg-gradient-hero" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-warm-500/[0.03] rounded-full blur-[120px]" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-warm-500/[0.02] rounded-full blur-[120px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -87,9 +87,9 @@ const Auth = () => {
         </p>
 
         {/* Trust badge */}
-        <div className="bg-secondary/50 border border-border rounded-xl p-4 mb-8">
+        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 mb-8 backdrop-blur-sm">
           <p className="text-muted-foreground text-sm flex items-center gap-3">
-            <Shield className="w-5 h-5 text-warm-500 flex-shrink-0" />
+            <Shield className="w-5 h-5 text-muted-foreground flex-shrink-0" />
             <span>No real trades without your explicit permission. Start with paper trading.</span>
           </p>
         </div>
@@ -107,7 +107,7 @@ const Auth = () => {
                 placeholder="Display name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warm-500/30 focus:border-warm-500/50 transition-all"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500/30 transition-all backdrop-blur-sm"
               />
             </motion.div>
           )}
@@ -118,7 +118,7 @@ const Auth = () => {
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warm-500/30 focus:border-warm-500/50 transition-all"
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500/30 transition-all backdrop-blur-sm"
               required
             />
           </div>
@@ -129,7 +129,7 @@ const Auth = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-xl px-5 py-4 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warm-500/30 focus:border-warm-500/50 transition-all"
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 pr-12 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500/30 transition-all backdrop-blur-sm"
               required
               minLength={6}
             />
