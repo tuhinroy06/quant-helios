@@ -1,50 +1,25 @@
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
-      {/* Warm atmospheric gradient */}
-      <div className="absolute inset-0 bg-gradient-hero" />
-      
-      {/* Ambient glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-warm-500/[0.03] rounded-full blur-[150px]" />
-      
-      {/* Subtle grid pattern */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Full-bleed hero background image */}
       <div 
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `linear-gradient(hsl(0 0% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 50%) 1px, transparent 1px)`,
-          backgroundSize: '100px 100px'
-        }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${heroBg})` }}
       />
-
-      {/* Floating abstract shapes with warm tint */}
-      <motion.div
-        className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full border border-warm-500/10"
-        animate={{ 
-          scale: [1, 1.1, 1],
-          rotate: [0, 180, 360],
-        }}
-        transition={{ 
-          duration: 60,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 right-1/4 w-60 h-60 rounded-full border border-foreground/[0.03]"
-        animate={{ 
-          scale: [1, 1.15, 1],
-          rotate: [360, 180, 0],
-        }}
-        transition={{ 
-          duration: 50,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      />
+      
+      {/* Gradient overlay for text contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-background/50" />
+      
+      {/* Subtle vignette effect */}
+      <div className="absolute inset-0 bg-radial-gradient pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at center, transparent 0%, hsl(220 20% 4% / 0.4) 100%)'
+      }} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 text-center">
         <motion.div
