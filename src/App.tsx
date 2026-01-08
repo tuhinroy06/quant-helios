@@ -9,8 +9,20 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Learn from "./pages/Learn";
 import Pricing from "./pages/Pricing";
-import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+
+// Dashboard Pages
+import Onboarding from "./pages/dashboard/Onboarding";
+import Overview from "./pages/dashboard/Overview";
+import Strategies from "./pages/dashboard/Strategies";
+import StrategyCreate from "./pages/dashboard/StrategyCreate";
+import StrategyReview from "./pages/dashboard/StrategyReview";
+import Backtest from "./pages/dashboard/Backtest";
+import ResultsExplanation from "./pages/dashboard/ResultsExplanation";
+import PaperTrading from "./pages/dashboard/PaperTrading";
+import FNO from "./pages/dashboard/FNO";
+import Settings from "./pages/dashboard/Settings";
+import LearnDashboard from "./pages/dashboard/LearnDashboard";
 
 const queryClient = new QueryClient();
 
@@ -22,18 +34,110 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/pricing" element={<Pricing />} />
+
+            {/* Protected Dashboard Routes */}
             <Route
-              path="/dashboard/*"
+              path="/dashboard/onboarding"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <Onboarding />
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/overview"
+              element={
+                <ProtectedRoute>
+                  <Overview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Overview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/strategies"
+              element={
+                <ProtectedRoute>
+                  <Strategies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/strategies/create"
+              element={
+                <ProtectedRoute>
+                  <StrategyCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/strategies/:id/review"
+              element={
+                <ProtectedRoute>
+                  <StrategyReview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/backtest/:id"
+              element={
+                <ProtectedRoute>
+                  <Backtest />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/results/:id"
+              element={
+                <ProtectedRoute>
+                  <ResultsExplanation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/paper-trading"
+              element={
+                <ProtectedRoute>
+                  <PaperTrading />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/fno"
+              element={
+                <ProtectedRoute>
+                  <FNO />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/learn"
+              element={
+                <ProtectedRoute>
+                  <LearnDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
