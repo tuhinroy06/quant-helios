@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, ArrowLeft, Eye, EyeOff, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -51,46 +51,46 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Atmospheric background */}
-      <div className="absolute inset-0 bg-gradient-radial-center" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/[0.015] rounded-full blur-[100px]" />
+      {/* Warm atmospheric background */}
+      <div className="absolute inset-0 bg-gradient-hero" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-warm-500/[0.03] rounded-full blur-[120px]" />
 
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md relative z-10"
       >
         {/* Back link */}
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm mb-12 transition-colors group"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm mb-10 transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           Back to home
         </Link>
 
         {/* Logo */}
-        <h1 className="font-display text-xl font-light text-muted-foreground mb-6">
+        <h1 className="font-display text-xl font-normal text-muted-foreground mb-8">
           AlgoTrade Pro
         </h1>
 
         {/* Heading */}
-        <h2 className="font-display text-4xl md:text-5xl font-light text-foreground leading-[0.95] mb-4">
+        <h2 className="font-display text-display-md text-foreground mb-3">
           {isLogin ? "Welcome back" : "Create account"}
         </h2>
 
-        <p className="text-muted-foreground mb-10 text-lg">
+        <p className="text-body-md text-muted-foreground mb-8">
           {isLogin 
             ? "Sign in to access your strategies." 
             : "Start your journey to smarter trading."}
         </p>
 
-        {/* Reassurance badge */}
-        <div className="glass rounded-xl p-4 mb-8">
-          <p className="text-muted-foreground text-sm flex items-center gap-2">
-            <span className="text-lg">🔒</span>
-            No real trades without your explicit permission. Start with paper trading.
+        {/* Trust badge */}
+        <div className="bg-secondary/50 border border-border rounded-xl p-4 mb-8">
+          <p className="text-muted-foreground text-sm flex items-center gap-3">
+            <Shield className="w-5 h-5 text-warm-500 flex-shrink-0" />
+            <span>No real trades without your explicit permission. Start with paper trading.</span>
           </p>
         </div>
 
@@ -107,7 +107,7 @@ const Auth = () => {
                 placeholder="Display name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-2xl px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+                className="w-full bg-secondary border border-border rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warm-500/30 focus:border-warm-500/50 transition-all"
               />
             </motion.div>
           )}
@@ -118,7 +118,7 @@ const Auth = () => {
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-2xl px-6 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+              className="w-full bg-secondary border border-border rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warm-500/30 focus:border-warm-500/50 transition-all"
               required
             />
           </div>
@@ -129,7 +129,7 @@ const Auth = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-2xl px-6 py-4 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+              className="w-full bg-secondary border border-border rounded-xl px-5 py-4 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warm-500/30 focus:border-warm-500/50 transition-all"
               required
               minLength={6}
             />
@@ -145,11 +145,11 @@ const Auth = () => {
           <button
             type="submit"
             disabled={loading}
-            className="group w-full flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-2xl text-base font-medium hover:bg-primary/90 transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group w-full flex items-center justify-center gap-3 bg-foreground text-background px-8 py-4 rounded-xl text-base font-medium hover:bg-foreground/90 transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-sm hover:shadow-glow-md"
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
                 Loading...
               </span>
             ) : (
@@ -166,7 +166,7 @@ const Auth = () => {
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-foreground hover:text-foreground/70 transition-colors font-medium"
+            className="text-foreground hover:text-warm-500 transition-colors font-medium"
           >
             {isLogin ? "Sign up" : "Sign in"}
           </button>

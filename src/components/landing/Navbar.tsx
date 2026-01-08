@@ -13,14 +13,17 @@ const Navbar = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2 }}
       >
-        <Link to="/" className="font-display text-lg tracking-wide text-foreground/80 hover:text-foreground transition-colors">
+        <Link 
+          to="/" 
+          className="font-display text-lg tracking-wide text-foreground hover:text-foreground/80 transition-colors"
+        >
           AlgoTrade Pro
         </Link>
       </motion.div>
 
-      {/* Left navigation - micro1 style stacked links */}
+      {/* Left navigation */}
       <motion.nav 
-        className="fixed left-8 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-4"
+        className="fixed left-8 md:left-12 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-5"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.4 }}
@@ -30,28 +33,28 @@ const Navbar = () => {
           className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
         >
           Learn
-          <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-px bg-foreground scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
+          <span className="absolute -left-5 top-1/2 -translate-y-1/2 w-3 h-px bg-warm-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
         </Link>
         <Link 
           to="/pricing" 
           className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
         >
           Pricing
-          <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-px bg-foreground scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
+          <span className="absolute -left-5 top-1/2 -translate-y-1/2 w-3 h-px bg-warm-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-right" />
         </Link>
       </motion.nav>
 
-      {/* Top-right CTA - hidden on mobile, shown on desktop */}
+      {/* Top-right CTA */}
       <motion.div 
-        className="fixed top-8 right-8 z-50 hidden md:block"
+        className="fixed top-8 right-8 md:right-12 z-50 hidden md:block"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.3 }}
       >
         <Link to="/auth">
-          <button className="group flex items-center gap-3 bg-primary text-primary-foreground pl-2 pr-5 py-2 rounded-full text-sm font-medium hover:bg-primary/90 transition-all duration-300">
-            <span className="flex items-center justify-center w-8 h-8 bg-primary-foreground/10 rounded-full">
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+          <button className="group flex items-center gap-3 bg-foreground text-background pl-2.5 pr-5 py-2 rounded-full text-sm font-medium hover:bg-foreground/90 transition-all duration-300 shadow-sm">
+            <span className="flex items-center justify-center w-7 h-7 bg-background/10 rounded-full">
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
             <span>Get Started</span>
           </button>
