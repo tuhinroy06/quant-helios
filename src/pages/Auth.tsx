@@ -50,10 +50,9 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Warm atmospheric background */}
-      <div className="absolute inset-0 bg-gradient-hero" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-warm-500/[0.02] rounded-full blur-[120px]" />
+    <div className="min-h-screen bg-white flex items-center justify-center px-6 relative overflow-hidden">
+      {/* Subtle warm glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-warm-500/[0.05] rounded-full blur-[120px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -64,32 +63,32 @@ const Auth = () => {
         {/* Back link */}
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm mb-10 transition-colors group"
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-10 transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           Back to home
         </Link>
 
         {/* Logo */}
-        <h1 className="font-display text-xl font-normal text-muted-foreground mb-8">
+        <h1 className="font-display text-xl font-normal text-gray-400 mb-8">
           AlgoTrade Pro
         </h1>
 
         {/* Heading */}
-        <h2 className="font-display text-display-md text-foreground mb-3">
+        <h2 className="font-display text-display-md text-gray-900 mb-3">
           {isLogin ? "Welcome back" : "Create account"}
         </h2>
 
-        <p className="text-body-md text-muted-foreground mb-8">
+        <p className="text-body-md text-gray-500 mb-8">
           {isLogin 
-            ? "Sign in to access your strategies." 
+            ? "Sign in to access your strategies."
             : "Start your journey to smarter trading."}
         </p>
 
         {/* Trust badge */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 mb-8 backdrop-blur-sm">
-          <p className="text-muted-foreground text-sm flex items-center gap-3">
-            <Shield className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-8">
+          <p className="text-gray-600 text-sm flex items-center gap-3">
+            <Shield className="w-5 h-5 text-warm-500 flex-shrink-0" />
             <span>No real trades without your explicit permission. Start with paper trading.</span>
           </p>
         </div>
@@ -107,7 +106,7 @@ const Auth = () => {
                 placeholder="Display name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500/30 transition-all backdrop-blur-sm"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500 transition-all"
               />
             </motion.div>
           )}
@@ -118,7 +117,7 @@ const Auth = () => {
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500/30 transition-all backdrop-blur-sm"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500 transition-all"
               required
             />
           </div>
@@ -129,14 +128,14 @@ const Auth = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 pr-12 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500/30 transition-all backdrop-blur-sm"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 pr-12 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-warm-500/20 focus:border-warm-500 transition-all"
               required
               minLength={6}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -145,7 +144,7 @@ const Auth = () => {
           <button
             type="submit"
             disabled={loading}
-            className="group w-full flex items-center justify-center gap-3 bg-foreground text-background px-8 py-4 rounded-xl text-base font-medium hover:bg-foreground/90 transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-sm hover:shadow-glow-md"
+            className="group w-full flex items-center justify-center gap-3 bg-gray-900 text-white px-8 py-4 rounded-xl text-base font-medium hover:bg-gray-800 transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -162,11 +161,11 @@ const Auth = () => {
         </form>
 
         {/* Toggle */}
-        <p className="text-center text-muted-foreground mt-8">
+        <p className="text-center text-gray-500 mt-8">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-foreground hover:text-warm-500 transition-colors font-medium"
+            className="text-gray-900 hover:text-warm-500 transition-colors font-medium"
           >
             {isLogin ? "Sign up" : "Sign in"}
           </button>
