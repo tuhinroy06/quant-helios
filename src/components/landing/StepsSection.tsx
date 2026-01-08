@@ -1,79 +1,67 @@
 import { motion } from "framer-motion";
-import { Lightbulb, TestTube2, TrendingUp, Rocket } from "lucide-react";
 
 const steps = [
   {
-    icon: Lightbulb,
     number: "01",
-    title: "Describe your idea",
-    description: "Tell the AI your trading concept in plain English. No coding required.",
+    title: "Describe Your Strategy",
+    description: "Tell our AI what you want to achieve. No coding required.",
   },
   {
-    icon: TestTube2,
     number: "02",
-    title: "Test safely",
-    description: "Backtest against historical data to see how your strategy would have performed.",
+    title: "Backtest & Refine",
+    description: "See how your strategy performs against historical data.",
   },
   {
-    icon: TrendingUp,
     number: "03",
-    title: "Paper trade",
-    description: "Practice with virtual money using real market data. Zero risk, full learning.",
+    title: "Paper Trade",
+    description: "Practice with simulated money in real market conditions.",
   },
   {
-    icon: Rocket,
     number: "04",
-    title: "Go live",
-    description: "When you're confident, deploy your strategy to real markets.",
+    title: "Go Live",
+    description: "Deploy your strategy when you're confident and ready.",
   },
 ];
 
 const StepsSection = () => {
   return (
-    <section className="py-32 px-6 bg-gradient-dark">
-      <div className="max-w-6xl mx-auto">
+    <section className="py-40 px-6 bg-background relative">
+      <div className="max-w-5xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-20"
+          transition={{ duration: 0.8 }}
+          className="mb-24"
         >
-          <p className="text-muted-foreground text-sm tracking-[0.2em] uppercase mb-4">
-            How it works
-          </p>
-          <h2 className="font-display text-4xl md:text-5xl font-medium text-foreground">
-            From idea to execution
+          <h2 className="font-display text-5xl md:text-7xl font-light text-foreground leading-tight">
+            Four steps to
+            <br />
+            <span className="text-foreground/50">confident trading</span>
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-16">
           {steps.map((step, index) => (
             <motion.div
               key={step.number}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="group relative bg-gradient-card border border-border rounded-2xl p-8 hover-lift"
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="flex items-start gap-8 md:gap-16 group"
             >
-              {/* Step number */}
-              <span className="text-muted-foreground/30 font-display text-6xl font-bold absolute top-4 right-6">
+              <span className="font-display text-4xl md:text-6xl font-light text-foreground/20 group-hover:text-foreground/40 transition-colors">
                 {step.number}
               </span>
-
-              {/* Icon */}
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-6 group-hover:bg-accent/10 transition-colors">
-                <step.icon className="w-6 h-6 text-foreground group-hover:text-accent transition-colors" />
+              <div className="pt-2 md:pt-4">
+                <h3 className="font-display text-2xl md:text-3xl font-light text-foreground mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-muted-foreground text-base md:text-lg font-light max-w-md">
+                  {step.description}
+                </p>
               </div>
-
-              {/* Content */}
-              <h3 className="font-display text-xl font-medium text-foreground mb-3">
-                {step.title}
-              </h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {step.description}
-              </p>
             </motion.div>
           ))}
         </div>

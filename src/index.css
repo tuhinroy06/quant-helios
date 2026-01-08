@@ -103,10 +103,18 @@
   /* Typography utilities */
   .font-display {
     font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 300;
   }
 
   .font-body {
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Vertical text for side navigation */
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
   }
 }
 
