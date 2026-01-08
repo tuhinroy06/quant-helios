@@ -44,39 +44,39 @@ export function DashboardSidebar() {
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"} collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
+    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border p-5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-            <span className="text-black font-bold text-sm">A</span>
+          <div className="w-9 h-9 rounded-xl bg-warm-500 flex items-center justify-center flex-shrink-0">
+            <span className="text-background font-bold text-sm">A</span>
           </div>
           {!collapsed && (
             <span className="font-display text-lg text-sidebar-foreground">
-              AlgoTrade Pro
+              AlgoTrade
             </span>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="p-3">
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+          <SidebarGroupLabel className={`${collapsed ? "sr-only" : ""} text-label text-muted-foreground mb-2`}>
             Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
                       end={item.url === "/dashboard/overview"}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      activeClassName="bg-muted text-foreground"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-all duration-200"
+                      activeClassName="bg-sidebar-accent text-foreground border-l-2 border-warm-500"
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
                       {!collapsed && (
-                        <span className="flex-1">{item.title}</span>
+                        <span className="text-sm font-medium">{item.title}</span>
                       )}
                     </NavLink>
                   </SidebarMenuButton>
@@ -89,16 +89,16 @@ export function DashboardSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         {!collapsed && user && (
-          <div className="text-xs text-muted-foreground mb-3 truncate">
+          <div className="text-xs text-muted-foreground mb-3 truncate px-1">
             {user.email}
           </div>
         )}
         <button
           onClick={signOut}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-all duration-200"
         >
-          <LogOut className="h-5 w-5 shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
+          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
         </button>
       </SidebarFooter>
     </Sidebar>

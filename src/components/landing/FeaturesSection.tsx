@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Shield, BarChart3 } from "lucide-react";
+import { Sparkles, Shield, BarChart3, Zap } from "lucide-react";
 
 const features = [
   {
@@ -17,58 +17,67 @@ const features = [
     title: "Deep Analytics",
     description: "Understand every trade. Visualize performance and refine your approach.",
   },
+  {
+    icon: Zap,
+    title: "Real-Time Execution",
+    description: "When you're ready, connect to your broker and trade with confidence.",
+  },
 ];
 
 function FeaturesSection() {
   return (
-    <section className="py-32 md:py-48 px-6 bg-background relative overflow-hidden">
-      {/* Subtle gradient accent */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/[0.01] to-transparent" />
+    <section className="py-32 md:py-40 px-6 md:px-12 bg-background relative overflow-hidden">
+      {/* Background accent */}
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-warm-500/[0.02] to-transparent" />
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-20 md:mb-32"
+          transition={{ duration: 0.6 }}
+          className="mb-16 md:mb-24"
         >
-          <p className="text-muted-foreground text-sm uppercase tracking-widest mb-4">Why Choose Us</p>
-          <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-light text-foreground leading-[0.95]">
+          <p className="text-label text-muted-foreground mb-4">Why Choose Us</p>
+          <h2 className="font-display text-display-lg text-foreground">
             Built for
             <br />
-            <span className="text-foreground/40">modern traders</span>
+            <span className="text-muted-foreground">modern traders</span>
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+        <div className="grid md:grid-cols-2 gap-6 md:gap-8">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
-              className="group relative"
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="group"
             >
-              {/* Card with subtle border */}
-              <div className="relative p-8 rounded-2xl border border-border bg-card/30 hover:bg-card/50 hover:border-border/60 transition-all duration-500">
-                {/* Icon */}
-                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mb-6 group-hover:bg-secondary/80 transition-colors">
-                  <feature.icon className="w-6 h-6 text-foreground/70" />
-                </div>
+              <div className="relative p-8 md:p-10 rounded-2xl border border-border bg-card/50 card-hover">
+                {/* Warm accent on hover */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-warm-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
-                {/* Content */}
-                <h3 className="font-display text-xl md:text-2xl font-light text-foreground mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-muted-foreground text-base font-light leading-relaxed">
-                  {feature.description}
-                </p>
+                <div className="relative z-10">
+                  {/* Icon */}
+                  <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-6 group-hover:bg-warm-500/10 transition-colors duration-300">
+                    <feature.icon className="w-5 h-5 text-foreground/70 group-hover:text-warm-500 transition-colors duration-300" />
+                  </div>
+                  
+                  {/* Content */}
+                  <h3 className="font-display text-display-md text-foreground mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-body-md text-muted-foreground">
+                    {feature.description}
+                  </p>
+                </div>
 
-                {/* Decorative line */}
-                <div className="absolute bottom-8 left-8 w-8 h-px bg-foreground/10 group-hover:w-12 group-hover:bg-foreground/20 transition-all duration-500" />
+                {/* Corner accent */}
+                <div className="absolute bottom-8 left-8 w-8 h-px bg-border group-hover:w-16 group-hover:bg-warm-500/40 transition-all duration-500" />
               </div>
             </motion.div>
           ))}

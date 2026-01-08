@@ -28,21 +28,21 @@ export const StatCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
       className={cn(
-        "group relative bg-card border border-border rounded-2xl p-6 hover:border-border/60 transition-all duration-300",
+        "group relative bg-card border border-border rounded-2xl p-6 card-hover",
         className
       )}
     >
-      {/* Subtle gradient overlay on hover */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      {/* Warm accent on hover */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-warm-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       <div className="relative z-10">
         {Icon && (
-          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center mb-4">
-            <Icon className="w-5 h-5 text-foreground/70" />
+          <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center mb-5 group-hover:bg-warm-500/10 transition-colors duration-300">
+            <Icon className="w-5 h-5 text-muted-foreground group-hover:text-warm-500 transition-colors duration-300" />
           </div>
         )}
         
-        <p className="text-3xl font-light text-foreground mb-1 tracking-tight">
+        <p className="text-3xl font-medium text-foreground mb-1 tracking-tight">
           {value}
         </p>
         
@@ -54,8 +54,8 @@ export const StatCard = ({
               className={cn(
                 "text-xs font-medium px-2 py-0.5 rounded-full",
                 trend.isPositive
-                  ? "bg-green-500/10 text-green-500"
-                  : "bg-red-500/10 text-red-500"
+                  ? "status-success"
+                  : "status-error"
               )}
             >
               {trend.isPositive ? "+" : ""}{trend.value}%

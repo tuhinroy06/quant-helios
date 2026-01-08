@@ -3,60 +3,49 @@ import { ArrowUpRight } from "lucide-react";
 
 function Footer() {
   return (
-    <footer className="py-16 px-6 bg-background relative">
+    <footer className="py-16 md:py-20 px-6 md:px-12 bg-background relative">
       {/* Top border */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       
       <div className="max-w-6xl mx-auto">
-        {/* Main footer content */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-12">
-          {/* Logo and tagline */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-16">
+          {/* Brand */}
           <div>
-            <Link to="/" className="font-display text-xl text-foreground mb-2 block">
+            <Link to="/" className="font-display text-xl text-foreground hover:text-foreground/80 transition-colors">
               AlgoTrade Pro
             </Link>
-            <p className="text-muted-foreground text-sm">
-              AI-powered trading strategy builder
+            <p className="text-muted-foreground text-sm mt-3 max-w-xs">
+              Design, test, and refine trading strategies with AI assistance.
             </p>
           </div>
-          
+
           {/* Navigation */}
-          <nav className="flex flex-wrap items-center gap-8">
-            <Link 
-              to="/learn" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
-            >
-              Learn
-              <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
-            <Link 
-              to="/pricing" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
-            >
-              Pricing
-              <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
-            <Link 
-              to="/auth" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
-            >
-              Sign In
-              <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
+          <nav className="flex flex-wrap gap-x-10 gap-y-4">
+            {[
+              { label: "Learn", href: "/learn" },
+              { label: "Pricing", href: "/pricing" },
+              { label: "Sign In", href: "/auth" },
+            ].map((link) => (
+              <Link
+                key={link.label}
+                to={link.href}
+                className="group text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                {link.label}
+                <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 translate-x-0.5 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
+              </Link>
+            ))}
           </nav>
         </div>
 
-        {/* Bottom row */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-border">
-          <p className="text-muted-foreground text-sm">
+        {/* Bottom */}
+        <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between gap-4">
+          <p className="text-sm text-muted-foreground/60">
             © {new Date().getFullYear()} AlgoTrade Pro. All rights reserved.
           </p>
-          
-          <div className="flex items-center gap-6">
-            <span className="text-xs text-muted-foreground/50">
-              Not financial advice. Paper trading only.
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground/40 max-w-md">
+            This platform is for educational purposes. Not financial advice. Always do your own research.
+          </p>
         </div>
       </div>
     </footer>
