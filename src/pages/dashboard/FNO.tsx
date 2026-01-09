@@ -1,17 +1,14 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, AlertTriangle, ArrowLeft, CheckCircle, BookOpen, TrendingUp, Shield, Zap } from "lucide-react";
+import { Lock, ArrowLeft, CheckCircle, BookOpen, TrendingUp, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
 const FNO = () => {
-  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
 
   const unlockRequirements = [
     { label: "Complete 20+ paper trades", completed: false, progress: "12/20" },
     { label: "Achieve 50%+ win rate in paper trading", completed: true, progress: "58%" },
     { label: "Complete F&O basics course", completed: false, progress: "3/8 lessons" },
-    { label: "Acknowledge risk disclosure", completed: riskAcknowledged, progress: riskAcknowledged ? "Done" : "Pending" },
   ];
 
   const completedCount = unlockRequirements.filter(r => r.completed).length;
@@ -167,44 +164,6 @@ const FNO = () => {
           </div>
         </motion.div>
 
-        {/* Risk Disclosure */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.25 }}
-          className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
-            </div>
-            <h3 className="text-red-400 font-medium">Risk Disclosure</h3>
-          </div>
-          <div className="space-y-3 text-sm text-red-400/80 pl-[52px]">
-            <p>
-              <strong className="text-red-400">Derivatives trading carries substantial risk of loss.</strong> 
-              {" "}You could lose more than your initial investment.
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-red-400/70">
-              <li>Futures and options are leveraged products</li>
-              <li>Options can expire worthless, losing 100% of premium paid</li>
-              <li>Futures positions can incur unlimited losses</li>
-              <li>Time decay (theta) works against option buyers</li>
-            </ul>
-          </div>
-
-          <label className="flex items-start gap-3 mt-6 cursor-pointer pl-[52px]">
-            <input
-              type="checkbox"
-              checked={riskAcknowledged}
-              onChange={(e) => setRiskAcknowledged(e.target.checked)}
-              className="mt-1 w-5 h-5 rounded border-red-500/30 bg-transparent text-red-500 focus:ring-red-500/50"
-            />
-            <span className="text-sm text-red-400">
-              I understand the risks and have read the disclosure above.
-            </span>
-          </label>
-        </motion.div>
 
         {/* What You'll Get */}
         <motion.div

@@ -224,18 +224,6 @@ const LiveTrading = () => {
             </div>
           </div>
 
-          {/* Risk Disclosure */}
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-8">
-            <h3 className="text-yellow-500 font-medium mb-3 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Risk Disclosure
-            </h3>
-            <p className="text-sm text-yellow-500/80">
-              Trading in securities involves risk. The value of investments can go down as well as up. 
-              Past performance is not indicative of future results. Please ensure you understand the 
-              risks involved before trading.
-            </p>
-          </div>
 
           {/* Back to Dashboard */}
           <Link
