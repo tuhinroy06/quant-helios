@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, Plus, X } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, Plus, X, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { INDIAN_STOCKS, getSimulatedPrice, formatINRSimple } from "@/lib/indian-stocks";
+import { useLivePrices } from "@/hooks/useLivePrices";
 
 interface PaperAccount {
   id: string;
@@ -203,9 +204,38 @@ const PaperTrading = () => {
     }
   };
 
-  const totalPnL = account ? account.current_balance - account.initial_balance : 0;
-  const totalPnLPercent = account ? ((totalPnL / account.initial_balance) * 100).toFixed(2) : "0.00";
   const openPositions = trades.filter(t => t.status === "open");
+  
+  // Get symbols of open positions for live price tracking
+  const openSymbols = useMemo(() => 
+    openPositions.map(t => t.symbol), 
+    [openPositions]
+  );
+  
+  // Fetch live prices for open positions (refresh every 5 seconds)
+  const { prices: livePrices, lastUpdated, refresh: refreshPrices, loading: pricesLoading } = useLivePrices({
+    symbols: openSymbols,
+    refreshInterval: 5000,
+    enabled: openSymbols.length > 0,
+  });
+
+  // Calculate unrealized P&L using live prices
+  const calculateUnrealizedPnL = (trade: PaperTrade) => {
+    const livePrice = livePrices[trade.symbol];
+    const currentPrice = livePrice?.price || INDIAN_STOCKS.find(s => s.symbol === trade.symbol)?.price || trade.entry_price;
+    
+    if (trade.side === "buy") {
+      return (currentPrice - trade.entry_price) * trade.quantity;
+    } else {
+      return (trade.entry_price - currentPrice) * trade.quantity;
+    }
+  };
+
+  // Calculate total unrealized P&L from open positions
+  const totalUnrealizedPnL = openPositions.reduce((sum, trade) => sum + calculateUnrealizedPnL(trade), 0);
+  
+  const totalPnL = account ? (account.current_balance - account.initial_balance) + totalUnrealizedPnL : 0;
+  const totalPnLPercent = account ? ((totalPnL / account.initial_balance) * 100).toFixed(2) : "0.00";
 
   if (loading) {
     return (
@@ -400,32 +430,61 @@ const PaperTrading = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="bg-card border border-border rounded-2xl overflow-hidden"
           >
-            <div className="p-6 border-b border-border flex items-center gap-3">
-              <Activity className="w-5 h-5 text-blue-500" />
-              <h3 className="text-foreground font-medium">Open Positions</h3>
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Activity className="w-5 h-5 text-blue-500" />
+                <h3 className="text-foreground font-medium">Open Positions</h3>
+              </div>
+              <div className="flex items-center gap-3">
+                {lastUpdated && (
+                  <span className="text-xs text-muted-foreground">
+                    Updated {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+                <button
+                  onClick={refreshPrices}
+                  disabled={pricesLoading}
+                  className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                  title="Refresh prices"
+                >
+                  <RefreshCw className={`w-4 h-4 text-muted-foreground ${pricesLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
             </div>
             <div className="divide-y divide-border">
               {openPositions.map((trade) => {
-                const stock = INDIAN_STOCKS.find(s => s.symbol === trade.symbol);
-                const currentPrice = stock ? getSimulatedPrice(stock.price, 0.01) : trade.entry_price;
-                const unrealizedPnL = trade.side === "buy" 
-                  ? (currentPrice - trade.entry_price) * trade.quantity
-                  : (trade.entry_price - currentPrice) * trade.quantity;
+                const livePrice = livePrices[trade.symbol];
+                const currentPrice = livePrice?.price || INDIAN_STOCKS.find(s => s.symbol === trade.symbol)?.price || trade.entry_price;
+                const priceChange = livePrice?.changePercent || 0;
+                const unrealizedPnL = calculateUnrealizedPnL(trade);
 
                 return (
                   <div key={trade.id} className="p-4 flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground">{trade.symbol}</span>
                         <span className={`text-xs px-2 py-0.5 rounded ${trade.side === "buy" ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}`}>
                           {trade.side.toUpperCase()}
                         </span>
+                        {livePrice && (
+                          <span className="text-xs text-muted-foreground">
+                            LIVE
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {trade.quantity} @ {formatINRSimple(trade.entry_price)}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-center flex-1">
+                      <p className="text-sm text-foreground font-medium">
+                        {formatINRSimple(currentPrice)}
+                      </p>
+                      <p className={`text-xs ${priceChange >= 0 ? "text-green-500" : "text-red-500"}`}>
+                        {priceChange >= 0 ? "+" : ""}{priceChange.toFixed(2)}%
+                      </p>
+                    </div>
+                    <div className="text-right flex-1">
                       <p className={`font-medium ${unrealizedPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
                         {unrealizedPnL >= 0 ? "+" : ""}{formatINRSimple(unrealizedPnL)}
                       </p>
