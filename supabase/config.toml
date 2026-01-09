@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.fetch-prices]
 verify_jwt = false
+
+[functions.paper-trading-overview]
+verify_jwt = false
+
+[functions.paper-trading-trade]
+verify_jwt = false
+
+[functions.paper-trading-close]
+verify_jwt = false
