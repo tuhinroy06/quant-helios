@@ -524,6 +524,7 @@ export type Database = {
           initial_balance: number | null
           is_active: boolean | null
           name: string | null
+          status: string | null
           updated_at: string
           user_id: string
         }
@@ -535,6 +536,7 @@ export type Database = {
           initial_balance?: number | null
           is_active?: boolean | null
           name?: string | null
+          status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -546,7 +548,107 @@ export type Database = {
           initial_balance?: number | null
           is_active?: boolean | null
           name?: string | null
+          status?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      paper_positions: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          entry_price: number
+          id: string
+          market: string
+          opened_at: string
+          quantity: number
+          side: string
+          status: string | null
+          stop_loss: number
+          strategy_id: string | null
+          symbol: string
+          take_profit: number | null
+          unrealized_pnl: number | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          entry_price: number
+          id?: string
+          market?: string
+          opened_at?: string
+          quantity: number
+          side: string
+          status?: string | null
+          stop_loss: number
+          strategy_id?: string | null
+          symbol: string
+          take_profit?: number | null
+          unrealized_pnl?: number | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          entry_price?: number
+          id?: string
+          market?: string
+          opened_at?: string
+          quantity?: number
+          side?: string
+          status?: string | null
+          stop_loss?: number
+          strategy_id?: string | null
+          symbol?: string
+          take_profit?: number | null
+          unrealized_pnl?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paper_positions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paper_positions_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paper_trade_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          message: string
+          metadata: Json | null
+          trade_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          trade_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          trade_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -559,11 +661,14 @@ export type Database = {
           exit_price: number | null
           fees: number | null
           id: string
+          market: string | null
           notes: string | null
           opened_at: string
           order_type: string | null
           pnl: number | null
+          pnl_pct: number | null
           quantity: number
+          reason: string | null
           side: string
           status: string | null
           stop_loss: number | null
@@ -578,11 +683,14 @@ export type Database = {
           exit_price?: number | null
           fees?: number | null
           id?: string
+          market?: string | null
           notes?: string | null
           opened_at?: string
           order_type?: string | null
           pnl?: number | null
+          pnl_pct?: number | null
           quantity: number
+          reason?: string | null
           side: string
           status?: string | null
           stop_loss?: number | null
@@ -597,11 +705,14 @@ export type Database = {
           exit_price?: number | null
           fees?: number | null
           id?: string
+          market?: string | null
           notes?: string | null
           opened_at?: string
           order_type?: string | null
           pnl?: number | null
+          pnl_pct?: number | null
           quantity?: number
+          reason?: string | null
           side?: string
           status?: string | null
           stop_loss?: number | null
@@ -960,6 +1071,7 @@ export type Database = {
         Returns: boolean
       }
       owns_paper_account: { Args: { _account_id: string }; Returns: boolean }
+      owns_paper_position: { Args: { position_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "retail" | "pro" | "b2b_admin" | "b2b_member" | "admin"
