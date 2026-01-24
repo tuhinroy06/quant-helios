@@ -27,18 +27,11 @@ export const useAlphaVantagePrices = ({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const pollingIntervalRef = useRef<number | null>(null);
-  const symbolsRef = useRef<string[]>(symbols);
-  const enabledRef = useRef(enabled);
   const isFetchingRef = useRef(false);
-
-  // Keep refs updated
-  useEffect(() => {
-    symbolsRef.current = symbols;
-  }, [symbols]);
-
-  useEffect(() => {
-    enabledRef.current = enabled;
-  }, [enabled]);
+  const mountedRef = useRef(true);
+  
+  // Stabilize symbols array by joining and comparing as string
+  const symbolsKey = symbols.sort().join(',');
 
   // Fetch prices from Alpha Vantage edge function
   const fetchPrices = useCallback(async (symbolsToFetch: string[]) => {
@@ -56,7 +49,11 @@ export const useAlphaVantagePrices = ({
         batches.push(symbolsToFetch.slice(i, i + batchSize));
       }
 
+      const allPrices: Record<string, LivePrice> = {};
+
       for (const batch of batches) {
+        if (!mountedRef.current) break;
+        
         const pricePromises = batch.map(async (symbol) => {
           try {
             const response = await fetch(
@@ -80,7 +77,7 @@ export const useAlphaVantagePrices = ({
 
         results.forEach((result) => {
           if (result && result.symbol) {
-            const priceData: LivePrice = {
+            allPrices[result.symbol] = {
               symbol: result.symbol,
               price: result.price,
               change: result.change,
@@ -89,11 +86,6 @@ export const useAlphaVantagePrices = ({
               marketStatus: result.marketStatus,
               source: result.source,
             };
-
-            setPrices((prev) => ({
-              ...prev,
-              [result.symbol]: priceData,
-            }));
           }
         });
 
@@ -103,48 +95,49 @@ export const useAlphaVantagePrices = ({
         }
       }
 
-      setLastUpdated(new Date());
+      if (mountedRef.current) {
+        setPrices(prev => ({ ...prev, ...allPrices }));
+        setLastUpdated(new Date());
+      }
     } catch (err) {
       console.error("[Alpha Vantage] Fetch error:", err);
-      setError("Failed to fetch prices");
+      if (mountedRef.current) {
+        setError("Failed to fetch prices");
+      }
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
     }
   }, []);
 
-  // Initial fetch
+  // Initial fetch and periodic refresh - use symbolsKey for stability
   useEffect(() => {
-    if (enabled && symbols.length > 0) {
-      fetchPrices(symbols);
+    mountedRef.current = true;
+    
+    if (!enabled || !symbolsKey) {
+      return;
     }
-  }, [enabled, symbols, fetchPrices]);
 
-  // Periodic refresh
-  useEffect(() => {
-    if (!enabled || symbols.length === 0) return;
+    const symbolsArray = symbolsKey.split(',').filter(Boolean);
+    
+    // Initial fetch
+    fetchPrices(symbolsArray);
 
+    // Set up polling interval
     pollingIntervalRef.current = window.setInterval(() => {
-      if (enabledRef.current && symbolsRef.current.length > 0) {
-        fetchPrices(symbolsRef.current);
+      if (mountedRef.current) {
+        fetchPrices(symbolsArray);
       }
     }, refreshInterval);
 
     return () => {
+      mountedRef.current = false;
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
     };
-  }, [enabled, symbols.length, refreshInterval, fetchPrices]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
+  }, [enabled, symbolsKey, refreshInterval, fetchPrices]);
 
   const getPrice = useCallback(
     (symbol: string): LivePrice | null => {
@@ -154,10 +147,11 @@ export const useAlphaVantagePrices = ({
   );
 
   const refresh = useCallback(() => {
-    if (symbolsRef.current.length > 0) {
-      fetchPrices(symbolsRef.current);
+    const symbolsArray = symbolsKey.split(',').filter(Boolean);
+    if (symbolsArray.length > 0) {
+      fetchPrices(symbolsArray);
     }
-  }, [fetchPrices]);
+  }, [symbolsKey, fetchPrices]);
 
   // Check if data is fresh (less than 2 minutes old)
   const isDataFresh = lastUpdated 
