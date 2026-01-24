@@ -201,6 +201,117 @@ export type Database = {
         }
         Relationships: []
       }
+      control_decisions: {
+        Row: {
+          admin_id: string | null
+          created_at: string | null
+          decided_at: string
+          decision_id: string
+          global_kill_override: boolean | null
+          id: string
+          new_state: string
+          previous_state: string
+          reason: string
+          requires_manual_reset: boolean | null
+          scope: string
+          signals: Json | null
+          target_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string | null
+          decided_at: string
+          decision_id: string
+          global_kill_override?: boolean | null
+          id?: string
+          new_state: string
+          previous_state: string
+          reason: string
+          requires_manual_reset?: boolean | null
+          scope: string
+          signals?: Json | null
+          target_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string | null
+          decided_at?: string
+          decision_id?: string
+          global_kill_override?: boolean | null
+          id?: string
+          new_state?: string
+          previous_state?: string
+          reason?: string
+          requires_manual_reset?: boolean | null
+          scope?: string
+          signals?: Json | null
+          target_id?: string
+        }
+        Relationships: []
+      }
+      control_signals: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          reason: string
+          scope: string
+          severity: number
+          source: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          reason: string
+          scope: string
+          severity: number
+          source: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string
+          scope?: string
+          severity?: number
+          source?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
+      control_states: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_transition_at: string | null
+          scope: string
+          state: string
+          target_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_transition_at?: string | null
+          scope: string
+          state?: string
+          target_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_transition_at?: string | null
+          scope?: string
+          state?: string
+          target_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       fno_simulations: {
         Row: {
           breakeven_points: Json | null

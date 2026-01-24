@@ -2,3 +2,6 @@ project_id = "axwhhazpvpkvheoruetu"
 
 [functions.strategy-health-engine]
 verify_jwt = false
+
+[functions.global-control-plane]
+verify_jwt = false
