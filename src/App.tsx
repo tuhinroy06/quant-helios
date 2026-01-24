@@ -25,7 +25,7 @@ import Settings from "./pages/dashboard/Settings";
 import LearnDashboard from "./pages/dashboard/LearnDashboard";
 import StoxoAI from "./pages/dashboard/StoxoAI";
 import LiveTrading from "./pages/dashboard/LiveTrading";
-import Organization from "./pages/dashboard/Organization";
+
 import TradeJournal from "./pages/dashboard/TradeJournal";
 import StrategyPerformance from "./pages/dashboard/StrategyPerformance";
 import StockScreenerPage from "./pages/dashboard/StockScreenerPage";
@@ -148,14 +148,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <LiveTrading />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/organization"
-              element={
-                <ProtectedRoute>
-                  <Organization />
                 </ProtectedRoute>
               }
             />

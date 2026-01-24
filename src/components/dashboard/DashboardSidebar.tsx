@@ -8,7 +8,6 @@ import {
   LogOut,
   Sparkles,
   Zap,
-  Building2,
   BookOpen,
   PieChart,
   SlidersHorizontal
@@ -39,7 +38,6 @@ const menuItems = [
   { title: "F&O Simulator", url: "/dashboard/fno", icon: BarChart3 },
   { title: "Helios AI", url: "/dashboard/stoxo-ai", icon: Sparkles },
   { title: "Live Trading", url: "/dashboard/live-trading", icon: Zap },
-  { title: "Organization", url: "/dashboard/organization", icon: Building2 },
   { title: "Learn", url: "/dashboard/learn", icon: GraduationCap },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
