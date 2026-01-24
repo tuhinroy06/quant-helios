@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Wrench, ArrowRight, Send, Plus, Trash2 } from "lucide-react";
+import { Sparkles, Wrench, ArrowRight, Send, Plus, Trash2, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { StrategyCompilerCard } from "@/components/strategy/StrategyCompilerCard";
+import { CompilationResult } from "@/hooks/useStrategyCompiler";
 
 interface Rule {
   id: string;
@@ -320,17 +322,51 @@ const StrategyCreate = () => {
             Build a new trading strategy using AI assistance or manual rules.
           </p>
 
-          <Tabs defaultValue="ai" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+          <Tabs defaultValue="compiler" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
+              <TabsTrigger value="compiler" className="flex items-center gap-2">
+                <Brain className="w-4 h-4" />
+                Smart Compiler
+              </TabsTrigger>
               <TabsTrigger value="ai" className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
-                AI-Assisted
+                AI Chat
               </TabsTrigger>
               <TabsTrigger value="manual" className="flex items-center gap-2">
                 <Wrench className="w-4 h-4" />
-                Manual Builder
+                Manual
               </TabsTrigger>
             </TabsList>
+
+            {/* Smart Compiler Tab */}
+            <TabsContent value="compiler">
+              <StrategyCompilerCard
+                onStrategyCompiled={async (result: CompilationResult) => {
+                  if (result.status === 'VALID' && result.strategy_json && user) {
+                    // Optionally auto-create the strategy
+                  }
+                }}
+              />
+              
+              {/* Info about the compiler */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6 p-4 rounded-xl bg-secondary/30 border border-border"
+              >
+                <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-primary" />
+                  About the Strategy Compiler
+                </h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• <strong>Prompt Firewall</strong>: Rejects dangerous patterns like martingale or revenge trading</li>
+                  <li>• <strong>Hard Caps</strong>: Enforces max 2% risk/trade, max 5 positions, min 0.25% stop loss</li>
+                  <li>• <strong>Validation</strong>: Checks for conflicting rules and missing safety parameters</li>
+                  <li>• <strong>Code Generation</strong>: Produces deterministic Python code for backtesting</li>
+                </ul>
+              </motion.div>
+            </TabsContent>
 
             {/* AI-Assisted Tab */}
             <TabsContent value="ai">
