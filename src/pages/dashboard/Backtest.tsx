@@ -6,10 +6,10 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatINR } from "@/lib/indian-stocks";
+import { EquityCurveChart, PnLHistogramChart } from "@/components/charts";
 
 interface BacktestMetrics {
   totalTrades: number;
@@ -311,49 +311,7 @@ const Backtest = () => {
                 className="bg-card border border-border rounded-2xl p-6"
               >
                 <h3 className="text-foreground font-medium mb-6">Equity Curve</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={equityCurve}>
-                      <defs>
-                        <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(38 60% 50%)" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="hsl(38 60% 50%)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="hsl(220 15% 25%)" 
-                        tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }} 
-                        axisLine={false} 
-                        tickLine={false}
-                        tickFormatter={(v) => v?.substring(5, 10) || ""}
-                      />
-                      <YAxis 
-                        stroke="hsl(220 15% 25%)" 
-                        tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }} 
-                        tickFormatter={(v) => `₹${(v/100000).toFixed(1)}L`}
-                        axisLine={false} 
-                        tickLine={false} 
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: "hsl(220 18% 6%)", 
-                          border: "1px solid hsl(220 15% 14%)", 
-                          borderRadius: "12px",
-                          boxShadow: "0 8px 30px -10px hsl(220 20% 5% / 0.5)"
-                        }} 
-                        formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, "Portfolio Value"]} 
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="hsl(38 60% 50%)" 
-                        fill="url(#equityGradient)" 
-                        strokeWidth={2} 
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                <EquityCurveChart data={equityCurve} height={256} />
               </motion.div>
 
               {/* Primary Metrics Grid */}
@@ -408,27 +366,7 @@ const Backtest = () => {
                 className="bg-card border border-border rounded-2xl p-6"
               >
                 <h3 className="text-foreground font-medium mb-6">Trade P&L Distribution</h3>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={tradePnLData}>
-                      <XAxis dataKey="trade" tick={{ fill: "hsl(220 10% 50%)", fontSize: 10 }} />
-                      <YAxis tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} tick={{ fill: "hsl(220 10% 50%)", fontSize: 10 }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(220 18% 6%)",
-                          border: "1px solid hsl(220 15% 14%)",
-                          borderRadius: "8px"
-                        }}
-                        formatter={(value: number) => [formatINR(value), "P&L"]}
-                      />
-                      <Bar dataKey="pnl">
-                        {tradePnLData.map((entry, index) => (
-                          <Cell key={index} fill={entry.pnl >= 0 ? "hsl(142 71% 45%)" : "hsl(0 84% 60%)"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                <PnLHistogramChart data={tradePnLData} height={192} />
               </motion.div>
 
               {/* Trade Log Table */}
