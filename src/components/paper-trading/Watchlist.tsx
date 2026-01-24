@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, X, TrendingUp, TrendingDown, Star } from "lucide-react";
-import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
-import { useLivePrices } from "@/hooks/useLivePrices";
+import { Plus, X, TrendingUp, TrendingDown, Star, Search } from "lucide-react";
+import { INDIAN_STOCKS, formatINRSimple, searchStocks } from "@/lib/indian-stocks";
+import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { ConnectionStatus } from "./ConnectionStatus";
 import {
   Dialog,
   DialogContent,
@@ -26,11 +27,12 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { prices, loading } = useLivePrices({
+  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
     symbols: watchlist,
-    refreshInterval: 5000,
     enabled: true,
   });
+
+  const loading = !connected && Object.keys(prices).length === 0;
 
   const addToWatchlist = (symbol: string) => {
     if (!watchlist.includes(symbol)) {
@@ -44,12 +46,10 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
     setWatchlist(watchlist.filter((s) => s !== symbol));
   };
 
-  const filteredStocks = INDIAN_STOCKS.filter(
-    (stock) =>
-      !watchlist.includes(stock.symbol) &&
-      (stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Use searchStocks for better search across all stocks
+  const filteredStocks = searchQuery
+    ? searchStocks(searchQuery).filter(stock => !watchlist.includes(stock.symbol))
+    : INDIAN_STOCKS.filter(stock => !watchlist.includes(stock.symbol));
 
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -57,6 +57,7 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
         <div className="flex items-center gap-2">
           <Star className="w-4 h-4 text-yellow-500" />
           <h3 className="font-medium text-foreground text-sm">Watchlist</h3>
+          <ConnectionStatus connected={connected} connecting={connecting} />
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -64,19 +65,22 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
               <Plus className="w-4 h-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add to Watchlist</DialogTitle>
             </DialogHeader>
-            <Input
-              placeholder="Search stocks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="mb-4"
-            />
-            <ScrollArea className="h-[300px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search stocks by symbol or name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <ScrollArea className="h-[350px]">
               <div className="space-y-1">
-                {filteredStocks.slice(0, 20).map((stock) => (
+                {filteredStocks.slice(0, 50).map((stock) => (
                   <button
                     key={stock.symbol}
                     onClick={() => addToWatchlist(stock.symbol)}
@@ -87,7 +91,7 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
                         {stock.symbol}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {stock.name}
+                        {stock.name} • {stock.sector}
                       </p>
                     </div>
                     <span className="text-sm text-muted-foreground">
@@ -95,6 +99,11 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
                     </span>
                   </button>
                 ))}
+                {filteredStocks.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No stocks found
+                  </p>
+                )}
               </div>
             </ScrollArea>
           </DialogContent>

@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, TrendingUp, TrendingDown, Calculator, Shield, Info } from "lucide-react";
-import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
-import { useLivePrices } from "@/hooks/useLivePrices";
+import { INDIAN_STOCKS, formatINRSimple, getStockBySymbol } from "@/lib/indian-stocks";
+import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
 import { useTransactionCosts } from "@/hooks/useTransactionCosts";
 import { usePositionSizing } from "@/hooks/usePositionSizing";
 import { useSafetyMode } from "@/hooks/useSafetyMode";
@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { ConnectionStatus } from "./ConnectionStatus";
 
 interface QuickTradePanelProps {
   symbol: string;
@@ -58,13 +59,13 @@ export const QuickTradePanel = ({
   // Safety mode
   const { status: safetyStatus, applyLimits } = useSafetyMode(accountId);
 
-  const { prices } = useLivePrices({
-    symbols: [symbol],
-    refreshInterval: 5000,
+  // WebSocket streaming prices
+  const { prices, connected, connecting } = useWebSocketPrices({
+    symbols: symbol ? [symbol] : [],
     enabled: !!symbol,
   });
 
-  const stockInfo = INDIAN_STOCKS.find((s) => s.symbol === symbol);
+  const stockInfo = getStockBySymbol(symbol);
   const currentPrice = prices[symbol]?.price || stockInfo?.price || 0;
   const changePercent = prices[symbol]?.changePercent || 0;
   const isPositive = changePercent >= 0;
@@ -273,18 +274,26 @@ export const QuickTradePanel = ({
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="font-medium text-foreground">{symbol}</span>
-          <span
-            className={`flex items-center gap-1 text-sm ${
-              isPositive ? "text-primary" : "text-destructive"
-            }`}
-          >
-            {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`flex items-center gap-1 text-sm ${
+                isPositive ? "text-primary" : "text-destructive"
+              }`}
+            >
+              {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
+            </span>
+            <ConnectionStatus connected={connected} connecting={connecting} />
+          </div>
         </div>
-        <p className="text-2xl font-semibold text-foreground">
+        <motion.p 
+          key={currentPrice}
+          initial={{ scale: 1.02 }}
+          animate={{ scale: 1 }}
+          className="text-2xl font-semibold text-foreground"
+        >
           {formatINRSimple(currentPrice)}
-        </p>
+        </motion.p>
       </div>
 
       {/* Safety Mode Badge */}
