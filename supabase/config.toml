@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.legal-audit]
 verify_jwt = false
+
+[functions.trade-explanation]
+verify_jwt = false
