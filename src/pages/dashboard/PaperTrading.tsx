@@ -295,12 +295,69 @@ const PaperTrading = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="space-y-4">
-          <div className="h-8 bg-secondary rounded-xl w-1/3 shimmer" />
-          <div className="h-12 bg-secondary rounded-xl shimmer" />
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-secondary rounded-xl shimmer" />
+              <div className="h-4 w-64 bg-secondary rounded-lg shimmer" />
+            </div>
+            <div className="h-8 w-20 bg-secondary rounded-full shimmer" />
+          </div>
+          
+          {/* Market Ticker skeleton */}
+          <div className="h-16 bg-card border border-border rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 p-2">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="flex-shrink-0 w-24 h-12 bg-secondary rounded-lg shimmer" />
+              ))}
+            </div>
+          </div>
+          
+          {/* Main grid skeleton */}
           <div className="grid lg:grid-cols-3 gap-4">
-            <div className="h-64 bg-secondary rounded-2xl shimmer lg:col-span-2" />
-            <div className="h-64 bg-secondary rounded-2xl shimmer" />
+            {/* Chart skeleton */}
+            <div className="lg:col-span-2 bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="p-4 border-b border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="space-y-2">
+                    <div className="h-5 w-32 bg-secondary rounded-lg shimmer" />
+                    <div className="h-8 w-24 bg-secondary rounded-lg shimmer" />
+                  </div>
+                  <div className="h-8 w-8 bg-secondary rounded-lg shimmer" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-8 w-32 bg-secondary rounded-lg shimmer" />
+                  <div className="h-8 w-20 bg-secondary rounded-lg shimmer" />
+                </div>
+              </div>
+              <div className="h-[350px] bg-secondary/30 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <div className="w-32 h-24 bg-secondary rounded-lg shimmer" />
+                  <span className="text-sm">Loading chart...</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right panel skeleton */}
+            <div className="space-y-4">
+              <div className="h-80 bg-card border border-border rounded-2xl p-4">
+                <div className="space-y-3">
+                  <div className="h-6 w-24 bg-secondary rounded-lg shimmer" />
+                  <div className="h-10 w-full bg-secondary rounded-lg shimmer" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-10 bg-secondary rounded-lg shimmer" />
+                    <div className="h-10 bg-secondary rounded-lg shimmer" />
+                  </div>
+                  <div className="h-20 bg-secondary rounded-lg shimmer" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-10 bg-secondary rounded-lg shimmer" />
+                    <div className="h-10 bg-secondary rounded-lg shimmer" />
+                  </div>
+                </div>
+              </div>
+              <div className="h-48 bg-card border border-border rounded-2xl shimmer" />
+            </div>
           </div>
         </div>
       </DashboardLayout>

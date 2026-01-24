@@ -286,17 +286,20 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
       </div>
 
       {/* Chart */}
-      <div className="relative h-[350px]">
+      <div className="relative h-[350px] bg-card">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-card/80 z-10">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Loading chart...</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-secondary/50 z-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-full max-w-xs h-32 bg-secondary rounded-lg shimmer" />
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Loading chart...</span>
+              </div>
             </div>
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-card/80 z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-secondary/50 z-10">
             <div className="text-center">
               <p className="text-destructive mb-2">{error}</p>
               <Button variant="outline" size="sm" onClick={refetch}>
@@ -305,7 +308,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
             </div>
           </div>
         )}
-        <div ref={chartContainerRef} className="w-full h-full" />
+        <div ref={chartContainerRef} className="w-full h-full bg-card" />
       </div>
     </div>
   );
