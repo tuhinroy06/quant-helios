@@ -28,6 +28,7 @@ import LiveTrading from "./pages/dashboard/LiveTrading";
 import Organization from "./pages/dashboard/Organization";
 import TradeJournal from "./pages/dashboard/TradeJournal";
 import StrategyPerformance from "./pages/dashboard/StrategyPerformance";
+import StockScreenerPage from "./pages/dashboard/StockScreenerPage";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PaperTrading />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/screener"
+              element={
+                <ProtectedRoute>
+                  <StockScreenerPage />
                 </ProtectedRoute>
               }
             />

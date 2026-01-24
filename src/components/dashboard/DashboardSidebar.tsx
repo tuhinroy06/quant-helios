@@ -10,7 +10,8 @@ import {
   Zap,
   Building2,
   BookOpen,
-  PieChart
+  PieChart,
+  SlidersHorizontal
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,7 @@ const menuItems = [
   { title: "Strategies", url: "/dashboard/strategies", icon: FolderOpen },
   { title: "Performance", url: "/dashboard/performance", icon: PieChart },
   { title: "Paper Trading", url: "/dashboard/paper-trading", icon: Wallet },
+  { title: "Stock Screener", url: "/dashboard/screener", icon: SlidersHorizontal },
   { title: "Trade Journal", url: "/dashboard/journal", icon: BookOpen },
   { title: "F&O Simulator", url: "/dashboard/fno", icon: BarChart3 },
   { title: "Stock Ranking", url: "/dashboard/stock-ranking", icon: Sparkles },
