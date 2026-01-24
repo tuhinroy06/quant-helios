@@ -23,7 +23,7 @@ import PaperTrading from "./pages/dashboard/PaperTrading";
 import FNOSimulator from "./pages/dashboard/FNOSimulator";
 import Settings from "./pages/dashboard/Settings";
 import LearnDashboard from "./pages/dashboard/LearnDashboard";
-import StockRanking from "./pages/dashboard/StockRanking";
+import StoxoAI from "./pages/dashboard/StoxoAI";
 import LiveTrading from "./pages/dashboard/LiveTrading";
 import Organization from "./pages/dashboard/Organization";
 import TradeJournal from "./pages/dashboard/TradeJournal";
@@ -136,10 +136,10 @@ const App = () => (
               }
             />
             <Route
-              path="/dashboard/stock-ranking"
+              path="/dashboard/stoxo-ai"
               element={
                 <ProtectedRoute>
-                  <StockRanking />
+                  <StoxoAI />
                 </ProtectedRoute>
               }
             />

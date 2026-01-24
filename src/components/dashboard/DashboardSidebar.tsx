@@ -37,7 +37,7 @@ const menuItems = [
   { title: "Stock Screener", url: "/dashboard/screener", icon: SlidersHorizontal },
   { title: "Trade Journal", url: "/dashboard/journal", icon: BookOpen },
   { title: "F&O Simulator", url: "/dashboard/fno", icon: BarChart3 },
-  { title: "Stock Ranking", url: "/dashboard/stock-ranking", icon: Sparkles },
+  { title: "Stoxo AI", url: "/dashboard/stoxo-ai", icon: Sparkles },
   { title: "Live Trading", url: "/dashboard/live-trading", icon: Zap },
   { title: "Organization", url: "/dashboard/organization", icon: Building2 },
   { title: "Learn", url: "/dashboard/learn", icon: GraduationCap },
