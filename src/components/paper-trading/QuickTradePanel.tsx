@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, TrendingUp, TrendingDown, Calculator, Shield, Info } from "lucide-react";
-import { INDIAN_STOCKS, formatINRSimple, getStockBySymbol } from "@/lib/indian-stocks";
-import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { formatINRSimple, getStockBySymbol } from "@/lib/indian-stocks";
+import { useAlphaVantagePrices } from "@/hooks/useAlphaVantagePrices";
 import { useTransactionCosts } from "@/hooks/useTransactionCosts";
 import { usePositionSizing } from "@/hooks/usePositionSizing";
 import { useSafetyMode } from "@/hooks/useSafetyMode";
@@ -59,8 +59,8 @@ export const QuickTradePanel = ({
   // Safety mode
   const { status: safetyStatus, applyLimits } = useSafetyMode(accountId);
 
-  // WebSocket streaming prices
-  const { prices, connected, connecting } = useWebSocketPrices({
+  // Alpha Vantage prices (replaces WebSocket)
+  const { prices, loading: pricesLoading, isDataFresh } = useAlphaVantagePrices({
     symbols: symbol ? [symbol] : [],
     enabled: !!symbol,
   });
@@ -283,7 +283,7 @@ export const QuickTradePanel = ({
               {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
             </span>
-            <ConnectionStatus connected={connected} connecting={connecting} />
+            <ConnectionStatus loading={pricesLoading} isDataFresh={isDataFresh} />
           </div>
         </div>
         <motion.p 

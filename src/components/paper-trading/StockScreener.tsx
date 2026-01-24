@@ -12,7 +12,7 @@ import {
   formatINRSimple, 
   formatMarketCap 
 } from "@/lib/indian-stocks";
-import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { useAlphaVantagePrices } from "@/hooks/useAlphaVantagePrices";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -186,7 +186,7 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
     []
   );
   
-  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
+  const { prices, loading: pricesLoading, isDataFresh, lastUpdated } = useAlphaVantagePrices({
     symbols: allSymbols,
     enabled: true,
   });
@@ -461,7 +461,7 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
               {filteredStocks.length} stocks
             </Badge>
           </div>
-          <ConnectionStatus connected={connected} connecting={connecting} lastUpdated={lastUpdated} />
+          <ConnectionStatus loading={pricesLoading} isDataFresh={isDataFresh} lastUpdated={lastUpdated} />
         </div>
         
         {/* Search, Filters & Presets */}
