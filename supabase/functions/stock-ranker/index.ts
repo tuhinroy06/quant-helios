@@ -48,37 +48,40 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Generate stock ranking using AI
-    const prompt = `You are a financial analyst AI. Generate a ranked list of 10 stocks based on the following criteria:
+    // Generate stock ranking using AI - Focus on Indian stocks (NSE/BSE)
+    const prompt = `You are a financial analyst AI specializing in the Indian stock market (NSE/BSE). Generate a ranked list of 10 INDIAN stocks based on the following criteria:
 ${sector ? `- Sector: ${sector}` : "- All sectors"}
 ${marketCap ? `- Market Cap: ${marketCap}` : "- All market caps"}
 ${riskTolerance ? `- Risk Tolerance: ${riskTolerance}` : "- Moderate risk"}
 ${symbols?.length ? `- Focus on these symbols: ${symbols.join(", ")}` : ""}
 
+IMPORTANT: Only include stocks listed on NSE (National Stock Exchange of India) or BSE (Bombay Stock Exchange).
+Popular Indian stocks include: RELIANCE, TCS, INFY, HDFCBANK, ICICIBANK, BHARTIARTL, SBIN, HINDUNILVR, ITC, KOTAKBANK, LT, AXISBANK, MARUTI, SUNPHARMA, TITAN, BAJFINANCE, ASIANPAINT, NESTLEIND, TATAMOTORS, WIPRO, TATASTEEL, ULTRACEMCO, HCLTECH, ADANIENT, ADANIPORTS, POWERGRID, NTPC, ONGC, COALINDIA, JSWSTEEL.
+
 For each stock, provide:
-1. Symbol (ticker)
-2. Company name
+1. Symbol (NSE ticker without .NS suffix)
+2. Company name (full Indian company name)
 3. Rank score (0-100)
 4. Momentum score (0-100)
 5. Value score (0-100)
 6. Quality score (0-100)
 7. Volatility score (0-100, lower is less volatile)
-8. Sector
+8. Sector (Indian market sectors like IT, Banking, FMCG, Auto, Pharma, Energy, Metals, Infra, Telecom, etc.)
 9. Market cap tier (small, mid, large)
-10. Brief analysis (2-3 sentences)
+10. Brief analysis (2-3 sentences about the Indian company)
 
 Return as JSON array with format:
 [{
-  "symbol": "AAPL",
-  "company_name": "Apple Inc.",
+  "symbol": "RELIANCE",
+  "company_name": "Reliance Industries Limited",
   "rank_score": 85,
   "momentum_score": 78,
   "value_score": 65,
   "quality_score": 92,
   "volatility_score": 70,
-  "sector": "Technology",
+  "sector": "Energy",
   "market_cap_tier": "large",
-  "ai_analysis": "Strong fundamentals with consistent revenue growth..."
+  "ai_analysis": "India's largest company by market cap with diversified presence in oil & gas, retail, and telecom..."
 }]`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
