@@ -186,22 +186,22 @@ const Overview = () => {
             {/* Warm accent glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-warm-500/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
             
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-warm-500/10 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-6 h-6 text-warm-500" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 md:gap-6">
+              <div className="flex items-start gap-4 md:gap-5">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-warm-500/10 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-warm-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-medium text-foreground mb-1">Create New Strategy</h2>
-                  <p className="text-muted-foreground text-sm max-w-md">
+                  <h2 className="text-lg md:text-xl font-medium text-foreground mb-1">Create New Strategy</h2>
+                  <p className="text-muted-foreground text-xs md:text-sm max-w-md">
                     Build a trading strategy with AI assistance or define your own rules.
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 bg-foreground text-background pl-5 pr-3 py-2.5 rounded-full group-hover:bg-foreground/90 transition-colors">
+              <div className="flex items-center gap-2 md:gap-3 bg-foreground text-background pl-4 md:pl-5 pr-2.5 md:pr-3 py-2 md:py-2.5 rounded-full group-hover:bg-foreground/90 transition-colors">
                 <span className="font-medium text-sm">Create</span>
-                <div className="w-7 h-7 bg-background/10 rounded-full flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                <div className="w-6 h-6 md:w-7 md:h-7 bg-background/10 rounded-full flex items-center justify-center">
+                  <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </div>
             </div>
@@ -209,7 +209,7 @@ const Overview = () => {
         </motion.div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
           <StatCard
             label="Active Strategies"
             value={strategiesCount}
@@ -235,48 +235,48 @@ const Overview = () => {
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.5, delay: 0.3 }} 
-          className="bg-card border border-border rounded-2xl p-6"
+          className="bg-card border border-border rounded-2xl p-4 md:p-6"
         >
-          <h3 className="text-foreground font-medium mb-6">Backtest Performance</h3>
-          <PerformanceChart data={performanceData} height={224} />
+          <h3 className="text-foreground font-medium mb-4 md:mb-6">Backtest Performance</h3>
+          <PerformanceChart data={performanceData} height={200} />
         </motion.div>
 
         {/* Recent Activity & Quick Links */}
-        <div className="grid lg:grid-cols-5 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           {/* Recent Activity Feed */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.5, delay: 0.35 }} 
-            className="lg:col-span-3 bg-card border border-border rounded-2xl p-6"
+            className="md:col-span-1 lg:col-span-3 bg-card border border-border rounded-2xl p-4 md:p-6"
           >
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center gap-2 mb-4 md:mb-5">
               <Activity className="w-4 h-4 text-muted-foreground" />
-              <h3 className="text-foreground font-medium">Recent Activity</h3>
+              <h3 className="text-foreground font-medium text-sm md:text-base">Recent Activity</h3>
             </div>
             {recentActivity.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-8">
                 No recent activity. Create your first strategy!
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {recentActivity.map((activity) => {
                   const Icon = getActivityIcon(activity.type);
                   return (
-                    <div key={activity.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center">
-                          <Icon className="w-4 h-4 text-muted-foreground" />
+                    <div key={activity.id} className="flex items-center justify-between p-2.5 md:p-3 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground" />
                         </div>
-                        <div>
-                          <p className="text-foreground text-sm font-medium">{activity.title}</p>
+                        <div className="min-w-0">
+                          <p className="text-foreground text-xs md:text-sm font-medium truncate">{activity.title}</p>
                           <p className="text-muted-foreground text-xs flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {format(new Date(activity.timestamp), "MMM d, h:mm a")}
                           </p>
                         </div>
                       </div>
-                      <span className={`text-xs px-2.5 py-1 rounded-full capitalize ${getStatusColor(activity.status)}`}>
+                      <span className={`text-xs px-2 md:px-2.5 py-1 rounded-full capitalize flex-shrink-0 ${getStatusColor(activity.status)}`}>
                         {activity.status}
                       </span>
                     </div>
@@ -291,9 +291,9 @@ const Overview = () => {
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.5, delay: 0.4 }} 
-            className="lg:col-span-2 space-y-3"
+            className="md:col-span-1 lg:col-span-2 space-y-2 md:space-y-3"
           >
-            <h3 className="text-sm text-muted-foreground font-medium mb-4">Quick Links</h3>
+            <h3 className="text-sm text-muted-foreground font-medium mb-3 md:mb-4">Quick Links</h3>
             {[
               { title: "My Strategies", icon: FolderOpen, href: "/dashboard/strategies" },
               { title: "Learn & Understand", icon: GraduationCap, href: "/dashboard/learn" },
@@ -302,9 +302,9 @@ const Overview = () => {
               <Link 
                 key={card.title} 
                 to={card.href} 
-                className="group flex items-center gap-4 bg-card border border-border rounded-xl p-4 hover:bg-card/80 hover:border-border/80 transition-all"
+                className="group flex items-center gap-3 md:gap-4 bg-card border border-border rounded-xl p-3 md:p-4 hover:bg-card/80 hover:border-border/80 transition-all"
               >
-                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 group-hover:bg-warm-500/10 transition-colors">
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 group-hover:bg-warm-500/10 transition-colors">
                   <card.icon className="w-4 h-4 text-muted-foreground group-hover:text-warm-500 transition-colors" />
                 </div>
                 <span className="text-foreground text-sm font-medium flex-1">{card.title}</span>

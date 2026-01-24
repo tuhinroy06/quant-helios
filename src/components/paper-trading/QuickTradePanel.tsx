@@ -269,14 +269,14 @@ export const QuickTradePanel = ({
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4">
+    <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
       {/* Header with price */}
-      <div className="mb-4">
+      <div className="mb-3 md:mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-medium text-foreground">{symbol}</span>
+          <span className="font-medium text-foreground text-sm md:text-base">{symbol}</span>
           <div className="flex items-center gap-2">
             <span
-              className={`flex items-center gap-1 text-sm ${
+              className={`flex items-center gap-1 text-xs md:text-sm ${
                 isPositive ? "text-primary" : "text-destructive"
               }`}
             >
@@ -290,7 +290,7 @@ export const QuickTradePanel = ({
           key={currentPrice}
           initial={{ scale: 1.02 }}
           animate={{ scale: 1 }}
-          className="text-2xl font-semibold text-foreground"
+          className="text-xl md:text-2xl font-semibold text-foreground"
         >
           {formatINRSimple(currentPrice)}
         </motion.p>
@@ -299,19 +299,19 @@ export const QuickTradePanel = ({
       {/* Safety Mode Badge */}
       {safetyStatus?.enabled && (
         <div className="flex items-center gap-2 px-2 py-1.5 bg-accent/10 border border-accent/20 rounded-lg mb-3">
-          <Shield className="w-3.5 h-3.5 text-accent-foreground" />
+          <Shield className="w-3 h-3 md:w-3.5 md:h-3.5 text-accent-foreground" />
           <span className="text-xs text-accent-foreground">
-            Safety Mode: {safetyStatus.days_remaining}d left • {Math.round((1 - safetyStatus.position_size_multiplier) * 100)}% size reduction
+            Safety Mode: {safetyStatus.days_remaining}d • {Math.round((1 - safetyStatus.position_size_multiplier) * 100)}% reduction
           </span>
         </div>
       )}
 
-      <div className="space-y-3 mb-4">
+      <div className="space-y-3 mb-3 md:mb-4">
         {/* Auto Position Sizing Toggle */}
         <div className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg">
           <div className="flex items-center gap-2">
-            <Calculator className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Auto Position Size</span>
+            <Calculator className="w-3 h-3 md:w-3.5 md:h-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Auto Size</span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
@@ -319,7 +319,7 @@ export const QuickTradePanel = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs max-w-xs">
-                    Automatically calculates quantity based on 1% risk per trade
+                    Calculates quantity based on 1% risk per trade
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -335,7 +335,7 @@ export const QuickTradePanel = ({
             min={1}
             value={quantity}
             onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-            className="mt-1"
+            className="mt-1 h-10"
             disabled={useAutoSize}
           />
         </div>
@@ -348,7 +348,7 @@ export const QuickTradePanel = ({
               placeholder="Required"
               value={stopLoss}
               onChange={(e) => setStopLoss(e.target.value)}
-              className="mt-1"
+              className="mt-1 h-10"
             />
           </div>
           <div>
@@ -358,7 +358,7 @@ export const QuickTradePanel = ({
               placeholder="Optional"
               value={takeProfit}
               onChange={(e) => setTakeProfit(e.target.value)}
-              className="mt-1"
+              className="mt-1 h-10"
             />
           </div>
         </div>

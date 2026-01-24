@@ -86,10 +86,10 @@ const FNOSimulator = () => {
             Back to Dashboard
           </Link>
 
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-3">
-              <BarChart3 className="w-8 h-8 text-purple-500" />
-              <h1 className="font-display text-3xl font-light text-foreground">F&O Simulator</h1>
+              <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-purple-500" />
+              <h1 className="font-display text-2xl md:text-3xl font-light text-foreground">F&O Simulator</h1>
             </div>
             <MarketStatusBadge 
               status={marketStatus} 
@@ -97,7 +97,7 @@ const FNOSimulator = () => {
               showSource={true}
             />
           </div>
-          <p className="text-muted-foreground mb-8">Options pricing, Greeks, and payoff visualization using real-time market data.</p>
+          <p className="text-muted-foreground text-sm md:text-base mb-6 md:mb-8">Options pricing, Greeks, and payoff visualization using real-time market data.</p>
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -115,11 +115,11 @@ const FNOSimulator = () => {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Left Panel - Inputs */}
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {activeTab === "calculator" && (
-                <div className="bg-card/50 border border-border rounded-xl p-6">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                   <h3 className="text-foreground font-medium mb-4">Option Parameters</h3>
                   <div className="space-y-4">
                     {/* Underlying Selection */}
@@ -128,7 +128,7 @@ const FNOSimulator = () => {
                       <select 
                         value={selectedUnderlying} 
                         onChange={(e) => setSelectedUnderlying(e.target.value)}
-                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground"
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground [&>option]:bg-secondary [&>option]:text-foreground"
                       >
                         <option value="NIFTY">NIFTY 50</option>
                         <option value="BANKNIFTY">BANK NIFTY</option>
@@ -138,7 +138,7 @@ const FNOSimulator = () => {
                         <option value="INFY">INFOSYS</option>
                       </select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">
                           Spot Price (₹) 
@@ -148,29 +148,29 @@ const FNOSimulator = () => {
                           type="number" 
                           value={currentPrice} 
                           onChange={(e) => setCurrentPrice(Number(e.target.value))} 
-                          className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" 
+                          className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground" 
                         />
                       </div>
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">Strike Price (₹)</label>
-                        <input type="number" value={strike} onChange={(e) => setStrike(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" />
+                        <input type="number" value={strike} onChange={(e) => setStrike(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">Days to Expiry</label>
-                        <input type="number" value={daysToExpiry} onChange={(e) => setDaysToExpiry(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" />
+                        <input type="number" value={daysToExpiry} onChange={(e) => setDaysToExpiry(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground" />
                       </div>
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">Volatility (%)</label>
-                        <input type="number" value={volatility * 100} onChange={(e) => setVolatility(Number(e.target.value) / 100)} className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" />
+                        <input type="number" value={volatility * 100} onChange={(e) => setVolatility(Number(e.target.value) / 100)} className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm text-muted-foreground mb-2">Option Type</label>
                       <div className="flex gap-2">
-                        <button onClick={() => setOptionType("call")} className={`flex-1 py-2 rounded-lg font-medium ${optionType === "call" ? "bg-green-500 text-white" : "bg-secondary text-muted-foreground"}`}>Call</button>
-                        <button onClick={() => setOptionType("put")} className={`flex-1 py-2 rounded-lg font-medium ${optionType === "put" ? "bg-red-500 text-white" : "bg-secondary text-muted-foreground"}`}>Put</button>
+                        <button onClick={() => setOptionType("call")} className={`flex-1 py-2.5 rounded-lg font-medium text-sm md:text-base ${optionType === "call" ? "bg-green-500 text-white" : "bg-secondary text-muted-foreground"}`}>Call</button>
+                        <button onClick={() => setOptionType("put")} className={`flex-1 py-2.5 rounded-lg font-medium text-sm md:text-base ${optionType === "put" ? "bg-red-500 text-white" : "bg-secondary text-muted-foreground"}`}>Put</button>
                       </div>
                     </div>
                   </div>
@@ -178,24 +178,24 @@ const FNOSimulator = () => {
               )}
 
               {activeTab === "chain" && (
-                <div className="bg-card/50 border border-border rounded-xl p-6 overflow-x-auto">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6 overflow-x-auto">
                   <OptionsChain currentPrice={currentPrice} volatility={volatility} riskFreeRate={riskFreeRate} daysToExpiry={daysToExpiry} onSelectOption={handleSelectOption} />
                 </div>
               )}
 
               {activeTab === "strategies" && (
-                <div className="bg-card/50 border border-border rounded-xl p-6">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                   <h3 className="text-foreground font-medium mb-4">Pre-built Strategies</h3>
                   <div className="grid gap-3">
                     {(Object.keys(STRATEGY_DESCRIPTIONS) as StrategyTemplate[]).map((key) => {
                       const strat = STRATEGY_DESCRIPTIONS[key];
                       return (
-                        <button key={key} onClick={() => handleSelectStrategy(key)} className={`p-4 rounded-lg text-left transition-colors ${selectedStrategy === key ? "bg-white/10 border border-white/20" : "bg-secondary hover:bg-secondary/80"}`}>
-                          <div className="flex justify-between items-start">
-                            <h4 className="text-foreground font-medium">{strat.name}</h4>
-                            <span className="text-xs px-2 py-1 bg-white/10 rounded-full text-muted-foreground">{strat.outlook}</span>
+                        <button key={key} onClick={() => handleSelectStrategy(key)} className={`p-3 md:p-4 rounded-lg text-left transition-colors ${selectedStrategy === key ? "bg-white/10 border border-white/20" : "bg-secondary hover:bg-secondary/80"}`}>
+                          <div className="flex justify-between items-start gap-2">
+                            <h4 className="text-foreground font-medium text-sm md:text-base">{strat.name}</h4>
+                            <span className="text-xs px-2 py-1 bg-white/10 rounded-full text-muted-foreground flex-shrink-0">{strat.outlook}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{strat.description}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground mt-1">{strat.description}</p>
                         </button>
                       );
                     })}
@@ -205,16 +205,16 @@ const FNOSimulator = () => {
             </div>
 
             {/* Right Panel - Results */}
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {activeTab === "calculator" && (
-                <div className="bg-card/50 border border-border rounded-xl p-6">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                   <h3 className="text-foreground font-medium mb-4">Option Greeks</h3>
                   <GreeksDisplay greeks={pricing} price={pricing.price} />
                 </div>
               )}
 
               {/* Payoff Diagram */}
-              <div className="bg-card/50 border border-border rounded-xl p-6">
+              <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-foreground font-medium">Payoff Diagram</h3>
                   {legs.length > 0 && (

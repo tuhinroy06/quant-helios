@@ -125,7 +125,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart = createChartWithOptions(chartContainerRef.current, 350);
+    const chart = createChartWithOptions(chartContainerRef.current, 280);
     chart.timeScale().fitContent();
     chartRef.current = chart;
 
@@ -452,37 +452,37 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-medium text-foreground">{symbol}</h3>
-              <span className="text-sm text-muted-foreground">
+      <div className="p-3 md:p-4 border-b border-border">
+        <div className="flex items-start justify-between mb-2 md:mb-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base md:text-lg font-medium text-foreground">{symbol}</h3>
+              <span className="text-xs md:text-sm text-muted-foreground truncate">
                 {stockInfo?.name || symbol}
               </span>
               <ConnectionStatus loading={pricesLoading} isDataFresh={isDataFresh} lastUpdated={lastUpdated} />
             </div>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-2 md:gap-3 mt-1">
               <motion.span
                 key={price}
                 initial={{ scale: 1.05 }}
                 animate={{ scale: 1 }}
-                className="text-2xl font-semibold text-foreground"
+                className="text-xl md:text-2xl font-semibold text-foreground"
               >
                 {formatINRSimple(price)}
               </motion.span>
               <span
-                className={`flex items-center gap-1 text-sm font-medium ${
+                className={`flex items-center gap-1 text-xs md:text-sm font-medium ${
                   isPositive ? "text-green-500" : "text-red-500"
                 }`}
               >
-                {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                {isPositive ? <TrendingUp className="w-3 h-3 md:w-4 md:h-4" /> : <TrendingDown className="w-3 h-3 md:w-4 md:h-4" />}
                 {isPositive ? "+" : ""}
                 {changePercent.toFixed(2)}%
               </span>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={refetch} disabled={loading}>
+          <Button variant="ghost" size="sm" onClick={refetch} disabled={loading} className="flex-shrink-0">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </div>
