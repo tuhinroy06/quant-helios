@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.trading-engine]
 verify_jwt = false
+
+[functions.multi-account]
+verify_jwt = false
+
+[functions.emergency-flatten]
+verify_jwt = false
+
+[functions.legal-audit]
+verify_jwt = false
