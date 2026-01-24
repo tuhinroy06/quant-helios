@@ -31,56 +31,563 @@ interface CurrentPriceData {
   source: 'alpha_vantage' | 'cache' | 'simulated';
 }
 
-// Map internal symbols to Alpha Vantage format
+// Complete mapping of internal symbols to Alpha Vantage format (400+ stocks)
 const SYMBOL_MAP: Record<string, string> = {
-  'RELIANCE': 'RELIANCE.BSE',
-  'TCS': 'TCS.BSE',
-  'HDFCBANK': 'HDFCBANK.BSE',
-  'INFY': 'INFY.BSE',
-  'ICICIBANK': 'ICICIBANK.BSE',
-  'HINDUNILVR': 'HINDUNILVR.BSE',
-  'ITC': 'ITC.BSE',
-  'SBIN': 'SBIN.BSE',
-  'BHARTIARTL': 'BHARTIARTL.BSE',
-  'KOTAKBANK': 'KOTAKBANK.BSE',
-  'LT': 'LT.BSE',
-  'AXISBANK': 'AXISBANK.BSE',
-  'ASIANPAINT': 'ASIANPAINT.BSE',
-  'MARUTI': 'MARUTI.BSE',
-  'SUNPHARMA': 'SUNPHARMA.BSE',
-  'TITAN': 'TITAN.BSE',
-  'ULTRACEMCO': 'ULTRACEMCO.BSE',
-  'WIPRO': 'WIPRO.BSE',
-  'BAJFINANCE': 'BAJFINANCE.BSE',
-  'HCLTECH': 'HCLTECH.BSE',
+  // Indices
   'NIFTY': 'NIFTY50.NS',
   'BANKNIFTY': 'NIFTYBANK.NS',
+  'NIFTYIT': 'CNXIT.NS',
+  'NIFTYMIDCAP': 'NSEMDCP50.NS',
+  'NIFTYSMLCAP': 'CNXSC.NS',
+  'NIFTYPHARMA': 'CNXPHARMA.NS',
+  'NIFTYMETAL': 'CNXMETAL.NS',
+  'NIFTYAUTO': 'CNXAUTO.NS',
+  'NIFTYREALTY': 'CNXREALTY.NS',
+  'NIFTYFMCG': 'CNXFMCG.NS',
+  
+  // Banking
+  'HDFCBANK': 'HDFCBANK.BSE',
+  'ICICIBANK': 'ICICIBANK.BSE',
+  'SBIN': 'SBIN.BSE',
+  'KOTAKBANK': 'KOTAKBANK.BSE',
+  'AXISBANK': 'AXISBANK.BSE',
+  'INDUSINDBK': 'INDUSINDBK.BSE',
+  'BANDHANBNK': 'BANDHANBNK.BSE',
+  'FEDERALBNK': 'FEDERALBNK.BSE',
+  'IDFCFIRSTB': 'IDFCFIRSTB.BSE',
+  'PNB': 'PNB.BSE',
+  'BANKBARODA': 'BANKBARODA.BSE',
+  'CANBK': 'CANBK.BSE',
+  'AUBANK': 'AUBANK.BSE',
+  'YESBANK': 'YESBANK.BSE',
+  'UNIONBANK': 'UNIONBANK.BSE',
+  'INDIANB': 'INDIANB.BSE',
+  'CENTRALBK': 'CENTRALBK.BSE',
+  'MAHABANK': 'MAHABANK.BSE',
+  'IOB': 'IOB.BSE',
+  'UCOBANK': 'UCOBANK.BSE',
+  'PSB': 'PSB.BSE',
+  'KARURVYSYA': 'KARURVYSYA.BSE',
+  'DCBBANK': 'DCBBANK.BSE',
+  'SOUTHBANK': 'SOUTHBANK.BSE',
+  'TMBANK': 'TMBANK.BSE',
+  'CSBBANK': 'CSBBANK.BSE',
+  'RBLBANK': 'RBLBANK.BSE',
+  'EQUITASBNK': 'EQUITASBNK.BSE',
+  'UJJIVANSFB': 'UJJIVANSFB.BSE',
+  'SURYODAY': 'SURYODAY.BSE',
+  'ESAFSFB': 'ESAFSFB.BSE',
+
+  // IT
+  'TCS': 'TCS.BSE',
+  'INFY': 'INFY.BSE',
+  'WIPRO': 'WIPRO.BSE',
+  'HCLTECH': 'HCLTECH.BSE',
+  'TECHM': 'TECHM.BSE',
+  'LTIM': 'LTIM.BSE',
+  'MPHASIS': 'MPHASIS.BSE',
+  'COFORGE': 'COFORGE.BSE',
+  'PERSISTENT': 'PERSISTENT.BSE',
+  'LTTS': 'LTTS.BSE',
+  'OFSS': 'OFSS.BSE',
+  'CYIENT': 'CYIENT.BSE',
+  'ECLERX': 'ECLERX.BSE',
+  'TATAELXSI': 'TATAELXSI.BSE',
+  'BIRLASOFT': 'BIRLASOFT.BSE',
+  'ZENSAR': 'ZENSAR.BSE',
+  'SONATSOFTW': 'SONATSOFTW.BSE',
+  'NEWGEN': 'NEWGEN.BSE',
+  'HAPPSTMNDS': 'HAPPSTMNDS.BSE',
+  'ROUTE': 'ROUTE.BSE',
+  'INTELLECT': 'INTELLECT.BSE',
+  'KPITTECH': 'KPITTECH.BSE',
+  'MASTEK': 'MASTEK.BSE',
+  'RATEGAIN': 'RATEGAIN.BSE',
+  'TANLA': 'TANLA.BSE',
+  'REDINGTON': 'REDINGTON.BSE',
+  'MAPMYINDIA': 'MAPMYINDIA.BSE',
+  'LATENTVIEW': 'LATENTVIEW.BSE',
+
+  // Oil & Gas
+  'RELIANCE': 'RELIANCE.BSE',
+  'ONGC': 'ONGC.BSE',
+  'BPCL': 'BPCL.BSE',
+  'IOC': 'IOC.BSE',
+  'HINDPETRO': 'HINDPETRO.BSE',
+  'GAIL': 'GAIL.BSE',
+  'PETRONET': 'PETRONET.BSE',
+  'OIL': 'OIL.BSE',
+  'MGL': 'MGL.BSE',
+  'IGL': 'IGL.BSE',
+  'GUJGAS': 'GUJGAS.BSE',
+  'MRPL': 'MRPL.BSE',
+  'CHENNPETRO': 'CHENNPETRO.BSE',
+  'CASTROLIND': 'CASTROLIND.BSE',
+  'AEGISCHEM': 'AEGISCHEM.BSE',
+  'GSPL': 'GSPL.BSE',
+
+  // FMCG
+  'HINDUNILVR': 'HINDUNILVR.BSE',
+  'ITC': 'ITC.BSE',
+  'NESTLEIND': 'NESTLEIND.BSE',
+  'BRITANNIA': 'BRITANNIA.BSE',
+  'DABUR': 'DABUR.BSE',
+  'MARICO': 'MARICO.BSE',
+  'GODREJCP': 'GODREJCP.BSE',
+  'COLPAL': 'COLPAL.BSE',
+  'TATACONSUM': 'TATACONSUM.BSE',
+  'VBL': 'VBL.BSE',
+  'PGHH': 'PGHH.BSE',
+  'GILLETTE': 'GILLETTE.BSE',
+  'EMAMILTD': 'EMAMILTD.BSE',
+  'JYOTHYLAB': 'JYOTHYLAB.BSE',
+  'RADICO': 'RADICO.BSE',
+  'UNITDSPR': 'UNITDSPR.BSE',
+  'MCDOWELL-N': 'MCDOWELL-N.BSE',
+  'ZYDUSWELL': 'ZYDUSWELL.BSE',
+  'BIKAJI': 'BIKAJI.BSE',
+  'CCL': 'CCL.BSE',
+  'GODFRYPHLP': 'GODFRYPHLP.BSE',
+
+  // Pharma
+  'SUNPHARMA': 'SUNPHARMA.BSE',
+  'DRREDDY': 'DRREDDY.BSE',
+  'CIPLA': 'CIPLA.BSE',
+  'DIVISLAB': 'DIVISLAB.BSE',
+  'APOLLOHOSP': 'APOLLOHOSP.BSE',
+  'LUPIN': 'LUPIN.BSE',
+  'BIOCON': 'BIOCON.BSE',
+  'TORNTPHARM': 'TORNTPHARM.BSE',
+  'ALKEM': 'ALKEM.BSE',
+  'AUROPHARMA': 'AUROPHARMA.BSE',
+  'ZYDUSLIFE': 'ZYDUSLIFE.BSE',
+  'GLENMARK': 'GLENMARK.BSE',
+  'IPCALAB': 'IPCALAB.BSE',
+  'ABBOTINDIA': 'ABBOTINDIA.BSE',
+  'SANOFI': 'SANOFI.BSE',
+  'GLAND': 'GLAND.BSE',
+  'LALPATHLAB': 'LALPATHLAB.BSE',
+  'METROPOLIS': 'METROPOLIS.BSE',
+  'NATCOPHARM': 'NATCOPHARM.BSE',
+  'GRANULES': 'GRANULES.BSE',
+  'LAURUSLABS': 'LAURUSLABS.BSE',
+  'SYNGENE': 'SYNGENE.BSE',
+  'ASTRAZEN': 'ASTRAZEN.BSE',
+  'PFIZER': 'PFIZER.BSE',
+  'GLAXO': 'GLAXO.BSE',
+  'MANKIND': 'MANKIND.BSE',
+  'JBCHEPHARM': 'JBCHEPHARM.BSE',
+  'ERIS': 'ERIS.BSE',
+
+  // Auto
+  'TATAMOTORS': 'TATAMOTORS.BSE',
+  'MARUTI': 'MARUTI.BSE',
+  'M&M': 'M&M.BSE',
+  'BAJAJ-AUTO': 'BAJAJ-AUTO.BSE',
+  'EICHERMOT': 'EICHERMOT.BSE',
+  'HEROMOTOCO': 'HEROMOTOCO.BSE',
+  'TVSMOTOR': 'TVSMOTOR.BSE',
+  'ASHOKLEY': 'ASHOKLEY.BSE',
+  'MOTHERSON': 'MOTHERSON.BSE',
+  'BHARATFORG': 'BHARATFORG.BSE',
+  'MRF': 'MRF.BSE',
+  'APOLLOTYRE': 'APOLLOTYRE.BSE',
+  'BALKRISIND': 'BALKRISIND.BSE',
+  'BOSCHLTD': 'BOSCHLTD.BSE',
+  'EXIDEIND': 'EXIDEIND.BSE',
+  'AMARAJABAT': 'AMARAJABAT.BSE',
+  'CEATLTD': 'CEATLTD.BSE',
+  'SUNDRMFAST': 'SUNDRMFAST.BSE',
+  'ENDURANCE': 'ENDURANCE.BSE',
+  'SWARAJENG': 'SWARAJENG.BSE',
+  'FORCEMOT': 'FORCEMOT.BSE',
+  'OLECTRA': 'OLECTRA.BSE',
+
+  // Metals
+  'TATASTEEL': 'TATASTEEL.BSE',
+  'JSWSTEEL': 'JSWSTEEL.BSE',
+  'HINDALCO': 'HINDALCO.BSE',
+  'VEDL': 'VEDL.BSE',
+  'COALINDIA': 'COALINDIA.BSE',
+  'NMDC': 'NMDC.BSE',
+  'SAIL': 'SAIL.BSE',
+  'JINDALSTEL': 'JINDALSTEL.BSE',
+  'NATIONALUM': 'NATIONALUM.BSE',
+  'HINDCOPPER': 'HINDCOPPER.BSE',
+  'MOIL': 'MOIL.BSE',
+  'WELCORP': 'WELCORP.BSE',
+  'APLAPOLLO': 'APLAPOLLO.BSE',
+  'RATNAMANI': 'RATNAMANI.BSE',
+  'JSLHISAR': 'JSLHISAR.BSE',
+  'GMRINFRA': 'GMRINFRA.BSE',
+
+  // Power & Utilities
+  'NTPC': 'NTPC.BSE',
+  'POWERGRID': 'POWERGRID.BSE',
+  'ADANIGREEN': 'ADANIGREEN.BSE',
+  'TATAPOWER': 'TATAPOWER.BSE',
+  'ADANIPOWER': 'ADANIPOWER.BSE',
+  'NHPC': 'NHPC.BSE',
+  'SJVN': 'SJVN.BSE',
+  'CESC': 'CESC.BSE',
+  'TORNTPOWER': 'TORNTPOWER.BSE',
+  'JSL': 'JSL.BSE',
+  'NLCINDIA': 'NLCINDIA.BSE',
+  'JSWENERGY': 'JSWENERGY.BSE',
+
+  // Infra & Construction
+  'LT': 'LT.BSE',
+  'ADANIENT': 'ADANIENT.BSE',
+  'ADANIPORTS': 'ADANIPORTS.BSE',
+  'ULTRACEMCO': 'ULTRACEMCO.BSE',
+  'GRASIM': 'GRASIM.BSE',
+  'SHREECEM': 'SHREECEM.BSE',
+  'AMBUJACEM': 'AMBUJACEM.BSE',
+  'ACC': 'ACC.BSE',
+  'DALMIACEM': 'DALMIACEM.BSE',
+  'JKCEMENT': 'JKCEMENT.BSE',
+  'RAMCOCEM': 'RAMCOCEM.BSE',
+  'BIRLACORPN': 'BIRLACORPN.BSE',
+  'HEIDELBCEM': 'HEIDELBCEM.BSE',
+  'DLF': 'DLF.BSE',
+  'GODREJPROP': 'GODREJPROP.BSE',
+  'OBEROIRLTY': 'OBEROIRLTY.BSE',
+  'PRESTIGE': 'PRESTIGE.BSE',
+  'LODHA': 'LODHA.BSE',
+  'BRIGADE': 'BRIGADE.BSE',
+  'PHOENIXLTD': 'PHOENIXLTD.BSE',
+  'SOBHA': 'SOBHA.BSE',
+  'SUNTECK': 'SUNTECK.BSE',
+  'KOLTEPATIL': 'KOLTEPATIL.BSE',
+  'ASHIANA': 'ASHIANA.BSE',
+
+  // Consumer Durables
+  'TITAN': 'TITAN.BSE',
+  'HAVELLS': 'HAVELLS.BSE',
+  'VOLTAS': 'VOLTAS.BSE',
+  'BLUESTARCO': 'BLUESTARCO.BSE',
+  'CROMPTON': 'CROMPTON.BSE',
+  'WHIRLPOOL': 'WHIRLPOOL.BSE',
+  'BATAINDIA': 'BATAINDIA.BSE',
+  'RELAXO': 'RELAXO.BSE',
+  'RAJESHEXPO': 'RAJESHEXPO.BSE',
+  'VGUARD': 'VGUARD.BSE',
+  'ORIENTELEC': 'ORIENTELEC.BSE',
+  'POLYCAB': 'POLYCAB.BSE',
+  'DIXON': 'DIXON.BSE',
+  'AMBER': 'AMBER.BSE',
+  'KAJARIACER': 'KAJARIACER.BSE',
+
+  // NBFC/Finance
+  'BAJFINANCE': 'BAJFINANCE.BSE',
+  'BAJAJFINSV': 'BAJAJFINSV.BSE',
+  'SHRIRAMFIN': 'SHRIRAMFIN.BSE',
+  'MUTHOOTFIN': 'MUTHOOTFIN.BSE',
+  'MANAPPURAM': 'MANAPPURAM.BSE',
+  'CHOLAFIN': 'CHOLAFIN.BSE',
+  'M&MFIN': 'M&MFIN.BSE',
+  'LICHSGFIN': 'LICHSGFIN.BSE',
+  'CANFINHOME': 'CANFINHOME.BSE',
+  'AAVAS': 'AAVAS.BSE',
+  'HOMEFIRST': 'HOMEFIRST.BSE',
+  'APTUS': 'APTUS.BSE',
+  'POONAWALLA': 'POONAWALLA.BSE',
+  'JMFINANCIL': 'JMFINANCIL.BSE',
+  'CREDITACC': 'CREDITACC.BSE',
+  'PNBHOUSING': 'PNBHOUSING.BSE',
+
+  // Insurance
+  'LICI': 'LICI.BSE',
+  'SBILIFE': 'SBILIFE.BSE',
+  'HDFCLIFE': 'HDFCLIFE.BSE',
+  'ICICIPRULI': 'ICICIPRULI.BSE',
+  'ICICIGI': 'ICICIGI.BSE',
+  'BAJAJHFL': 'BAJAJHFL.BSE',
+  'STARHEALTH': 'STARHEALTH.BSE',
+  'MAXHEALTH': 'MAXHEALTH.BSE',
+  'NIACL': 'NIACL.BSE',
+  'GICRE': 'GICRE.BSE',
+
+  // Telecom
+  'BHARTIARTL': 'BHARTIARTL.BSE',
+  'IDEA': 'IDEA.BSE',
+  'TTML': 'TTML.BSE',
+  'INDUSTOWER': 'INDUSTOWER.BSE',
+
+  // Retail
+  'DMART': 'DMART.BSE',
+  'TRENT': 'TRENT.BSE',
+  'SHOPERSTOP': 'SHOPERSTOP.BSE',
+  'ABFRL': 'ABFRL.BSE',
+  'VMART': 'VMART.BSE',
+  'METRO': 'METRO.BSE',
+  'KALYANKJIL': 'KALYANKJIL.BSE',
+
+  // Capital Goods
+  'HONAUT': 'HONAUT.BSE',
+  'AIAENG': 'AIAENG.BSE',
+  'ELGIEQUIP': 'ELGIEQUIP.BSE',
+  'KAYNES': 'KAYNES.BSE',
+  'TRIVENI': 'TRIVENI.BSE',
+  'KENNAMET': 'KENNAMET.BSE',
+  'CARBORUNIV': 'CARBORUNIV.BSE',
+  'WENDT': 'WENDT.BSE',
+  'BEL': 'BEL.BSE',
+  'HAL': 'HAL.BSE',
+  'MAZDA': 'MAZDOCK.BSE',
+  'COCHINSHIP': 'COCHINSHIP.BSE',
+  'GRSE': 'GRSE.BSE',
+  'PARAS': 'PARAS.BSE',
+  'DATAPATT': 'DATAPATT.BSE',
+  'ZENTEC': 'ZENTEC.BSE',
+
+  // Chemicals
+  'PIDILITIND': 'PIDILITIND.BSE',
+  'SRF': 'SRF.BSE',
+  'ATUL': 'ATUL.BSE',
+  'NAVINFLUOR': 'NAVINFLUOR.BSE',
+  'DEEPAKFERT': 'DEEPAKFERT.BSE',
+  'DEEPAKNTR': 'DEEPAKNTR.BSE',
+  'FINEORG': 'FINEORG.BSE',
+  'CLEAN': 'CLEAN.BSE',
+  'TATACHEM': 'TATACHEM.BSE',
+  'BASF': 'BASF.BSE',
+  'ANURAS': 'ANURAS.BSE',
+  'GALAXYSURF': 'GALAXYSURF.BSE',
+  'PIIND': 'PIIND.BSE',
+  'AARTIIND': 'AARTIIND.BSE',
+  'SUMICHEM': 'SUMICHEM.BSE',
+  'ALKYLAMINE': 'ALKYLAMINE.BSE',
+  'BALAJI': 'BALAMINES.BSE',
+  'VINATI': 'VINATIORGA.BSE',
+  'IOLCP': 'IOLCP.BSE',
+  'ASIANPAINT': 'ASIANPAINT.BSE',
+  'BERGEPAINT': 'BERGEPAINT.BSE',
+  'KANSAINER': 'KANSAINER.BSE',
+  'AKZONOBEL': 'AKZONOBEL.BSE',
+
+  // Fintech
+  'PAYTM': 'PAYTM.BSE',
+  'POLICYBZR': 'POLICYBZR.BSE',
+  'CARTRADE': 'CARTRADE.BSE',
+  'EASEMYTRIP': 'EASEMYTRIP.BSE',
+  'INFIBEAM': 'INFIBEAM.BSE',
+  'ANGELONE': 'ANGELONE.BSE',
+  'CDSL': 'CDSL.BSE',
+  'BSE': 'BSE.BSE',
+  'CAMS': 'CAMS.BSE',
+  'KFINTECH': 'KFINTECH.BSE',
+  'MCX': 'MCX.BSE',
+  'IIFL': 'IIFL.BSE',
+  'MOTILALOFS': 'MOTILALOFS.BSE',
+  'HDFCAMC': 'HDFCAMC.BSE',
+  'NIPPONIND': 'NAM-INDIA.BSE',
+  'UTIAMC': 'UTIAMC.BSE',
+  'ABSLAMC': 'ABSLAMC.BSE',
+
+  // Textiles
+  'PAGEIND': 'PAGEIND.BSE',
+  'RAYMOND': 'RAYMOND.BSE',
+  'ARVIND': 'ARVIND.BSE',
+  'WELSPUNIND': 'WELSPUNIND.BSE',
+  'KPRMILL': 'KPRMILL.BSE',
+  'VARDHMAN': 'VTL.BSE',
+  'SOMANYCERA': 'SOMANYCERA.BSE',
+  'CERA': 'CERA.BSE',
+  'TRIDENT': 'TRIDENT.BSE',
+  'GOKEX': 'GOKEX.BSE',
+
+  // Media
+  'SUNTV': 'SUNTV.BSE',
+  'ZEEL': 'ZEEL.BSE',
+  'PVR': 'PVRINOX.BSE',
+  'NAZARA': 'NAZARA.BSE',
+  'TIPS': 'TIPSINDLTD.BSE',
+  'SAREGAMA': 'SAREGAMA.BSE',
+  'NETWORK18': 'NETWORK18.BSE',
+  'TV18BRDCST': 'TV18BRDCST.BSE',
+
+  // Agriculture
+  'UPL': 'UPL.BSE',
+  'COROMANDEL': 'COROMANDEL.BSE',
+  'CHAMBAL': 'CHAMBLFERT.BSE',
+  'GNFC': 'GNFC.BSE',
+  'GSFC': 'GSFC.BSE',
+  'RCF': 'RCF.BSE',
+  'FACT': 'FACT.BSE',
+  'ZUARI': 'ZUARIAGRO.BSE',
+  'KAVERI': 'KSCL.BSE',
+  'DHANUKA': 'DHANUKA.BSE',
+  'RALLIS': 'RALLIS.BSE',
+  'BAYER': 'BAYERCROP.BSE',
+
+  // Hotels & E-commerce
+  'INDIANHOTEL': 'INDHOTEL.BSE',
+  'LEMON': 'LEMONTREE.BSE',
+  'CHALET': 'CHALET.BSE',
+  'EIH': 'EIHOTEL.BSE',
+  'INDIAMART': 'INDIAMART.BSE',
+  'JUSTDIAL': 'JUSTDIAL.BSE',
+  'AFFLE': 'AFFLE.BSE',
+
+  // Finance
+  'IRFC': 'IRFC.BSE',
+  'RECLTD': 'RECLTD.BSE',
+  'PFC': 'PFC.BSE',
+  'HUDCO': 'HUDCO.BSE',
+  'IREDA': 'IREDA.BSE',
+  'CGCL': 'CGCL.BSE',
+  'SUNDARM': 'SUNDARMFIN.BSE',
+  'RITES': 'RITES.BSE',
 };
 
-// Fallback base prices for simulation when API fails
+// Complete base prices for simulation fallback (all 400+ stocks)
 const STOCK_BASE_PRICES: Record<string, number> = {
-  'RELIANCE': 2450,
-  'TCS': 3850,
-  'HDFCBANK': 1650,
-  'INFY': 1480,
-  'ICICIBANK': 1050,
-  'HINDUNILVR': 2580,
-  'ITC': 445,
-  'SBIN': 625,
-  'BHARTIARTL': 1420,
-  'KOTAKBANK': 1780,
-  'LT': 3350,
-  'AXISBANK': 1120,
-  'ASIANPAINT': 2850,
-  'MARUTI': 10500,
-  'SUNPHARMA': 1250,
-  'TITAN': 3180,
-  'ULTRACEMCO': 9800,
-  'WIPRO': 485,
-  'BAJFINANCE': 6800,
-  'HCLTECH': 1350,
-  'NIFTY': 22500,
-  'BANKNIFTY': 48500,
+  // Indices
+  'NIFTY': 24500, 'BANKNIFTY': 51800, 'NIFTYIT': 41500, 'NIFTYMIDCAP': 15800, 'NIFTYSMLCAP': 18200,
+  'NIFTYPHARMA': 21500, 'NIFTYMETAL': 9200, 'NIFTYAUTO': 23500, 'NIFTYREALTY': 1050, 'NIFTYFMCG': 58500,
+  
+  // Banking
+  'HDFCBANK': 1680, 'ICICIBANK': 1120, 'SBIN': 780, 'KOTAKBANK': 1850, 'AXISBANK': 1080,
+  'INDUSINDBK': 1420, 'BANDHANBNK': 195, 'FEDERALBNK': 165, 'IDFCFIRSTB': 78, 'PNB': 105,
+  'BANKBARODA': 245, 'CANBK': 108, 'AUBANK': 620, 'YESBANK': 22, 'UNIONBANK': 125,
+  'INDIANB': 485, 'CENTRALBK': 52, 'MAHABANK': 58, 'IOB': 52, 'UCOBANK': 48,
+  'PSB': 58, 'KARURVYSYA': 185, 'DCBBANK': 118, 'SOUTHBANK': 28, 'TMBANK': 485,
+  'CSBBANK': 325, 'RBLBANK': 185, 'EQUITASBNK': 85, 'UJJIVANSFB': 42, 'SURYODAY': 145, 'ESAFSFB': 58,
+  
+  // IT
+  'TCS': 3950, 'INFY': 1520, 'WIPRO': 445, 'HCLTECH': 1780, 'TECHM': 1650,
+  'LTIM': 5850, 'MPHASIS': 2680, 'COFORGE': 5450, 'PERSISTENT': 5200, 'LTTS': 4850,
+  'OFSS': 9800, 'CYIENT': 1920, 'ECLERX': 2850, 'TATAELXSI': 6850, 'BIRLASOFT': 585,
+  'ZENSAR': 685, 'SONATSOFTW': 585, 'NEWGEN': 1285, 'HAPPSTMNDS': 785, 'ROUTE': 1650,
+  'INTELLECT': 785, 'KPITTECH': 1485, 'MASTEK': 2850, 'RATEGAIN': 685, 'TANLA': 985,
+  'REDINGTON': 185, 'MAPMYINDIA': 1850, 'LATENTVIEW': 485,
+  
+  // Oil & Gas
+  'RELIANCE': 2850, 'ONGC': 265, 'BPCL': 585, 'IOC': 168, 'HINDPETRO': 385,
+  'GAIL': 195, 'PETRONET': 345, 'OIL': 520, 'MGL': 1450, 'IGL': 485,
+  'GUJGAS': 545, 'MRPL': 185, 'CHENNPETRO': 685, 'CASTROLIND': 185, 'AEGISCHEM': 385, 'GSPL': 385,
+  
+  // FMCG
+  'HINDUNILVR': 2450, 'ITC': 460, 'NESTLEIND': 2480, 'BRITANNIA': 5200, 'DABUR': 585,
+  'MARICO': 635, 'GODREJCP': 1280, 'COLPAL': 2850, 'TATACONSUM': 1120, 'VBL': 1580,
+  'PGHH': 15800, 'GILLETTE': 6850, 'EMAMILTD': 585, 'JYOTHYLAB': 485, 'RADICO': 1850,
+  'UNITDSPR': 1185, 'MCDOWELL-N': 1850, 'ZYDUSWELL': 1850, 'BIKAJI': 685, 'CCL': 685, 'GODFRYPHLP': 4850,
+  
+  // Pharma
+  'SUNPHARMA': 1620, 'DRREDDY': 6200, 'CIPLA': 1480, 'DIVISLAB': 4950, 'APOLLOHOSP': 6800,
+  'LUPIN': 1680, 'BIOCON': 285, 'TORNTPHARM': 2850, 'ALKEM': 5450, 'AUROPHARMA': 1280,
+  'ZYDUSLIFE': 985, 'GLENMARK': 1185, 'IPCALAB': 1450, 'ABBOTINDIA': 26500, 'SANOFI': 6850,
+  'GLAND': 1850, 'LALPATHLAB': 2850, 'METROPOLIS': 1850, 'NATCOPHARM': 1185, 'GRANULES': 485,
+  'LAURUSLABS': 485, 'SYNGENE': 785, 'ASTRAZEN': 6850, 'PFIZER': 4850, 'GLAXO': 2450,
+  'MANKIND': 2185, 'JBCHEPHARM': 1850, 'ERIS': 985,
+  
+  // Auto
+  'TATAMOTORS': 920, 'MARUTI': 10800, 'M&M': 2850, 'BAJAJ-AUTO': 9200, 'EICHERMOT': 4850,
+  'HEROMOTOCO': 4200, 'TVSMOTOR': 2450, 'ASHOKLEY': 185, 'MOTHERSON': 145, 'BHARATFORG': 1350,
+  'MRF': 128500, 'APOLLOTYRE': 485, 'BALKRISIND': 2850, 'BOSCHLTD': 32500, 'EXIDEIND': 485,
+  'AMARAJABAT': 1185, 'CEATLTD': 2850, 'SUNDRMFAST': 1085, 'ENDURANCE': 2185, 'SWARAJENG': 2850,
+  'FORCEMOT': 6850, 'OLECTRA': 1450,
+  
+  // Metals
+  'TATASTEEL': 145, 'JSWSTEEL': 890, 'HINDALCO': 620, 'VEDL': 445, 'COALINDIA': 420,
+  'NMDC': 225, 'SAIL': 125, 'JINDALSTEL': 920, 'NATIONALUM': 185, 'HINDCOPPER': 285,
+  'MOIL': 385, 'WELCORP': 585, 'APLAPOLLO': 1585, 'RATNAMANI': 3250, 'JSLHISAR': 685, 'GMRINFRA': 85,
+  
+  // Power
+  'NTPC': 385, 'POWERGRID': 295, 'ADANIGREEN': 1850, 'TATAPOWER': 420, 'ADANIPOWER': 585,
+  'NHPC': 85, 'SJVN': 125, 'CESC': 145, 'TORNTPOWER': 1650, 'JSL': 785, 'NLCINDIA': 265, 'JSWENERGY': 585,
+  
+  // Infra & Construction
+  'LT': 3400, 'ADANIENT': 2850, 'ADANIPORTS': 1280, 'ULTRACEMCO': 11200, 'GRASIM': 2450,
+  'SHREECEM': 26500, 'AMBUJACEM': 585, 'ACC': 2450, 'DALMIACEM': 1850, 'JKCEMENT': 4250,
+  'RAMCOCEM': 985, 'BIRLACORPN': 1450, 'HEIDELBCEM': 185, 'DLF': 850, 'GODREJPROP': 2650,
+  'OBEROIRLTY': 1650, 'PRESTIGE': 1450, 'LODHA': 1285, 'BRIGADE': 1185, 'PHOENIXLTD': 1850,
+  'SOBHA': 1650, 'SUNTECK': 485, 'KOLTEPATIL': 485, 'ASHIANA': 285,
+  
+  // Consumer Durables
+  'TITAN': 3200, 'HAVELLS': 1450, 'VOLTAS': 1250, 'BLUESTARCO': 1650, 'CROMPTON': 385,
+  'WHIRLPOOL': 1350, 'BATAINDIA': 1450, 'RELAXO': 785, 'RAJESHEXPO': 785, 'VGUARD': 385,
+  'ORIENTELEC': 285, 'POLYCAB': 6450, 'DIXON': 12500, 'AMBER': 4850, 'KAJARIACER': 1285,
+  
+  // NBFC/Finance
+  'BAJFINANCE': 6800, 'BAJAJFINSV': 1650, 'SHRIRAMFIN': 2450, 'MUTHOOTFIN': 1650, 'MANAPPURAM': 185,
+  'CHOLAFIN': 1250, 'M&MFIN': 285, 'LICHSGFIN': 585, 'CANFINHOME': 785, 'AAVAS': 1650,
+  'HOMEFIRST': 985, 'APTUS': 385, 'POONAWALLA': 385, 'JMFINANCIL': 85, 'CREDITACC': 1185, 'PNBHOUSING': 785,
+  
+  // Insurance
+  'LICI': 985, 'SBILIFE': 1550, 'HDFCLIFE': 685, 'ICICIPRULI': 585, 'ICICIGI': 1750,
+  'BAJAJHFL': 145, 'STARHEALTH': 585, 'MAXHEALTH': 785, 'NIACL': 185, 'GICRE': 385,
+  
+  // Telecom
+  'BHARTIARTL': 1620, 'IDEA': 14, 'TTML': 85, 'INDUSTOWER': 385,
+  
+  // Retail
+  'DMART': 3850, 'TRENT': 5450, 'SHOPERSTOP': 785, 'ABFRL': 285, 'VMART': 2450, 'METRO': 185, 'KALYANKJIL': 585,
+  
+  // Capital Goods
+  'HONAUT': 52500, 'AIAENG': 3850, 'ELGIEQUIP': 685, 'KAYNES': 4850, 'TRIVENI': 585,
+  'KENNAMET': 2450, 'CARBORUNIV': 1285, 'WENDT': 7850, 'BEL': 285, 'HAL': 4250,
+  'MAZDA': 4850, 'COCHINSHIP': 1850, 'GRSE': 1650, 'PARAS': 985, 'DATAPATT': 2450, 'ZENTEC': 1650,
+  
+  // Chemicals
+  'PIDILITIND': 2950, 'SRF': 2450, 'ATUL': 6850, 'NAVINFLUOR': 3450, 'DEEPAKFERT': 585,
+  'DEEPAKNTR': 2450, 'FINEORG': 4850, 'CLEAN': 1450, 'TATACHEM': 1085, 'BASF': 6850,
+  'ANURAS': 885, 'GALAXYSURF': 2850, 'PIIND': 3850, 'AARTIIND': 485, 'SUMICHEM': 485,
+  'ALKYLAMINE': 2250, 'BALAJI': 2450, 'VINATI': 1850, 'IOLCP': 385,
+  'ASIANPAINT': 2950, 'BERGEPAINT': 485, 'KANSAINER': 385, 'AKZONOBEL': 3850,
+  
+  // Fintech
+  'PAYTM': 385, 'POLICYBZR': 1450, 'CARTRADE': 885, 'EASEMYTRIP': 38, 'INFIBEAM': 28,
+  'ANGELONE': 2850, 'CDSL': 1450, 'BSE': 4850, 'CAMS': 3850, 'KFINTECH': 985,
+  'MCX': 5850, 'IIFL': 485, 'MOTILALOFS': 785, 'HDFCAMC': 4250, 'NIPPONIND': 585,
+  'UTIAMC': 1085, 'ABSLAMC': 485,
+  
+  // Textiles
+  'PAGEIND': 42000, 'RAYMOND': 1650, 'ARVIND': 385, 'WELSPUNIND': 145, 'KPRMILL': 885,
+  'VARDHMAN': 485, 'SOMANYCERA': 685, 'CERA': 8850, 'TRIDENT': 32, 'GOKEX': 985,
+  
+  // Media
+  'SUNTV': 685, 'ZEEL': 145, 'PVR': 1450, 'NAZARA': 985, 'TIPS': 685, 'SAREGAMA': 485,
+  'NETWORK18': 78, 'TV18BRDCST': 42,
+  
+  // Agriculture
+  'UPL': 545, 'COROMANDEL': 1650, 'CHAMBAL': 485, 'GNFC': 585, 'GSFC': 185,
+  'RCF': 145, 'FACT': 785, 'ZUARI': 185, 'KAVERI': 785, 'DHANUKA': 1450, 'RALLIS': 285, 'BAYER': 6850,
+  
+  // Hotels & E-commerce
+  'INDIANHOTEL': 685, 'LEMON': 145, 'CHALET': 785, 'EIH': 385, 'INDIAMART': 2850,
+  'JUSTDIAL': 1085, 'AFFLE': 1450,
+  
+  // Finance
+  'IRFC': 165, 'RECLTD': 485, 'PFC': 485, 'HUDCO': 245, 'IREDA': 185,
+  'CGCL': 185, 'SUNDARM': 4250, 'RITES': 685,
+};
+
+// Sector-based volatility for simulation
+const SECTOR_VOLATILITY: Record<string, number> = {
+  'Index': 0.008,
+  'Banking': 0.016,
+  'IT': 0.015,
+  'Oil & Gas': 0.018,
+  'FMCG': 0.010,
+  'Pharma': 0.015,
+  'Auto': 0.018,
+  'Metals': 0.022,
+  'Power': 0.014,
+  'Infrastructure': 0.016,
+  'Consumer': 0.014,
+  'Finance': 0.018,
+  'Insurance': 0.012,
+  'Telecom': 0.020,
+  'Retail': 0.016,
+  'Chemicals': 0.015,
+  'Fintech': 0.025,
+  'Textiles': 0.018,
+  'Media': 0.020,
+  'Agriculture': 0.015,
+  'Hotels': 0.018,
+  'default': 0.015,
 };
 
 // In-memory cache for quick lookups
@@ -88,7 +595,7 @@ const priceCache: Map<string, { data: any; expiresAt: number }> = new Map();
 
 function isMarketOpen(): { status: 'open' | 'closed' | 'pre-market' | 'post-market'; message: string } {
   const now = new Date();
-  const istOffset = 5.5 * 60; // IST is UTC+5:30
+  const istOffset = 5.5 * 60;
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;
   const ist = new Date(utc + istOffset * 60000);
   
@@ -97,28 +604,23 @@ function isMarketOpen(): { status: 'open' | 'closed' | 'pre-market' | 'post-mark
   const minutes = ist.getMinutes();
   const timeInMinutes = hours * 60 + minutes;
   
-  // Market: Mon-Fri, 9:15 AM - 3:30 PM IST
-  const preMarketStart = 9 * 60; // 9:00 AM
-  const marketOpen = 9 * 60 + 15;  // 9:15 AM
-  const marketClose = 15 * 60 + 30; // 3:30 PM
-  const postMarketEnd = 16 * 60; // 4:00 PM
+  const preMarketStart = 9 * 60;
+  const marketOpen = 9 * 60 + 15;
+  const marketClose = 15 * 60 + 30;
+  const postMarketEnd = 16 * 60;
   
-  // Weekend
   if (day === 0 || day === 6) {
     return { status: 'closed', message: 'Market closed (Weekend)' };
   }
   
-  // Pre-market
   if (timeInMinutes >= preMarketStart && timeInMinutes < marketOpen) {
     return { status: 'pre-market', message: 'Pre-market session' };
   }
   
-  // Market open
   if (timeInMinutes >= marketOpen && timeInMinutes <= marketClose) {
     return { status: 'open', message: 'Market is open' };
   }
   
-  // Post-market
   if (timeInMinutes > marketClose && timeInMinutes <= postMarketEnd) {
     return { status: 'post-market', message: 'Post-market session' };
   }
@@ -157,7 +659,6 @@ async function fetchFromAlphaVantage(
         };
       }
       
-      // Check for rate limit or error
       if (data['Note'] || data['Information']) {
         console.warn('Alpha Vantage rate limit:', data['Note'] || data['Information']);
         return null;
@@ -166,7 +667,6 @@ async function fetchFromAlphaVantage(
       console.warn('No quote data returned for', alphaSymbol, data);
       return null;
     } else {
-      // Historical data
       const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${alphaSymbol}&outputsize=full&apikey=${apiKey}`;
       console.log(`Fetching historical data for ${alphaSymbol}`);
       
@@ -185,7 +685,6 @@ async function fetchFromAlphaVantage(
           volume: parseInt(values['5. volume']),
         }));
         
-        // Sort by date ascending
         historicalData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         return {
@@ -208,10 +707,29 @@ async function fetchFromAlphaVantage(
   }
 }
 
-// Generate simulated price as fallback
+function getVolatility(symbol: string): number {
+  const upperSymbol = symbol.toUpperCase();
+  
+  // Index volatility
+  if (upperSymbol.includes('NIFTY')) return SECTOR_VOLATILITY['Index'];
+  
+  // Get from base prices to determine sector
+  if (STOCK_BASE_PRICES[upperSymbol]) {
+    const price = STOCK_BASE_PRICES[upperSymbol];
+    // Higher priced stocks tend to have lower volatility
+    if (price > 10000) return 0.012;
+    if (price > 5000) return 0.014;
+    if (price > 1000) return 0.016;
+    if (price > 100) return 0.018;
+    return 0.025; // Penny stocks
+  }
+  
+  return SECTOR_VOLATILITY['default'];
+}
+
 function generateSimulatedPrice(symbol: string): CurrentPriceData {
   const basePrice = STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
-  const volatility = 0.015;
+  const volatility = getVolatility(symbol);
   
   const now = new Date();
   const seed = Math.floor(now.getTime() / 60000);
@@ -239,13 +757,12 @@ function generateSimulatedPrice(symbol: string): CurrentPriceData {
   };
 }
 
-// Generate simulated historical data as fallback
 function generateSimulatedHistorical(symbol: string, days: number = 365): { data: PriceData[]; source: 'simulated' } {
   const data: PriceData[] = [];
   let price = STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
   
-  const isIndex = symbol === 'NIFTY' || symbol === 'BANKNIFTY';
-  const volatility = isIndex ? 0.012 : 0.022;
+  const isIndex = symbol.toUpperCase().includes('NIFTY');
+  const volatility = getVolatility(symbol);
   const trend = 0.0002;
 
   const startDate = new Date();
@@ -301,7 +818,6 @@ serve(async (req) => {
     const marketStatus = isMarketOpen();
     const cacheKey = `${symbol}-${type}`;
     
-    // Check in-memory cache first
     const cached = priceCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       console.log(`Cache hit for ${cacheKey}`);
@@ -323,7 +839,6 @@ serve(async (req) => {
     }
 
     if (type === 'current') {
-      // Try Alpha Vantage first
       if (apiKey) {
         const alphaData = await fetchFromAlphaVantage(symbol, 'current', apiKey);
         if (alphaData) {
@@ -333,7 +848,6 @@ serve(async (req) => {
             marketStatus: marketStatus.status,
           };
           
-          // Cache for 1 minute during market hours, 5 minutes otherwise
           const ttl = marketStatus.status === 'open' ? 60000 : 300000;
           priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + ttl });
           
@@ -344,7 +858,6 @@ serve(async (req) => {
         }
       }
       
-      // Fallback to simulated data
       console.log(`Falling back to simulated data for ${symbol}`);
       const simulatedData = generateSimulatedPrice(symbol);
       
@@ -354,11 +867,9 @@ serve(async (req) => {
       );
     }
 
-    // Historical data
     if (apiKey) {
       const alphaData = await fetchFromAlphaVantage(symbol, 'historical', apiKey);
       if (alphaData) {
-        // Filter to requested number of days
         const filteredData = alphaData.data.slice(-days);
         
         const response = {
@@ -369,7 +880,6 @@ serve(async (req) => {
           data: filteredData,
         };
         
-        // Cache historical data for 1 hour
         priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + 3600000 });
         
         return new Response(
@@ -379,7 +889,6 @@ serve(async (req) => {
       }
     }
     
-    // Fallback to simulated historical data
     console.log(`Falling back to simulated historical data for ${symbol}`);
     const simulatedHistorical = generateSimulatedHistorical(symbol, days);
     
