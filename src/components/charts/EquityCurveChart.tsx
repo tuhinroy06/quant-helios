@@ -25,31 +25,31 @@ export const EquityCurveChart = ({ data, height = 256 }: EquityCurveChartProps) 
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(220 10% 50%)",
+        textColor: "hsl(220, 10%, 50%)",
         fontFamily: "Inter, sans-serif",
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: "hsl(220 15% 14%)" },
-        horzLines: { color: "hsl(220 15% 14%)" },
+        vertLines: { color: "hsl(220, 15%, 14%)" },
+        horzLines: { color: "hsl(220, 15%, 14%)" },
       },
       rightPriceScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "hsl(220, 15%, 14%)",
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "hsl(220, 15%, 14%)",
         timeVisible: true,
         secondsVisible: false,
       },
       crosshair: {
         vertLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "hsl(220, 10%, 40%)",
+          labelBackgroundColor: "hsl(220, 18%, 10%)",
         },
         horzLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "hsl(220, 10%, 40%)",
+          labelBackgroundColor: "hsl(220, 18%, 10%)",
         },
       },
     });
@@ -58,7 +58,7 @@ export const EquityCurveChart = ({ data, height = 256 }: EquityCurveChartProps) 
 
     // Create area series
     const areaSeries = chart.addAreaSeries({
-      lineColor: "hsl(38 60% 50%)",
+      lineColor: "hsl(38, 60%, 50%)",
       topColor: "hsla(38, 60%, 50%, 0.25)",
       bottomColor: "hsla(38, 60%, 50%, 0)",
       lineWidth: 2,

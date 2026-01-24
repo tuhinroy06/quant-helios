@@ -26,31 +26,31 @@ export const PnLHistogramChart = ({ data, height = 192 }: PnLHistogramChartProps
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(220 10% 50%)",
+        textColor: "hsl(220, 10%, 50%)",
         fontFamily: "Inter, sans-serif",
         fontSize: 10,
       },
       grid: {
-        vertLines: { color: "hsl(220 15% 14%)" },
-        horzLines: { color: "hsl(220 15% 14%)" },
+        vertLines: { color: "hsl(220, 15%, 14%)" },
+        horzLines: { color: "hsl(220, 15%, 14%)" },
       },
       rightPriceScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "hsl(220, 15%, 14%)",
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "hsl(220, 15%, 14%)",
         fixLeftEdge: true,
         fixRightEdge: true,
       },
       crosshair: {
         vertLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "hsl(220, 10%, 40%)",
+          labelBackgroundColor: "hsl(220, 18%, 10%)",
         },
         horzLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "hsl(220, 10%, 40%)",
+          labelBackgroundColor: "hsl(220, 18%, 10%)",
         },
       },
     });
@@ -75,7 +75,7 @@ export const PnLHistogramChart = ({ data, height = 192 }: PnLHistogramChartProps
       return {
         time: date.toISOString().split("T")[0] as string,
         value: trade.pnl,
-        color: trade.pnl >= 0 ? "hsl(142 71% 45%)" : "hsl(0 84% 60%)",
+        color: trade.pnl >= 0 ? "hsl(142, 71%, 45%)" : "hsl(0, 84%, 60%)",
       };
     });
 

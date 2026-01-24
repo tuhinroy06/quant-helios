@@ -37,30 +37,30 @@ export const PayoffChart = ({
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(220 10% 50%)",
+        textColor: "hsl(220, 10%, 50%)",
         fontFamily: "Inter, sans-serif",
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: "hsl(220 15% 14%)" },
-        horzLines: { color: "hsl(220 15% 14%)" },
+        vertLines: { color: "hsl(220, 15%, 14%)" },
+        horzLines: { color: "hsl(220, 15%, 14%)" },
       },
       rightPriceScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "hsl(220, 15%, 14%)",
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "hsl(220, 15%, 14%)",
         visible: false,
       },
       crosshair: {
         vertLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "hsl(220, 10%, 40%)",
+          labelBackgroundColor: "hsl(220, 18%, 10%)",
         },
         horzLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "hsl(220, 10%, 40%)",
+          labelBackgroundColor: "hsl(220, 18%, 10%)",
         },
       },
     });
@@ -72,7 +72,7 @@ export const PayoffChart = ({
 
     // Use LineSeries for the payoff
     const lineSeries = chart.addLineSeries({
-      color: "hsl(142 71% 45%)",
+      color: "hsl(142, 71%, 45%)",
       lineWidth: 2,
       priceFormat: {
         type: "custom",
@@ -97,7 +97,7 @@ export const PayoffChart = ({
     // Add zero line
     lineSeries.createPriceLine({
       price: 0,
-      color: "hsl(220 15% 25%)",
+      color: "hsl(220, 15%, 25%)",
       lineWidth: 1,
       lineStyle: 2,
       axisLabelVisible: false,
