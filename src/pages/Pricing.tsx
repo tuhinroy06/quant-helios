@@ -3,58 +3,9 @@ import { Check, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { PRICING_PLANS, formatPrice } from "@/lib/pricing-config";
 
 const Pricing = () => {
-  const plans = [
-    {
-      name: "Free",
-      price: "₹0",
-      period: "forever",
-      description: "Perfect for exploring and learning",
-      features: [
-        "3 strategies",
-        "Paper trading",
-        "Basic backtesting",
-        "Community support",
-        "Educational resources",
-      ],
-      cta: "Get Started",
-      popular: false,
-    },
-    {
-      name: "Pro",
-      price: "₹999",
-      period: "/month",
-      description: "For serious retail traders",
-      features: [
-        "Unlimited strategies",
-        "Advanced backtesting",
-        "F&O simulator",
-        "AI stock ranking",
-        "Priority support",
-        "API access",
-      ],
-      cta: "Start Free Trial",
-      popular: true,
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "",
-      description: "For institutions and teams",
-      features: [
-        "Everything in Pro",
-        "Live trading integration",
-        "Custom indicators",
-        "Dedicated support",
-        "Team collaboration",
-        "SLA guarantee",
-      ],
-      cta: "Contact Sales",
-      popular: false,
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background gradients */}
@@ -86,9 +37,9 @@ const Pricing = () => {
       <section className="py-16 px-6 md:px-12">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-3 gap-6">
-            {plans.map((plan, index) => (
+            {PRICING_PLANS.map((plan, index) => (
               <motion.div
-                key={plan.name}
+                key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
@@ -114,7 +65,7 @@ const Pricing = () => {
                   <h3 className="text-foreground font-medium text-lg mb-2">{plan.name}</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-display-md font-display text-foreground">
-                      {plan.price}
+                      {formatPrice(plan.price)}
                     </span>
                     <span className="text-muted-foreground text-sm">{plan.period}</span>
                   </div>
