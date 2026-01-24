@@ -295,21 +295,24 @@ const PaperTrading = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
+        <div className="space-y-6 animate-pulse">
           {/* Header skeleton */}
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <div className="h-8 w-48 bg-secondary rounded-xl shimmer" />
-              <div className="h-4 w-64 bg-secondary rounded-lg shimmer" />
+              <div className="h-8 w-48 bg-muted rounded-xl" />
+              <div className="h-4 w-64 bg-muted/70 rounded-lg" />
             </div>
-            <div className="h-8 w-20 bg-secondary rounded-full shimmer" />
+            <div className="h-8 w-20 bg-muted rounded-full" />
           </div>
           
           {/* Market Ticker skeleton */}
-          <div className="h-16 bg-card border border-border rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 p-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="flex-shrink-0 w-24 h-12 bg-secondary rounded-lg shimmer" />
+          <div className="h-16 bg-card border border-border rounded-xl overflow-hidden p-3">
+            <div className="flex items-center gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-16 h-4 bg-muted rounded" />
+                  <div className="w-12 h-4 bg-muted/70 rounded" />
+                </div>
               ))}
             </div>
           </div>
@@ -321,42 +324,52 @@ const PaperTrading = () => {
               <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between mb-3">
                   <div className="space-y-2">
-                    <div className="h-5 w-32 bg-secondary rounded-lg shimmer" />
-                    <div className="h-8 w-24 bg-secondary rounded-lg shimmer" />
+                    <div className="h-5 w-32 bg-muted rounded" />
+                    <div className="h-7 w-24 bg-muted/70 rounded" />
                   </div>
-                  <div className="h-8 w-8 bg-secondary rounded-lg shimmer" />
+                  <div className="h-8 w-8 bg-muted rounded" />
                 </div>
                 <div className="flex gap-2">
-                  <div className="h-8 w-32 bg-secondary rounded-lg shimmer" />
-                  <div className="h-8 w-20 bg-secondary rounded-lg shimmer" />
+                  <div className="h-8 w-28 bg-muted rounded-lg" />
+                  <div className="h-8 w-16 bg-muted/70 rounded-lg" />
                 </div>
               </div>
-              <div className="h-[350px] bg-secondary/30 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <div className="w-32 h-24 bg-secondary rounded-lg shimmer" />
-                  <span className="text-sm">Loading chart...</span>
-                </div>
+              <div className="h-[350px] bg-muted/20 flex items-center justify-center">
+                <div className="text-muted-foreground text-sm">Loading chart...</div>
               </div>
             </div>
             
             {/* Right panel skeleton */}
             <div className="space-y-4">
-              <div className="h-80 bg-card border border-border rounded-2xl p-4">
-                <div className="space-y-3">
-                  <div className="h-6 w-24 bg-secondary rounded-lg shimmer" />
-                  <div className="h-10 w-full bg-secondary rounded-lg shimmer" />
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <div className="space-y-4">
+                  <div className="h-5 w-20 bg-muted rounded" />
+                  <div className="h-10 w-full bg-muted/70 rounded-lg" />
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="h-10 bg-secondary rounded-lg shimmer" />
-                    <div className="h-10 bg-secondary rounded-lg shimmer" />
+                    <div className="h-10 bg-muted rounded-lg" />
+                    <div className="h-10 bg-muted rounded-lg" />
                   </div>
-                  <div className="h-20 bg-secondary rounded-lg shimmer" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-16 bg-muted/70 rounded" />
+                    <div className="h-16 bg-muted rounded-lg" />
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="h-10 bg-secondary rounded-lg shimmer" />
-                    <div className="h-10 bg-secondary rounded-lg shimmer" />
+                    <div className="h-10 bg-muted rounded-lg" />
+                    <div className="h-10 bg-muted rounded-lg" />
                   </div>
                 </div>
               </div>
-              <div className="h-48 bg-card border border-border rounded-2xl shimmer" />
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <div className="space-y-3">
+                  <div className="h-5 w-24 bg-muted rounded" />
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex justify-between">
+                      <div className="h-4 w-20 bg-muted/70 rounded" />
+                      <div className="h-4 w-16 bg-muted rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
