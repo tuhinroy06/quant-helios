@@ -26,6 +26,7 @@ import LearnDashboard from "./pages/dashboard/LearnDashboard";
 import StockRanking from "./pages/dashboard/StockRanking";
 import LiveTrading from "./pages/dashboard/LiveTrading";
 import Organization from "./pages/dashboard/Organization";
+import TradeJournal from "./pages/dashboard/TradeJournal";
 
 const queryClient = new QueryClient();
 
@@ -145,6 +146,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Organization />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/journal"
+              element={
+                <ProtectedRoute>
+                  <TradeJournal />
                 </ProtectedRoute>
               }
             />

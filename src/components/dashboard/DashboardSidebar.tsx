@@ -8,7 +8,8 @@ import {
   LogOut,
   Sparkles,
   Zap,
-  Building2
+  Building2,
+  BookOpen
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard/overview", icon: LayoutDashboard },
   { title: "Strategies", url: "/dashboard/strategies", icon: FolderOpen },
   { title: "Paper Trading", url: "/dashboard/paper-trading", icon: Wallet },
+  { title: "Trade Journal", url: "/dashboard/journal", icon: BookOpen },
   { title: "F&O Simulator", url: "/dashboard/fno", icon: BarChart3 },
   { title: "Stock Ranking", url: "/dashboard/stock-ranking", icon: Sparkles },
   { title: "Live Trading", url: "/dashboard/live-trading", icon: Zap },
