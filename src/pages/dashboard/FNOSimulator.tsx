@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calculator, BarChart3, Layers, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -6,6 +6,8 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { PayoffDiagram } from "@/components/fno/PayoffDiagram";
 import { GreeksDisplay } from "@/components/fno/GreeksDisplay";
 import { OptionsChain } from "@/components/fno/OptionsChain";
+import { MarketStatusBadge } from "@/components/paper-trading/MarketStatusBadge";
+import { useLivePrices } from "@/hooks/useLivePrices";
 import { 
   OptionLeg, 
   calculateOptionPricing, 
@@ -16,14 +18,32 @@ import {
 
 const FNOSimulator = () => {
   const [activeTab, setActiveTab] = useState<"calculator" | "chain" | "strategies">("calculator");
-  const [currentPrice, setCurrentPrice] = useState(100);
-  const [strike, setStrike] = useState(100);
+  const [selectedUnderlying, setSelectedUnderlying] = useState("NIFTY");
+  const [currentPrice, setCurrentPrice] = useState(22500);
+  const [strike, setStrike] = useState(22500);
   const [daysToExpiry, setDaysToExpiry] = useState(30);
-  const [volatility, setVolatility] = useState(0.25);
-  const [riskFreeRate, setRiskFreeRate] = useState(0.05);
+  const [volatility, setVolatility] = useState(0.18);
+  const [riskFreeRate, setRiskFreeRate] = useState(0.065);
   const [optionType, setOptionType] = useState<"call" | "put">("call");
   const [legs, setLegs] = useState<OptionLeg[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyTemplate | null>(null);
+
+  const { prices, marketStatus, loading: pricesLoading } = useLivePrices({
+    symbols: [selectedUnderlying],
+    refreshInterval: 10000,
+  });
+
+  // Update current price when live price updates
+  useEffect(() => {
+    const livePrice = prices[selectedUnderlying];
+    if (livePrice?.price) {
+      setCurrentPrice(livePrice.price);
+      // Update strike to ATM on first load
+      if (strike === 22500 && selectedUnderlying === "NIFTY") {
+        setStrike(Math.round(livePrice.price / 50) * 50); // Round to nearest 50
+      }
+    }
+  }, [prices, selectedUnderlying, strike]);
 
   const pricing = useMemo(() => {
     return calculateOptionPricing({
@@ -66,11 +86,18 @@ const FNOSimulator = () => {
             Back to Dashboard
           </Link>
 
-          <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="w-8 h-8 text-purple-500" />
-            <h1 className="font-display text-3xl font-light text-foreground">F&O Simulator</h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="w-8 h-8 text-purple-500" />
+              <h1 className="font-display text-3xl font-light text-foreground">F&O Simulator</h1>
+            </div>
+            <MarketStatusBadge 
+              status={marketStatus} 
+              source={prices[selectedUnderlying]?.source}
+              showSource={true}
+            />
           </div>
-          <p className="text-muted-foreground mb-8">Options pricing, Greeks, and payoff visualization.</p>
+          <p className="text-muted-foreground mb-8">Options pricing, Greeks, and payoff visualization using real-time market data.</p>
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -95,10 +122,34 @@ const FNOSimulator = () => {
                 <div className="bg-card/50 border border-border rounded-xl p-6">
                   <h3 className="text-foreground font-medium mb-4">Option Parameters</h3>
                   <div className="space-y-4">
+                    {/* Underlying Selection */}
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">Underlying</label>
+                      <select 
+                        value={selectedUnderlying} 
+                        onChange={(e) => setSelectedUnderlying(e.target.value)}
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground"
+                      >
+                        <option value="NIFTY">NIFTY 50</option>
+                        <option value="BANKNIFTY">BANK NIFTY</option>
+                        <option value="RELIANCE">RELIANCE</option>
+                        <option value="TCS">TCS</option>
+                        <option value="HDFCBANK">HDFC BANK</option>
+                        <option value="INFY">INFOSYS</option>
+                      </select>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm text-muted-foreground mb-2">Stock Price (₹)</label>
-                        <input type="number" value={currentPrice} onChange={(e) => setCurrentPrice(Number(e.target.value))} className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" />
+                        <label className="block text-sm text-muted-foreground mb-2">
+                          Spot Price (₹) 
+                          {pricesLoading && <span className="text-xs text-muted-foreground ml-1">Loading...</span>}
+                        </label>
+                        <input 
+                          type="number" 
+                          value={currentPrice} 
+                          onChange={(e) => setCurrentPrice(Number(e.target.value))} 
+                          className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground" 
+                        />
                       </div>
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">Strike Price (₹)</label>

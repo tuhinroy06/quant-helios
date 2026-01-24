@@ -1,12 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface LivePrice {
   symbol: string;
   price: number;
   change: number;
   changePercent: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  previousClose?: number;
+  volume?: number;
   timestamp: string;
+  marketStatus?: 'open' | 'closed' | 'pre-market' | 'post-market';
+  source?: 'alpha_vantage' | 'cache' | 'simulated';
 }
 
 interface UseLivePricesOptions {
@@ -24,6 +30,7 @@ export const useLivePrices = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [marketStatus, setMarketStatus] = useState<'open' | 'closed' | 'pre-market' | 'post-market'>('closed');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchPrices = useCallback(async () => {
@@ -35,12 +42,6 @@ export const useLivePrices = ({
     try {
       // Fetch prices for all symbols in parallel
       const pricePromises = symbols.map(async (symbol) => {
-        const { data, error } = await supabase.functions.invoke("fetch-prices", {
-          body: null,
-          method: "GET",
-        });
-
-        // Use query params approach with URL
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-prices?symbol=${symbol}&type=current`,
           {
@@ -68,8 +69,20 @@ export const useLivePrices = ({
             price: result.price,
             change: result.change,
             changePercent: result.changePercent,
+            open: result.open,
+            high: result.high,
+            low: result.low,
+            previousClose: result.previousClose,
+            volume: result.volume,
             timestamp: result.timestamp,
+            marketStatus: result.marketStatus,
+            source: result.source,
           };
+          
+          // Update global market status from first result
+          if (result.marketStatus) {
+            setMarketStatus(result.marketStatus);
+          }
         }
       });
 
@@ -89,15 +102,18 @@ export const useLivePrices = ({
     // Initial fetch
     fetchPrices();
 
+    // Adjust refresh interval based on market status
+    const interval = marketStatus === 'open' ? refreshInterval : refreshInterval * 2;
+    
     // Set up interval for real-time updates
-    intervalRef.current = setInterval(fetchPrices, refreshInterval);
+    intervalRef.current = setInterval(fetchPrices, interval);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchPrices, refreshInterval, enabled]);
+  }, [fetchPrices, refreshInterval, enabled, marketStatus]);
 
   const getPrice = useCallback((symbol: string): LivePrice | null => {
     return prices[symbol] || null;
@@ -112,6 +128,7 @@ export const useLivePrices = ({
     loading,
     error,
     lastUpdated,
+    marketStatus,
     getPrice,
     refresh,
   };
