@@ -15,14 +15,25 @@ interface UseHistoricalPricesOptions {
   enabled?: boolean;
 }
 
+interface HistoricalPricesResult {
+  data: OHLCData[];
+  loading: boolean;
+  error: string | null;
+  source: 'alpha_vantage' | 'cache' | 'simulated' | null;
+  marketStatus: 'open' | 'closed' | 'pre-market' | 'post-market' | null;
+  refetch: () => void;
+}
+
 export const useHistoricalPrices = ({
   symbol,
   days = 90,
   enabled = true,
-}: UseHistoricalPricesOptions) => {
+}: UseHistoricalPricesOptions): HistoricalPricesResult => {
   const [data, setData] = useState<OHLCData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [source, setSource] = useState<'alpha_vantage' | 'cache' | 'simulated' | null>(null);
+  const [marketStatus, setMarketStatus] = useState<'open' | 'closed' | 'pre-market' | 'post-market' | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!symbol || !enabled) {
@@ -67,6 +78,8 @@ export const useHistoricalPrices = ({
           volume: item.volume,
         }));
         setData(ohlcData);
+        setSource(result.source || null);
+        setMarketStatus(result.marketStatus || null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -83,6 +96,8 @@ export const useHistoricalPrices = ({
     data,
     loading,
     error,
+    source,
+    marketStatus,
     refetch: fetchData,
   };
 };
