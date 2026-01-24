@@ -205,27 +205,39 @@ export function generatePayoffDiagram(
   const points: PayoffPoint[] = [];
   
   for (let price = minPrice; price <= maxPrice; price += step) {
-    let totalPayoff = 0;
-    let totalPremium = 0;
+    let totalNetPayoff = 0;
+    let totalIntrinsic = 0;
 
     for (const leg of legs) {
       const { type, strike, premium, quantity } = leg;
       
-      let legPayoff: number;
+      // Calculate intrinsic value at expiration
+      let intrinsicValue: number;
       if (type === 'call') {
-        legPayoff = Math.max(0, price - strike);
+        intrinsicValue = Math.max(0, price - strike);
       } else {
-        legPayoff = Math.max(0, strike - price);
+        intrinsicValue = Math.max(0, strike - price);
       }
       
-      totalPayoff += legPayoff * quantity;
-      totalPremium += premium * quantity;
+      // For long positions (quantity > 0): Pay premium, receive intrinsic
+      // Net = intrinsic - premium
+      // For short positions (quantity < 0): Receive premium, pay intrinsic
+      // Net = premium - intrinsic
+      if (quantity > 0) {
+        // Long: pay premium, get intrinsic value
+        totalNetPayoff += (intrinsicValue - premium) * quantity;
+      } else {
+        // Short: receive premium, pay out intrinsic value
+        totalNetPayoff += (premium - intrinsicValue) * Math.abs(quantity);
+      }
+      
+      totalIntrinsic += intrinsicValue * quantity;
     }
 
     points.push({
       price: Math.round(price * 100) / 100,
-      payoff: totalPayoff,
-      netPayoff: totalPayoff - totalPremium,
+      payoff: totalIntrinsic,
+      netPayoff: Math.round(totalNetPayoff * 100) / 100,
     });
   }
 
@@ -233,39 +245,23 @@ export function generatePayoffDiagram(
 }
 
 // Calculate breakeven points
-export function calculateBreakevens(legs: OptionLeg[]): number[] {
+export function calculateBreakevens(legs: OptionLeg[], currentPrice: number): number[] {
+  if (legs.length === 0) return [];
+  
+  // Use currentPrice to center the payoff diagram properly
+  const centerPrice = currentPrice || legs[0].strike;
+  
+  // Calculate numerically from payoff - find where netPayoff crosses zero
+  const payoff = generatePayoffDiagram(legs, centerPrice, 0.5);
   const breakevens: number[] = [];
-  
-  // For single leg
-  if (legs.length === 1) {
-    const leg = legs[0];
-    if (leg.quantity > 0) {
-      // Long position
-      if (leg.type === 'call') {
-        breakevens.push(leg.strike + leg.premium);
-      } else {
-        breakevens.push(leg.strike - leg.premium);
-      }
-    } else {
-      // Short position
-      if (leg.type === 'call') {
-        breakevens.push(leg.strike + leg.premium);
-      } else {
-        breakevens.push(leg.strike - leg.premium);
-      }
-    }
-  }
-  
-  // For spreads, calculate numerically from payoff
-  // This is a simplified approach - find where netPayoff crosses zero
-  const payoff = generatePayoffDiagram(legs, legs[0].strike, 0.5);
   
   for (let i = 1; i < payoff.length; i++) {
     const prev = payoff[i - 1];
     const curr = payoff[i];
     
+    // Check for zero crossing
     if ((prev.netPayoff < 0 && curr.netPayoff >= 0) || (prev.netPayoff >= 0 && curr.netPayoff < 0)) {
-      // Linear interpolation
+      // Linear interpolation to find exact crossing point
       const breakeven = prev.price + (0 - prev.netPayoff) * (curr.price - prev.price) / (curr.netPayoff - prev.netPayoff);
       breakevens.push(Math.round(breakeven * 100) / 100);
     }
@@ -275,8 +271,11 @@ export function calculateBreakevens(legs: OptionLeg[]): number[] {
 }
 
 // Calculate max profit and loss
-export function calculateMaxProfitLoss(legs: OptionLeg[]): { maxProfit: number; maxLoss: number } {
-  const payoff = generatePayoffDiagram(legs, legs[0].strike, 1);
+export function calculateMaxProfitLoss(legs: OptionLeg[], currentPrice: number): { maxProfit: number; maxLoss: number } {
+  if (legs.length === 0) return { maxProfit: 0, maxLoss: 0 };
+  
+  const centerPrice = currentPrice || legs[0].strike;
+  const payoff = generatePayoffDiagram(legs, centerPrice, 1);
   
   const netPayoffs = payoff.map(p => p.netPayoff);
   const maxProfit = Math.max(...netPayoffs);
