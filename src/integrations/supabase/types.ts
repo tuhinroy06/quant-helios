@@ -118,33 +118,45 @@ export type Database = {
       behavior_signals: {
         Row: {
           behavior: string
+          category: string | null
           confidence: number
+          context: Json | null
           detected_at: string
           id: string
+          severity: string | null
           strategy_id: string | null
           strength: number
+          trade_id: string | null
           user_id: string
           window_end: string | null
           window_start: string | null
         }
         Insert: {
           behavior: string
+          category?: string | null
           confidence: number
+          context?: Json | null
           detected_at?: string
           id?: string
+          severity?: string | null
           strategy_id?: string | null
           strength: number
+          trade_id?: string | null
           user_id: string
           window_end?: string | null
           window_start?: string | null
         }
         Update: {
           behavior?: string
+          category?: string | null
           confidence?: number
+          context?: Json | null
           detected_at?: string
           id?: string
+          severity?: string | null
           strategy_id?: string | null
           strength?: number
+          trade_id?: string | null
           user_id?: string
           window_end?: string | null
           window_start?: string | null
@@ -2033,6 +2045,75 @@ export type Database = {
           },
         ]
       }
+      streak_analyses: {
+        Row: {
+          account_id: string | null
+          avg_pnl: number | null
+          avg_volatility: number | null
+          behaviors: Json
+          created_at: string
+          explanation_id: string | null
+          id: string
+          strategy_id: string | null
+          streak_end: string
+          streak_start: string
+          streak_type: string
+          total_pnl: number
+          trade_count: number
+          trade_ids: Json
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          avg_pnl?: number | null
+          avg_volatility?: number | null
+          behaviors?: Json
+          created_at?: string
+          explanation_id?: string | null
+          id?: string
+          strategy_id?: string | null
+          streak_end?: string
+          streak_start?: string
+          streak_type?: string
+          total_pnl?: number
+          trade_count?: number
+          trade_ids?: Json
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          avg_pnl?: number | null
+          avg_volatility?: number | null
+          behaviors?: Json
+          created_at?: string
+          explanation_id?: string | null
+          id?: string
+          strategy_id?: string | null
+          streak_end?: string
+          streak_start?: string
+          streak_type?: string
+          total_pnl?: number
+          trade_count?: number
+          trade_ids?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_analyses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "streak_analyses_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -2175,42 +2256,93 @@ export type Database = {
       }
       trade_explanations: {
         Row: {
+          account_id: string | null
           attribution: Json | null
+          behaviors: Json | null
+          causation: string | null
           created_at: string
           explanation_text: string
           explanation_type: string
           id: string
+          market_context: string | null
+          observations: Json | null
           priority_score: number | null
+          risk_interaction: string | null
           sanitized_payload: Json | null
+          severity: string | null
+          strategy_id: string | null
+          summary: string | null
+          total_pnl: number | null
+          trade_count: number | null
           trade_id: string
           updated_at: string
+          user_id: string | null
           validated: boolean | null
         }
         Insert: {
+          account_id?: string | null
           attribution?: Json | null
+          behaviors?: Json | null
+          causation?: string | null
           created_at?: string
           explanation_text: string
           explanation_type: string
           id?: string
+          market_context?: string | null
+          observations?: Json | null
           priority_score?: number | null
+          risk_interaction?: string | null
           sanitized_payload?: Json | null
+          severity?: string | null
+          strategy_id?: string | null
+          summary?: string | null
+          total_pnl?: number | null
+          trade_count?: number | null
           trade_id: string
           updated_at?: string
+          user_id?: string | null
           validated?: boolean | null
         }
         Update: {
+          account_id?: string | null
           attribution?: Json | null
+          behaviors?: Json | null
+          causation?: string | null
           created_at?: string
           explanation_text?: string
           explanation_type?: string
           id?: string
+          market_context?: string | null
+          observations?: Json | null
           priority_score?: number | null
+          risk_interaction?: string | null
           sanitized_payload?: Json | null
+          severity?: string | null
+          strategy_id?: string | null
+          summary?: string | null
+          total_pnl?: number | null
+          trade_count?: number | null
           trade_id?: string
           updated_at?: string
+          user_id?: string | null
           validated?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trade_explanations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_explanations_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trading_accounts: {
         Row: {
