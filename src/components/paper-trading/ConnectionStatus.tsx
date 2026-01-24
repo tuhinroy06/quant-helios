@@ -1,57 +1,70 @@
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, Loader2 } from "lucide-react";
+import { Wifi, WifiOff, Loader2, Clock } from "lucide-react";
 
 interface ConnectionStatusProps {
-  connected: boolean;
-  connecting?: boolean;
+  loading?: boolean;
+  isDataFresh?: boolean;
   error?: string | null;
   lastUpdated?: Date | null;
+  // Legacy props for backward compatibility during migration
+  connected?: boolean;
+  connecting?: boolean;
 }
 
 export const ConnectionStatus = ({
-  connected,
-  connecting = false,
+  loading = false,
+  isDataFresh,
   error,
   lastUpdated,
+  // Legacy props
+  connected,
+  connecting,
 }: ConnectionStatusProps) => {
-  if (connecting) {
+  // Handle legacy props (connected/connecting) for backward compatibility
+  const isLoading = loading || connecting;
+  const hasError = !!error;
+  
+  // If using new API (isDataFresh), use that; otherwise fall back to connected
+  const isFresh = isDataFresh !== undefined ? isDataFresh : connected;
+
+  if (isLoading) {
     return (
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="w-3 h-3 animate-spin" />
-        <span>Connecting...</span>
+        <span>Loading...</span>
       </div>
     );
   }
 
-  if (error) {
+  if (hasError) {
     return (
       <div className="flex items-center gap-1.5 text-xs text-destructive">
         <WifiOff className="w-3 h-3" />
-        <span>Offline</span>
+        <span>Error</span>
       </div>
     );
   }
 
   return (
     <div className="flex items-center gap-1.5 text-xs">
-      {connected ? (
+      {isFresh ? (
         <>
           <motion.span
-            className="w-2 h-2 rounded-full bg-green-500"
+            className="w-2 h-2 rounded-full bg-[hsl(142_71%_45%)]"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
-          <Wifi className="w-3 h-3 text-green-500" />
-          <span className="text-green-500 font-medium">LIVE</span>
+          <Wifi className="w-3 h-3 text-[hsl(142_71%_45%)]" />
+          <span className="text-[hsl(142_71%_45%)] font-medium">LIVE</span>
         </>
       ) : (
         <>
           <span className="w-2 h-2 rounded-full bg-yellow-500" />
-          <WifiOff className="w-3 h-3 text-yellow-500" />
-          <span className="text-yellow-500">Delayed</span>
+          <Clock className="w-3 h-3 text-yellow-500" />
+          <span className="text-yellow-500">Stale</span>
         </>
       )}
-      {lastUpdated && connected && (
+      {lastUpdated && isFresh && (
         <span className="text-muted-foreground ml-1">
           {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </span>

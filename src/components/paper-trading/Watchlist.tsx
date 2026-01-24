@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, X, TrendingUp, TrendingDown, Star, Search } from "lucide-react";
 import { INDIAN_STOCKS, formatINRSimple, searchStocks } from "@/lib/indian-stocks";
-import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { useAlphaVantagePrices } from "@/hooks/useAlphaVantagePrices";
 import { ConnectionStatus } from "./ConnectionStatus";
 import {
   Dialog,
@@ -27,12 +27,10 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
+  const { prices, loading, isDataFresh } = useAlphaVantagePrices({
     symbols: watchlist,
     enabled: true,
   });
-
-  const loading = !connected && Object.keys(prices).length === 0;
 
   const addToWatchlist = (symbol: string) => {
     if (!watchlist.includes(symbol)) {
@@ -57,7 +55,7 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
         <div className="flex items-center gap-2">
           <Star className="w-4 h-4 text-yellow-500" />
           <h3 className="font-medium text-foreground text-sm">Watchlist</h3>
-          <ConnectionStatus connected={connected} connecting={connecting} />
+          <ConnectionStatus loading={loading} isDataFresh={isDataFresh} />
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>

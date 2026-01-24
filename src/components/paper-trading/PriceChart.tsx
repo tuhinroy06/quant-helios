@@ -3,8 +3,8 @@ import { createChart, IChartApi, ISeriesApi, CandlestickData, LineData } from "l
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, BarChart3, LineChart, RefreshCw } from "lucide-react";
 import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
-import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
-import { INDIAN_STOCKS, formatINRSimple, getStockBySymbol } from "@/lib/indian-stocks";
+import { useAlphaVantagePrices } from "@/hooks/useAlphaVantagePrices";
+import { formatINRSimple, getStockBySymbol } from "@/lib/indian-stocks";
 import { Button } from "@/components/ui/button";
 import { ConnectionStatus } from "./ConnectionStatus";
 
@@ -38,7 +38,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
     enabled: !!symbol,
   });
 
-  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
+  const { prices, loading: pricesLoading, isDataFresh, lastUpdated } = useAlphaVantagePrices({
     symbols: symbol ? [symbol] : [],
     enabled: !!symbol,
   });
@@ -204,7 +204,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
               <span className="text-sm text-muted-foreground">
                 {stockInfo?.name || symbol}
               </span>
-              <ConnectionStatus connected={connected} connecting={connecting} lastUpdated={lastUpdated} />
+              <ConnectionStatus loading={pricesLoading} isDataFresh={isDataFresh} lastUpdated={lastUpdated} />
             </div>
             <div className="flex items-center gap-3 mt-1">
               <motion.span 

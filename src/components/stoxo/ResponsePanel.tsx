@@ -7,7 +7,7 @@ import { PeerComparisonTable } from './PeerComparisonTable';
 import { SectorAnalysisModule } from './SectorAnalysisModule';
 import { RiskAnalysisCard } from './RiskAnalysisCard';
 import { SuggestedPrompts } from './SuggestedPrompts';
-import { useWebSocketPrices } from '@/hooks/useWebSocketPrices';
+import { useAlphaVantagePrices } from '@/hooks/useAlphaVantagePrices';
 import { cn } from '@/lib/utils';
 
 interface ResponsePanelProps {
@@ -23,8 +23,8 @@ export const ResponsePanel = ({ response, onPromptSelect, isLoading }: ResponseP
     return response.stocks.map(s => s.symbol);
   }, [response?.stocks]);
 
-  // Subscribe to live prices for displayed stocks
-  const { prices, connected, error } = useWebSocketPrices({
+  // Subscribe to prices for displayed stocks
+  const { prices, isDataFresh, error } = useAlphaVantagePrices({
     symbols,
     enabled: symbols.length > 0,
   });
@@ -47,18 +47,18 @@ export const ResponsePanel = ({ response, onPromptSelect, isLoading }: ResponseP
         transition={{ duration: 0.3 }}
         className="space-y-4"
       >
-        {/* Live Price Connection Status */}
+        {/* Price Data Status */}
         {symbols.length > 0 && (
           <div className="flex items-center justify-end gap-2">
             <div className={cn(
               "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs",
-              connected 
-                ? "bg-success/10 text-success" 
+              isDataFresh 
+                ? "bg-primary/10 text-primary" 
                 : error 
                   ? "bg-destructive/10 text-destructive"
                   : "bg-muted text-muted-foreground"
             )}>
-              {connected ? (
+              {isDataFresh ? (
                 <>
                   <Wifi className="h-3 w-3" />
                   <span>Live Prices</span>
@@ -66,7 +66,7 @@ export const ResponsePanel = ({ response, onPromptSelect, isLoading }: ResponseP
               ) : (
                 <>
                   <WifiOff className="h-3 w-3" />
-                  <span>{error ? 'Connection Error' : 'Connecting...'}</span>
+                  <span>{error ? 'Connection Error' : 'Loading...'}</span>
                 </>
               )}
             </div>

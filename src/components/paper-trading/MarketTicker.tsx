@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
-import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { useAlphaVantagePrices } from "@/hooks/useAlphaVantagePrices";
 import { ConnectionStatus } from "./ConnectionStatus";
 
 interface MarketTickerProps {
@@ -12,18 +12,16 @@ interface MarketTickerProps {
 const TICKER_SYMBOLS = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "ITC", "SBIN", "LT"];
 
 export const MarketTicker = ({ onSymbolClick, selectedSymbol }: MarketTickerProps) => {
-  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
+  const { prices, loading, isDataFresh, lastUpdated } = useAlphaVantagePrices({
     symbols: TICKER_SYMBOLS,
     enabled: true,
   });
-
-  const loading = !connected && Object.keys(prices).length === 0;
 
   return (
     <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-secondary/30">
         <span className="text-xs text-muted-foreground font-medium">Market Overview</span>
-        <ConnectionStatus connected={connected} connecting={connecting} lastUpdated={lastUpdated} />
+        <ConnectionStatus loading={loading} isDataFresh={isDataFresh} lastUpdated={lastUpdated} />
       </div>
       <div className="flex items-center gap-1 px-2 py-2 overflow-x-auto scrollbar-hide">
         {TICKER_SYMBOLS.map((symbol) => {
