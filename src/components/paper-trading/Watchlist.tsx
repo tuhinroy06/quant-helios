@@ -51,7 +51,7 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
 
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      <div className="p-4 border-b border-border flex items-center justify-between">
+      <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Star className="w-4 h-4 text-yellow-500" />
           <h3 className="font-medium text-foreground text-sm">Watchlist</h3>
@@ -76,23 +76,23 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
                 className="pl-9"
               />
             </div>
-            <ScrollArea className="h-[350px]">
+            <ScrollArea className="h-[300px] md:h-[350px]">
               <div className="space-y-1">
                 {filteredStocks.slice(0, 50).map((stock) => (
                   <button
                     key={stock.symbol}
                     onClick={() => addToWatchlist(stock.symbol)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-secondary rounded-lg transition-colors"
+                    className="w-full flex items-center justify-between p-2.5 md:p-3 hover:bg-secondary rounded-lg transition-colors"
                   >
-                    <div className="text-left">
+                    <div className="text-left min-w-0">
                       <p className="font-medium text-foreground text-sm">
                         {stock.symbol}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {stock.name} • {stock.sector}
                       </p>
                     </div>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground flex-shrink-0 ml-2">
                       {formatINRSimple(stock.price)}
                     </span>
                   </button>
@@ -108,7 +108,7 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
         </Dialog>
       </div>
 
-      <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
+      <div className="divide-y divide-border max-h-[250px] md:max-h-[300px] overflow-y-auto">
         {watchlist.map((symbol) => {
           const stock = INDIAN_STOCKS.find((s) => s.symbol === symbol);
           const priceData = prices[symbol];
@@ -121,7 +121,7 @@ export const Watchlist = ({ onSymbolSelect, selectedSymbol }: WatchlistProps) =>
             <motion.div
               key={symbol}
               whileHover={{ backgroundColor: "hsl(var(--secondary) / 0.5)" }}
-              className={`group flex items-center justify-between p-3 cursor-pointer transition-colors ${
+              className={`group flex items-center justify-between p-2.5 md:p-3 cursor-pointer transition-colors ${
                 isSelected ? "bg-primary/5 border-l-2 border-l-primary" : ""
               }`}
               onClick={() => onSymbolSelect(symbol)}

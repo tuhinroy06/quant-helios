@@ -15,7 +15,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <header className="h-14 flex items-center border-b border-border px-4">
             <SidebarTrigger />
           </header>
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-4 md:p-6 pb-safe">
             {children}
           </div>
         </main>

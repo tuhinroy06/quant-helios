@@ -411,13 +411,13 @@ const PaperTrading = () => {
         </motion.div>
 
         {/* Main Grid: Chart + Trading Panel */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          {/* Left: Chart (2/3 width) */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Left: Chart (2/3 width on lg, full on md) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="lg:col-span-2"
+            className="md:col-span-1 lg:col-span-2"
           >
             <PriceChart symbol={selectedSymbol} />
           </motion.div>
@@ -454,7 +454,7 @@ const PaperTrading = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid md:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
         >
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">

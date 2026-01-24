@@ -315,24 +315,24 @@ const StrategyCreate = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="font-display text-3xl font-light text-foreground mb-2">
+          <h1 className="font-display text-2xl md:text-3xl font-light text-foreground mb-2">
             Create Strategy
           </h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground text-sm md:text-base mb-6 md:mb-8">
             Build a new trading strategy using AI assistance or manual rules.
           </p>
 
           <Tabs defaultValue="compiler" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger value="compiler" className="flex items-center gap-2">
+            <TabsList className="flex w-full mb-6 md:mb-8 overflow-x-auto gap-1 bg-transparent pb-1">
+              <TabsTrigger value="compiler" className="flex items-center gap-2 flex-shrink-0 text-sm">
                 <Brain className="w-4 h-4" />
-                Smart Compiler
+                <span className="hidden sm:inline">Smart</span> Compiler
               </TabsTrigger>
-              <TabsTrigger value="ai" className="flex items-center gap-2">
+              <TabsTrigger value="ai" className="flex items-center gap-2 flex-shrink-0 text-sm">
                 <Sparkles className="w-4 h-4" />
                 AI Chat
               </TabsTrigger>
-              <TabsTrigger value="manual" className="flex items-center gap-2">
+              <TabsTrigger value="manual" className="flex items-center gap-2 flex-shrink-0 text-sm">
                 <Wrench className="w-4 h-4" />
                 Manual
               </TabsTrigger>
@@ -372,14 +372,14 @@ const StrategyCreate = () => {
             <TabsContent value="ai">
               <div className="bg-card/50 border border-border rounded-xl overflow-hidden">
                 {/* Chat Messages */}
-                <div className="h-[400px] overflow-y-auto p-6 space-y-4">
+                <div className="h-[300px] md:h-[400px] overflow-y-auto p-4 md:p-6 space-y-4">
                   {messages.map((msg, idx) => (
                     <div
                       key={idx}
                       className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[80%] p-4 rounded-xl ${
+                        className={`max-w-[90%] md:max-w-[80%] p-3 md:p-4 rounded-xl ${
                           msg.role === "user"
                             ? "bg-white text-black"
                             : "bg-secondary text-foreground"
@@ -393,7 +393,7 @@ const StrategyCreate = () => {
                   ))}
                   {aiGenerating && messages[messages.length - 1]?.role === "user" && (
                     <div className="flex justify-start">
-                      <div className="bg-secondary text-foreground p-4 rounded-xl">
+                      <div className="bg-secondary text-foreground p-3 md:p-4 rounded-xl">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-foreground rounded-full animate-pulse" />
                           <div className="w-2 h-2 bg-foreground rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
@@ -406,8 +406,8 @@ const StrategyCreate = () => {
                 </div>
 
                 {/* Input */}
-                <div className="border-t border-border p-4">
-                  <div className="flex gap-3">
+                <div className="border-t border-border p-3 md:p-4">
+                  <div className="flex gap-2 md:gap-3">
                     <input
                       type="text"
                       value={aiPrompt}
@@ -415,14 +415,14 @@ const StrategyCreate = () => {
                       onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAiSubmit()}
                       placeholder="Describe your strategy..."
                       disabled={aiGenerating}
-                      className="flex-1 bg-secondary border border-border rounded-full px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
+                      className="flex-1 bg-secondary border border-border rounded-full px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
                     />
                     <button
                       onClick={handleAiSubmit}
                       disabled={aiGenerating || !aiPrompt.trim()}
-                      className="p-3 bg-white text-black rounded-full hover:bg-white/90 transition-colors disabled:opacity-50"
+                      className="p-2.5 md:p-3 bg-white text-black rounded-full hover:bg-white/90 transition-colors disabled:opacity-50"
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
                   </div>
                 </div>
@@ -435,9 +435,9 @@ const StrategyCreate = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-6"
                 >
-                  <div className="bg-card/50 border border-white/20 rounded-xl p-6 mb-4">
+                  <div className="bg-card/50 border border-white/20 rounded-xl p-4 md:p-6 mb-4">
                     <h3 className="text-foreground font-medium mb-3">Strategy Ready</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground">Name:</span>
                         <span className="text-foreground ml-2">{parsedStrategy.name}</span>
@@ -473,7 +473,7 @@ const StrategyCreate = () => {
             <TabsContent value="manual">
               <div className="space-y-6">
                 {/* Basic Info */}
-                <div className="bg-card/50 border border-border rounded-xl p-6">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                   <h3 className="text-foreground font-medium mb-4">Basic Information</h3>
                   <div className="space-y-4">
                     <div>
@@ -483,16 +483,16 @@ const StrategyCreate = () => {
                         value={strategyName}
                         onChange={(e) => setStrategyName(e.target.value)}
                         placeholder="e.g., RSI Mean Reversion"
-                        className="w-full bg-secondary border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20"
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 md:py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/20"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">Market Type</label>
                         <select
                           value={marketType}
                           onChange={(e) => setMarketType(e.target.value as "cash" | "crypto" | "fno")}
-                          className="w-full bg-secondary border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-white/20"
+                          className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 md:py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-white/20 [&>option]:bg-secondary [&>option]:text-foreground"
                         >
                           <option value="cash">Cash / Stocks</option>
                           <option value="crypto">Cryptocurrency</option>
@@ -504,7 +504,7 @@ const StrategyCreate = () => {
                         <select
                           value={timeframe}
                           onChange={(e) => setTimeframe(e.target.value)}
-                          className="w-full bg-secondary border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-white/20"
+                          className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 md:py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-white/20 [&>option]:bg-secondary [&>option]:text-foreground"
                         >
                           {timeframes.map(tf => (
                             <option key={tf} value={tf}>{tf}</option>
@@ -516,7 +516,7 @@ const StrategyCreate = () => {
                 </div>
 
                 {/* Entry Rules */}
-                <div className="bg-card/50 border border-border rounded-xl p-6">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-foreground font-medium">Entry Rules</h3>
                     <button
@@ -524,45 +524,49 @@ const StrategyCreate = () => {
                       className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Rule
+                      <span className="hidden sm:inline">Add Rule</span>
                     </button>
                   </div>
                   <div className="space-y-3">
                     {entryRules.map((rule) => (
-                      <div key={rule.id} className="flex items-center gap-3">
-                        <select
-                          value={rule.indicator}
-                          onChange={(e) => updateRule("entry", rule.id, "indicator", e.target.value)}
-                          className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
-                        >
-                          {indicators.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-                        </select>
-                        <select
-                          value={rule.condition}
-                          onChange={(e) => updateRule("entry", rule.id, "condition", e.target.value)}
-                          className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
-                        >
-                          {conditions.map(cond => <option key={cond} value={cond}>{cond}</option>)}
-                        </select>
-                        <input
-                          type="text"
-                          value={rule.value}
-                          onChange={(e) => updateRule("entry", rule.id, "value", e.target.value)}
-                          className="w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
-                        />
-                        <button
-                          onClick={() => removeRule("entry", rule.id)}
-                          className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div key={rule.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-secondary/30 rounded-lg sm:p-0 sm:bg-transparent">
+                        <div className="grid grid-cols-2 sm:flex sm:flex-1 gap-2">
+                          <select
+                            value={rule.indicator}
+                            onChange={(e) => updateRule("entry", rule.id, "indicator", e.target.value)}
+                            className="w-full sm:flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none [&>option]:bg-secondary [&>option]:text-foreground"
+                          >
+                            {indicators.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+                          </select>
+                          <select
+                            value={rule.condition}
+                            onChange={(e) => updateRule("entry", rule.id, "condition", e.target.value)}
+                            className="w-full sm:flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none [&>option]:bg-secondary [&>option]:text-foreground"
+                          >
+                            {conditions.map(cond => <option key={cond} value={cond}>{cond}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={rule.value}
+                            onChange={(e) => updateRule("entry", rule.id, "value", e.target.value)}
+                            className="flex-1 sm:w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
+                          />
+                          <button
+                            onClick={() => removeRule("entry", rule.id)}
+                            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Exit Rules */}
-                <div className="bg-card/50 border border-border rounded-xl p-6">
+                <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-foreground font-medium">Exit Rules</h3>
                     <button
@@ -570,38 +574,42 @@ const StrategyCreate = () => {
                       className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Rule
+                      <span className="hidden sm:inline">Add Rule</span>
                     </button>
                   </div>
                   <div className="space-y-3">
                     {exitRules.map((rule) => (
-                      <div key={rule.id} className="flex items-center gap-3">
-                        <select
-                          value={rule.indicator}
-                          onChange={(e) => updateRule("exit", rule.id, "indicator", e.target.value)}
-                          className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
-                        >
-                          {indicators.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-                        </select>
-                        <select
-                          value={rule.condition}
-                          onChange={(e) => updateRule("exit", rule.id, "condition", e.target.value)}
-                          className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
-                        >
-                          {conditions.map(cond => <option key={cond} value={cond}>{cond}</option>)}
-                        </select>
-                        <input
-                          type="text"
-                          value={rule.value}
-                          onChange={(e) => updateRule("exit", rule.id, "value", e.target.value)}
-                          className="w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
-                        />
-                        <button
-                          onClick={() => removeRule("exit", rule.id)}
-                          className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div key={rule.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-secondary/30 rounded-lg sm:p-0 sm:bg-transparent">
+                        <div className="grid grid-cols-2 sm:flex sm:flex-1 gap-2">
+                          <select
+                            value={rule.indicator}
+                            onChange={(e) => updateRule("exit", rule.id, "indicator", e.target.value)}
+                            className="w-full sm:flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none [&>option]:bg-secondary [&>option]:text-foreground"
+                          >
+                            {indicators.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+                          </select>
+                          <select
+                            value={rule.condition}
+                            onChange={(e) => updateRule("exit", rule.id, "condition", e.target.value)}
+                            className="w-full sm:flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none [&>option]:bg-secondary [&>option]:text-foreground"
+                          >
+                            {conditions.map(cond => <option key={cond} value={cond}>{cond}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={rule.value}
+                            onChange={(e) => updateRule("exit", rule.id, "value", e.target.value)}
+                            className="flex-1 sm:w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none"
+                          />
+                          <button
+                            onClick={() => removeRule("exit", rule.id)}
+                            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
