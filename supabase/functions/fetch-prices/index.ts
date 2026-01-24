@@ -593,6 +593,26 @@ const SECTOR_VOLATILITY: Record<string, number> = {
 // In-memory cache for quick lookups
 const priceCache: Map<string, { data: any; expiresAt: number }> = new Map();
 
+// Seeded random number generator for deterministic simulated data
+function createSeededRandom(seed: number): () => number {
+  let currentSeed = seed;
+  return function() {
+    currentSeed = (currentSeed * 1103515245 + 12345) & 0x7fffffff;
+    return currentSeed / 0x7fffffff;
+  };
+}
+
+// Create a consistent seed from a symbol string
+function getSymbolSeed(symbol: string): number {
+  return symbol.toUpperCase().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+}
+
+// Create a date seed for consistent daily prices
+function getDateSeed(date: Date): number {
+  const dateStr = date.toISOString().split('T')[0];
+  return dateStr.split('-').reduce((acc, p) => acc + parseInt(p), 0);
+}
+
 function isMarketOpen(): { status: 'open' | 'closed' | 'pre-market' | 'post-market'; message: string } {
   const now = new Date();
   const istOffset = 5.5 * 60;
@@ -727,43 +747,29 @@ function getVolatility(symbol: string): number {
   return SECTOR_VOLATILITY['default'];
 }
 
-function generateSimulatedPrice(symbol: string): CurrentPriceData {
-  const basePrice = STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
-  const volatility = getVolatility(symbol);
-  
-  const now = new Date();
-  const seed = Math.floor(now.getTime() / 60000);
-  const random = Math.sin(seed * symbol.length) * 0.5 + 0.5;
-  
-  const change = (random - 0.5) * 2 * volatility * basePrice;
-  const price = basePrice + change;
-  const changePercent = (change / basePrice) * 100;
-  
-  const marketStatus = isMarketOpen();
-  
-  return {
-    symbol: symbol.toUpperCase(),
-    price: Math.round(price * 100) / 100,
-    change: Math.round(change * 100) / 100,
-    changePercent: Math.round(changePercent * 100) / 100,
-    open: Math.round(basePrice * 0.998 * 100) / 100,
-    high: Math.round(price * 1.01 * 100) / 100,
-    low: Math.round(price * 0.99 * 100) / 100,
-    previousClose: basePrice,
-    volume: Math.floor(100000 + Math.random() * 500000),
-    timestamp: now.toISOString(),
-    marketStatus: marketStatus.status,
-    source: 'simulated',
-  };
-}
+// Cache for simulated historical data to ensure consistency
+const simulatedHistoricalCache: Map<string, { data: PriceData[]; expiresAt: number }> = new Map();
 
 function generateSimulatedHistorical(symbol: string, days: number = 365): { data: PriceData[]; source: 'simulated' } {
+  const cacheKey = `sim_hist_${symbol.toUpperCase()}_${days}`;
+  const cached = simulatedHistoricalCache.get(cacheKey);
+  
+  // Cache for 1 hour to ensure consistency across requests
+  if (cached && cached.expiresAt > Date.now()) {
+    return { data: cached.data, source: 'simulated' };
+  }
+  
   const data: PriceData[] = [];
-  let price = STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
+  const basePrice = STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
+  let price = basePrice;
   
   const isIndex = symbol.toUpperCase().includes('NIFTY');
   const volatility = getVolatility(symbol);
   const trend = 0.0002;
+  
+  // Use seeded random for consistent data
+  const symbolSeed = getSymbolSeed(symbol);
+  const random = createSeededRandom(symbolSeed);
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -777,17 +783,18 @@ function generateSimulatedHistorical(symbol: string, days: number = 365): { data
     const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
     const seasonal = Math.sin(dayOfYear / 365 * Math.PI * 2) * 0.002;
     
-    const change = (Math.random() - 0.5) * 2 * volatility + trend + seasonal;
+    // Use seeded random instead of Math.random()
+    const change = (random() - 0.5) * 2 * volatility + trend + seasonal;
     const open = price;
     price = price * (1 + change);
     const close = price;
     
-    const range = Math.abs(close - open) + price * (Math.random() * 0.01);
-    const high = Math.max(open, close) + Math.random() * range * 0.5;
-    const low = Math.min(open, close) - Math.random() * range * 0.5;
+    const range = Math.abs(close - open) + price * (random() * 0.01);
+    const high = Math.max(open, close) + random() * range * 0.5;
+    const low = Math.min(open, close) - random() * range * 0.5;
     
     const baseVolume = isIndex ? 500000 : 100000;
-    const volume = Math.floor(baseVolume + Math.random() * baseVolume * 2 * (Math.abs(change) * 50));
+    const volume = Math.floor(baseVolume + random() * baseVolume * 2 * (Math.abs(change) * 50));
 
     data.push({
       symbol: symbol.toUpperCase(),
@@ -800,7 +807,65 @@ function generateSimulatedHistorical(symbol: string, days: number = 365): { data
     });
   }
 
+  // Cache the result for consistency
+  simulatedHistoricalCache.set(cacheKey, { data, expiresAt: Date.now() + 3600000 });
+
   return { data, source: 'simulated' };
+}
+
+function generateSimulatedPrice(symbol: string): CurrentPriceData {
+  // First, get the historical data to ensure current price aligns with last close
+  const historicalResult = generateSimulatedHistorical(symbol, 365);
+  const historicalData = historicalResult.data;
+  
+  // Get the last historical close as the previous close
+  const lastHistorical = historicalData.length > 0 
+    ? historicalData[historicalData.length - 1] 
+    : null;
+  
+  const previousClose = lastHistorical?.close || STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
+  const volatility = getVolatility(symbol);
+  
+  // Create a seed based on symbol + today's date for consistent intraday price
+  const now = new Date();
+  const symbolSeed = getSymbolSeed(symbol);
+  const dateSeed = getDateSeed(now);
+  const combinedSeed = symbolSeed + dateSeed;
+  
+  const random = createSeededRandom(combinedSeed);
+  
+  // Generate consistent intraday movement from previous close
+  const changePercent = (random() - 0.5) * 2 * volatility * 100;
+  const change = previousClose * (changePercent / 100);
+  const price = previousClose + change;
+  
+  // Generate OHLC that makes sense
+  const openVariation = (random() - 0.5) * 0.005;
+  const open = previousClose * (1 + openVariation);
+  
+  const dayRange = Math.abs(change) + price * 0.005;
+  const high = Math.max(open, price) + random() * dayRange;
+  const low = Math.min(open, price) - random() * dayRange;
+  
+  const baseVolume = symbol.toUpperCase().includes('NIFTY') ? 500000 : 100000;
+  const volume = Math.floor(baseVolume + random() * baseVolume * 4);
+  
+  const marketStatus = isMarketOpen();
+  
+  return {
+    symbol: symbol.toUpperCase(),
+    price: Math.round(price * 100) / 100,
+    change: Math.round(change * 100) / 100,
+    changePercent: Math.round(changePercent * 100) / 100,
+    open: Math.round(open * 100) / 100,
+    high: Math.round(high * 100) / 100,
+    low: Math.round(low * 100) / 100,
+    previousClose: Math.round(previousClose * 100) / 100,
+    volume,
+    timestamp: now.toISOString(),
+    marketStatus: marketStatus.status,
+    source: 'simulated',
+  };
 }
 
 serve(async (req) => {
