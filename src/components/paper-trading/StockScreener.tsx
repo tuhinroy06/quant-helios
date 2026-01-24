@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Search, Filter, X, TrendingUp, TrendingDown, ChevronDown, 
-  ArrowUpDown, Star, Plus, SlidersHorizontal, BarChart3
+  Search, X, TrendingUp, TrendingDown, 
+  ArrowUpDown, Star, SlidersHorizontal, BarChart3,
+  Save, FolderOpen, Trash2, Check, Loader2
 } from "lucide-react";
 import { 
   INDIAN_STOCKS, 
@@ -26,11 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Table,
   TableBody,
   TableCell,
@@ -39,6 +35,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface StockScreenerProps {
   onSymbolSelect?: (symbol: string) => void;
@@ -55,10 +71,73 @@ interface TechnicalIndicator {
   nearLow: boolean;
 }
 
+interface ScreenerFilters {
+  searchQuery: string;
+  selectedSectors: string[];
+  marketCapFilter: string;
+  priceRange: [number, number];
+  peRange: [number, number];
+  dividendFilter: string;
+  technicalFilter: string;
+}
+
+interface ScreenerPreset {
+  id: string;
+  name: string;
+  description: string | null;
+  filters: ScreenerFilters;
+  is_default: boolean;
+  created_at: string;
+}
+
+const DEFAULT_FILTERS: ScreenerFilters = {
+  searchQuery: "",
+  selectedSectors: [],
+  marketCapFilter: "all",
+  priceRange: [0, 50000],
+  peRange: [0, 100],
+  dividendFilter: "all",
+  technicalFilter: "all",
+};
+
+// Built-in presets
+const BUILTIN_PRESETS: { name: string; description: string; filters: Partial<ScreenerFilters> }[] = [
+  {
+    name: "High Dividend Yield",
+    description: "Stocks with dividend yield > 2%",
+    filters: { dividendFilter: "high" },
+  },
+  {
+    name: "Value Stocks",
+    description: "Low P/E ratio stocks (< 20)",
+    filters: { peRange: [0, 20] },
+  },
+  {
+    name: "Banking Sector",
+    description: "All banking stocks",
+    filters: { selectedSectors: ["Banking"] },
+  },
+  {
+    name: "IT Giants",
+    description: "Large cap IT companies",
+    filters: { selectedSectors: ["IT"], marketCapFilter: "large" },
+  },
+  {
+    name: "Oversold Opportunities",
+    description: "Stocks with RSI < 35",
+    filters: { technicalFilter: "oversold" },
+  },
+  {
+    name: "Near 52-Week Low",
+    description: "Potential value opportunities",
+    filters: { technicalFilter: "near52low" },
+  },
+];
+
 // Simulated technical indicators
 const generateTechnicalIndicators = (stock: IndianStock): TechnicalIndicator => {
   const seed = stock.symbol.charCodeAt(0) + stock.price;
-  const rsi = 30 + (seed % 40); // RSI between 30-70
+  const rsi = 30 + (seed % 40);
   
   const priceRange = (stock.week52High || stock.price) - (stock.week52Low || stock.price);
   const currentPosition = stock.price - (stock.week52Low || stock.price);
@@ -73,6 +152,8 @@ const generateTechnicalIndicators = (stock: IndianStock): TechnicalIndicator => 
 };
 
 export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerProps) => {
+  const { user } = useAuth();
+  
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
@@ -87,6 +168,15 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
   const [sortField, setSortField] = useState<SortField>("marketCap");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  
+  // Preset states
+  const [presets, setPresets] = useState<ScreenerPreset[]>([]);
+  const [loadingPresets, setLoadingPresets] = useState(false);
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState("");
+  const [newPresetDescription, setNewPresetDescription] = useState("");
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   const sectors = getAllSectors();
   
@@ -101,11 +191,137 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
     enabled: true,
   });
 
+  // Load user presets on mount
+  useEffect(() => {
+    if (user) {
+      loadPresets();
+    }
+  }, [user]);
+
+  const loadPresets = async () => {
+    if (!user) return;
+    
+    setLoadingPresets(true);
+    try {
+      const { data, error } = await supabase
+        .from("screener_presets")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      // Type the data properly
+      const typedPresets: ScreenerPreset[] = (data || []).map(preset => ({
+        id: preset.id,
+        name: preset.name,
+        description: preset.description,
+        filters: preset.filters as unknown as ScreenerFilters,
+        is_default: preset.is_default,
+        created_at: preset.created_at,
+      }));
+      
+      setPresets(typedPresets);
+    } catch (error) {
+      console.error("Failed to load presets:", error);
+    } finally {
+      setLoadingPresets(false);
+    }
+  };
+
+  const getCurrentFilters = (): ScreenerFilters => ({
+    searchQuery,
+    selectedSectors,
+    marketCapFilter,
+    priceRange,
+    peRange,
+    dividendFilter,
+    technicalFilter,
+  });
+
+  const applyFilters = (filters: Partial<ScreenerFilters>) => {
+    const merged = { ...DEFAULT_FILTERS, ...filters };
+    setSearchQuery(merged.searchQuery);
+    setSelectedSectors(merged.selectedSectors);
+    setMarketCapFilter(merged.marketCapFilter);
+    setPriceRange(merged.priceRange);
+    setPeRange(merged.peRange);
+    setDividendFilter(merged.dividendFilter);
+    setTechnicalFilter(merged.technicalFilter);
+  };
+
+  const savePreset = async () => {
+    if (!user || !newPresetName.trim()) return;
+    
+    setSavingPreset(true);
+    try {
+      const filtersToSave = getCurrentFilters();
+      const { data, error } = await supabase
+        .from("screener_presets")
+        .insert([{
+          user_id: user.id,
+          name: newPresetName.trim(),
+          description: newPresetDescription.trim() || null,
+          filters: JSON.parse(JSON.stringify(filtersToSave)),
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      const newPreset: ScreenerPreset = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        filters: data.filters as unknown as ScreenerFilters,
+        is_default: data.is_default,
+        created_at: data.created_at,
+      };
+      
+      setPresets(prev => [newPreset, ...prev]);
+      setActivePresetId(data.id);
+      setSaveDialogOpen(false);
+      setNewPresetName("");
+      setNewPresetDescription("");
+      toast.success("Preset saved successfully!");
+    } catch (error) {
+      console.error("Failed to save preset:", error);
+      toast.error("Failed to save preset");
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
+  const loadPreset = (preset: ScreenerPreset | { filters: Partial<ScreenerFilters>; id?: string }) => {
+    applyFilters(preset.filters);
+    setActivePresetId('id' in preset && preset.id ? preset.id : null);
+    toast.success(`Preset applied`);
+  };
+
+  const deletePreset = async (presetId: string) => {
+    try {
+      const { error } = await supabase
+        .from("screener_presets")
+        .delete()
+        .eq("id", presetId);
+
+      if (error) throw error;
+      
+      setPresets(prev => prev.filter(p => p.id !== presetId));
+      if (activePresetId === presetId) {
+        setActivePresetId(null);
+      }
+      toast.success("Preset deleted");
+    } catch (error) {
+      console.error("Failed to delete preset:", error);
+      toast.error("Failed to delete preset");
+    }
+  };
+
   // Filter and sort stocks
   const filteredStocks = useMemo(() => {
     let stocks = INDIAN_STOCKS.filter(s => s.sector !== "Index");
     
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       stocks = stocks.filter(s => 
@@ -114,26 +330,21 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
       );
     }
     
-    // Sector filter
     if (selectedSectors.length > 0) {
       stocks = stocks.filter(s => selectedSectors.includes(s.sector));
     }
     
-    // Market cap filter
     if (marketCapFilter !== "all") {
       stocks = stocks.filter(s => s.marketCapCategory === marketCapFilter);
     }
     
-    // Price range filter
     stocks = stocks.filter(s => s.price >= priceRange[0] && s.price <= priceRange[1]);
     
-    // P/E ratio filter
     stocks = stocks.filter(s => {
       const pe = s.pe || 0;
       return pe >= peRange[0] && pe <= peRange[1];
     });
     
-    // Dividend filter
     if (dividendFilter === "high") {
       stocks = stocks.filter(s => (s.dividendYield || 0) >= 2);
     } else if (dividendFilter === "medium") {
@@ -145,30 +356,21 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
       stocks = stocks.filter(s => (s.dividendYield || 0) === 0);
     }
     
-    // Technical filter
     if (technicalFilter !== "all") {
       stocks = stocks.filter(s => {
         const indicators = generateTechnicalIndicators(s);
         switch (technicalFilter) {
-          case "oversold":
-            return indicators.rsi < 35;
-          case "overbought":
-            return indicators.rsi > 65;
-          case "bullish":
-            return indicators.maSignal === "bullish";
-          case "bearish":
-            return indicators.maSignal === "bearish";
-          case "near52high":
-            return indicators.nearHigh;
-          case "near52low":
-            return indicators.nearLow;
-          default:
-            return true;
+          case "oversold": return indicators.rsi < 35;
+          case "overbought": return indicators.rsi > 65;
+          case "bullish": return indicators.maSignal === "bullish";
+          case "bearish": return indicators.maSignal === "bearish";
+          case "near52high": return indicators.nearHigh;
+          case "near52low": return indicators.nearLow;
+          default: return true;
         }
       });
     }
     
-    // Sort
     stocks.sort((a, b) => {
       let aVal: number, bVal: number;
       
@@ -219,6 +421,7 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
         ? prev.filter(s => s !== sector)
         : [...prev, sector]
     );
+    setActivePresetId(null);
   };
 
   const toggleWatchlist = (symbol: string) => {
@@ -230,13 +433,8 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
   };
 
   const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedSectors([]);
-    setMarketCapFilter("all");
-    setPriceRange([0, 50000]);
-    setPeRange([0, 100]);
-    setDividendFilter("all");
-    setTechnicalFilter("all");
+    applyFilters(DEFAULT_FILTERS);
+    setActivePresetId(null);
   };
 
   const activeFiltersCount = [
@@ -248,6 +446,8 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
     dividendFilter !== "all",
     technicalFilter !== "all",
   ].filter(Boolean).length;
+
+  const hasActiveFilters = activeFiltersCount > 0;
 
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -264,17 +464,187 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
           <ConnectionStatus connected={connected} connecting={connecting} lastUpdated={lastUpdated} />
         </div>
         
-        {/* Search & Filter Toggle */}
+        {/* Search, Filters & Presets */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search by symbol or name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setActivePresetId(null);
+              }}
               className="pl-9"
             />
           </div>
+          
+          {/* Presets Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <FolderOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Presets</span>
+                {activePresetId && <Check className="w-3 h-3 text-primary" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Quick Presets</DropdownMenuLabel>
+              {BUILTIN_PRESETS.map((preset, index) => (
+                <DropdownMenuItem
+                  key={`builtin-${index}`}
+                  onClick={() => loadPreset({ filters: { ...DEFAULT_FILTERS, ...preset.filters } })}
+                  className="flex flex-col items-start gap-0.5"
+                >
+                  <span className="font-medium">{preset.name}</span>
+                  <span className="text-xs text-muted-foreground">{preset.description}</span>
+                </DropdownMenuItem>
+              ))}
+              
+              {user && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="flex items-center justify-between">
+                    <span>My Presets</span>
+                    {loadingPresets && <Loader2 className="w-3 h-3 animate-spin" />}
+                  </DropdownMenuLabel>
+                  {presets.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                      No saved presets yet
+                    </div>
+                  ) : (
+                    presets.map(preset => (
+                      <DropdownMenuItem
+                        key={preset.id}
+                        className="flex items-center justify-between group"
+                      >
+                        <div 
+                          className="flex-1 flex flex-col items-start gap-0.5"
+                          onClick={() => loadPreset(preset)}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{preset.name}</span>
+                            {activePresetId === preset.id && (
+                              <Check className="w-3 h-3 text-primary" />
+                            )}
+                          </div>
+                          {preset.description && (
+                            <span className="text-xs text-muted-foreground">{preset.description}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deletePreset(preset.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 rounded transition-opacity"
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </button>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Save Preset Button */}
+          {user && hasActiveFilters && (
+            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Save className="w-4 h-4" />
+                  <span className="hidden sm:inline">Save</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Save Screener Preset</DialogTitle>
+                  <DialogDescription>
+                    Save your current filter settings as a preset to quickly apply them later.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="preset-name">Preset Name</Label>
+                    <Input
+                      id="preset-name"
+                      placeholder="e.g., My Value Stocks"
+                      value={newPresetName}
+                      onChange={(e) => setNewPresetName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preset-desc">Description (optional)</Label>
+                    <Input
+                      id="preset-desc"
+                      placeholder="e.g., Low P/E banking stocks"
+                      value={newPresetDescription}
+                      onChange={(e) => setNewPresetDescription(e.target.value)}
+                    />
+                  </div>
+                  <div className="bg-secondary/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-2">Active filters:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedSectors.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {selectedSectors.length} sector(s)
+                        </Badge>
+                      )}
+                      {marketCapFilter !== "all" && (
+                        <Badge variant="outline" className="text-xs">
+                          {marketCapFilter} cap
+                        </Badge>
+                      )}
+                      {(priceRange[0] > 0 || priceRange[1] < 50000) && (
+                        <Badge variant="outline" className="text-xs">
+                          Price: ₹{priceRange[0]}-₹{priceRange[1]}
+                        </Badge>
+                      )}
+                      {(peRange[0] > 0 || peRange[1] < 100) && (
+                        <Badge variant="outline" className="text-xs">
+                          P/E: {peRange[0]}-{peRange[1]}
+                        </Badge>
+                      )}
+                      {dividendFilter !== "all" && (
+                        <Badge variant="outline" className="text-xs">
+                          Div: {dividendFilter}
+                        </Badge>
+                      )}
+                      {technicalFilter !== "all" && (
+                        <Badge variant="outline" className="text-xs">
+                          {technicalFilter}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={savePreset} 
+                    disabled={!newPresetName.trim() || savingPreset}
+                  >
+                    {savingPreset ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Preset
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          
           <Button
             variant={showFilters ? "default" : "outline"}
             size="sm"
@@ -282,13 +652,14 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
             className="gap-1.5"
           >
             <SlidersHorizontal className="w-4 h-4" />
-            Filters
+            <span className="hidden sm:inline">Filters</span>
             {activeFiltersCount > 0 && (
               <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 justify-center">
                 {activeFiltersCount}
               </Badge>
             )}
           </Button>
+          
           {activeFiltersCount > 0 && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               <X className="w-4 h-4" />
@@ -328,7 +699,13 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
                 {/* Market Cap */}
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1.5 block">Market Cap</Label>
-                  <Select value={marketCapFilter} onValueChange={setMarketCapFilter}>
+                  <Select 
+                    value={marketCapFilter} 
+                    onValueChange={(v) => {
+                      setMarketCapFilter(v);
+                      setActivePresetId(null);
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -344,7 +721,13 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
                 {/* Dividend */}
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1.5 block">Dividend Yield</Label>
-                  <Select value={dividendFilter} onValueChange={setDividendFilter}>
+                  <Select 
+                    value={dividendFilter} 
+                    onValueChange={(v) => {
+                      setDividendFilter(v);
+                      setActivePresetId(null);
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -360,7 +743,13 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
                 {/* Technical Indicators */}
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1.5 block">Technical Signal</Label>
-                  <Select value={technicalFilter} onValueChange={setTechnicalFilter}>
+                  <Select 
+                    value={technicalFilter} 
+                    onValueChange={(v) => {
+                      setTechnicalFilter(v);
+                      setActivePresetId(null);
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -385,7 +774,10 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
                   </Label>
                   <Slider
                     value={priceRange}
-                    onValueChange={(v) => setPriceRange(v as [number, number])}
+                    onValueChange={(v) => {
+                      setPriceRange(v as [number, number]);
+                      setActivePresetId(null);
+                    }}
                     min={0}
                     max={50000}
                     step={100}
@@ -398,7 +790,10 @@ export const StockScreener = ({ onSymbolSelect, selectedSymbol }: StockScreenerP
                   </Label>
                   <Slider
                     value={peRange}
-                    onValueChange={(v) => setPeRange(v as [number, number])}
+                    onValueChange={(v) => {
+                      setPeRange(v as [number, number]);
+                      setActivePresetId(null);
+                    }}
                     min={0}
                     max={100}
                     step={1}
