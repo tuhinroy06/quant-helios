@@ -1789,6 +1789,45 @@ export type Database = {
           },
         ]
       }
+      trade_explanations: {
+        Row: {
+          attribution: Json | null
+          created_at: string
+          explanation_text: string
+          explanation_type: string
+          id: string
+          priority_score: number | null
+          sanitized_payload: Json | null
+          trade_id: string
+          updated_at: string
+          validated: boolean | null
+        }
+        Insert: {
+          attribution?: Json | null
+          created_at?: string
+          explanation_text: string
+          explanation_type: string
+          id?: string
+          priority_score?: number | null
+          sanitized_payload?: Json | null
+          trade_id: string
+          updated_at?: string
+          validated?: boolean | null
+        }
+        Update: {
+          attribution?: Json | null
+          created_at?: string
+          explanation_text?: string
+          explanation_type?: string
+          id?: string
+          priority_score?: number | null
+          sanitized_payload?: Json | null
+          trade_id?: string
+          updated_at?: string
+          validated?: boolean | null
+        }
+        Relationships: []
+      }
       trading_accounts: {
         Row: {
           account_name: string
