@@ -53,23 +53,28 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    const containerWidth = chartContainerRef.current.clientWidth || 600;
+    const containerHeight = chartContainerRef.current.clientHeight || 350;
+
     const chart = createChart(chartContainerRef.current, {
+      width: containerWidth,
+      height: containerHeight,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(var(--muted-foreground))",
+        textColor: "#a1a1aa", // Use hex for lightweight-charts compatibility
       },
       grid: {
-        vertLines: { color: "hsl(var(--border) / 0.5)" },
-        horzLines: { color: "hsl(var(--border) / 0.5)" },
+        vertLines: { color: "rgba(255, 255, 255, 0.1)" },
+        horzLines: { color: "rgba(255, 255, 255, 0.1)" },
       },
       crosshair: {
         mode: 1,
       },
       rightPriceScale: {
-        borderColor: "hsl(var(--border))",
+        borderColor: "rgba(255, 255, 255, 0.2)",
       },
       timeScale: {
-        borderColor: "hsl(var(--border))",
+        borderColor: "rgba(255, 255, 255, 0.2)",
         timeVisible: true,
         secondsVisible: false,
       },
@@ -81,20 +86,19 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
     chart.timeScale().fitContent();
     chartRef.current = chart;
 
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight,
-        });
+    // Use ResizeObserver for reliable sizing
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (entries[0] && chartRef.current) {
+        const { width, height } = entries[0].contentRect;
+        if (width > 0 && height > 0) {
+          chartRef.current.applyOptions({ width, height });
+        }
       }
-    };
-
-    window.addEventListener("resize", handleResize);
-    handleResize();
+    });
+    resizeObserver.observe(chartContainerRef.current);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      resizeObserver.disconnect();
       chart.remove();
     };
   }, []);
@@ -107,30 +111,37 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
     try {
       if (seriesRef.current) {
         chartRef.current.removeSeries(seriesRef.current);
+        seriesRef.current = null;
       }
     } catch (e) {
       // Series already removed or chart destroyed
+      seriesRef.current = null;
     }
     try {
       if (volumeSeriesRef.current) {
         chartRef.current.removeSeries(volumeSeriesRef.current);
+        volumeSeriesRef.current = null;
       }
     } catch (e) {
       // Series already removed or chart destroyed
+      volumeSeriesRef.current = null;
     }
+
+    // Sort data by time to ensure correct order
+    const sortedData = [...data].sort((a, b) => a.time - b.time);
 
     // Add new series based on chart type
     if (chartType === "candlestick") {
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: "hsl(142 71% 45%)",
-        downColor: "hsl(0 72% 51%)",
-        borderUpColor: "hsl(142 71% 45%)",
-        borderDownColor: "hsl(0 72% 51%)",
-        wickUpColor: "hsl(142 71% 45%)",
-        wickDownColor: "hsl(0 72% 51%)",
+        upColor: "#22c55e", // green-500
+        downColor: "#ef4444", // red-500
+        borderUpColor: "#22c55e",
+        borderDownColor: "#ef4444",
+        wickUpColor: "#22c55e",
+        wickDownColor: "#ef4444",
       });
 
-      const candleData: CandlestickData[] = data.map((d) => ({
+      const candleData: CandlestickData[] = sortedData.map((d) => ({
         time: d.time as any,
         open: d.open,
         high: d.high,
@@ -142,11 +153,11 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
       seriesRef.current = candlestickSeries;
     } else {
       const lineSeries = chartRef.current.addLineSeries({
-        color: "hsl(var(--primary))",
+        color: "#3b82f6", // blue-500
         lineWidth: 2,
       });
 
-      const lineData: LineData[] = data.map((d) => ({
+      const lineData: LineData[] = sortedData.map((d) => ({
         time: d.time as any,
         value: d.close,
       }));
@@ -158,7 +169,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
     // Add volume
     if (showVolume) {
       const volumeSeries = chartRef.current.addHistogramSeries({
-        color: "hsl(var(--primary) / 0.3)",
+        color: "rgba(59, 130, 246, 0.3)", // blue-500 with opacity
         priceFormat: {
           type: "volume",
         },
@@ -172,10 +183,10 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
         },
       });
 
-      const volumeData = data.map((d) => ({
+      const volumeData = sortedData.map((d) => ({
         time: d.time as any,
         value: d.volume || 0,
-        color: d.close >= d.open ? "hsl(142 71% 45% / 0.4)" : "hsl(0 72% 51% / 0.4)",
+        color: d.close >= d.open ? "rgba(34, 197, 94, 0.4)" : "rgba(239, 68, 68, 0.4)",
       }));
 
       volumeSeries.setData(volumeData);
@@ -217,7 +228,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
               </motion.span>
               <span
                 className={`flex items-center gap-1 text-sm font-medium ${
-                  isPositive ? "text-[hsl(142_71%_45%)]" : "text-destructive"
+                  isPositive ? "text-green-500" : "text-red-500"
                 }`}
               >
                 {isPositive ? (
