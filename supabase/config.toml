@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.behavior-explanation-engine]
 verify_jwt = false
+
+[functions.outcome-attribution-engine]
+verify_jwt = false

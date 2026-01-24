@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      attribution_reports: {
+        Row: {
+          confidence_score: number
+          contributing_factors: string[] | null
+          counterfactuals: Json | null
+          created_at: string
+          determinism_hash: string
+          duration_seconds: number
+          entry_price: number
+          evidence: Json
+          execution_sub_type: string | null
+          exit_price: number
+          generated_at: string
+          id: string
+          instrument: string
+          primary_cause: string
+          quantity: number
+          realized_pnl: number
+          return_pct: number
+          ruled_out_causes: string[] | null
+          strategy_id: string
+          trade_id: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score: number
+          contributing_factors?: string[] | null
+          counterfactuals?: Json | null
+          created_at?: string
+          determinism_hash: string
+          duration_seconds: number
+          entry_price: number
+          evidence: Json
+          execution_sub_type?: string | null
+          exit_price: number
+          generated_at?: string
+          id?: string
+          instrument: string
+          primary_cause: string
+          quantity: number
+          realized_pnl: number
+          return_pct: number
+          ruled_out_causes?: string[] | null
+          strategy_id: string
+          trade_id: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number
+          contributing_factors?: string[] | null
+          counterfactuals?: Json | null
+          created_at?: string
+          determinism_hash?: string
+          duration_seconds?: number
+          entry_price?: number
+          evidence?: Json
+          execution_sub_type?: string | null
+          exit_price?: number
+          generated_at?: string
+          id?: string
+          instrument?: string
+          primary_cause?: string
+          quantity?: number
+          realized_pnl?: number
+          return_pct?: number
+          ruled_out_causes?: string[] | null
+          strategy_id?: string
+          trade_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -780,6 +852,71 @@ export type Database = {
             columns: ["strategy_id"]
             isOneToOne: false
             referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      llm_explanation_contracts: {
+        Row: {
+          allowed_facts: Json
+          attribution_report_id: string | null
+          created_at: string
+          explanation_goals: string[] | null
+          forbidden_topics: string[]
+          id: string
+          llm_response: string | null
+          refusal_conditions: Json | null
+          required_references: Json | null
+          response_valid: boolean | null
+          response_violations: string[] | null
+          scope_contract: Json | null
+          tone: string | null
+          updated_at: string
+          user_id: string
+          validation_requirements: Json | null
+        }
+        Insert: {
+          allowed_facts: Json
+          attribution_report_id?: string | null
+          created_at?: string
+          explanation_goals?: string[] | null
+          forbidden_topics: string[]
+          id?: string
+          llm_response?: string | null
+          refusal_conditions?: Json | null
+          required_references?: Json | null
+          response_valid?: boolean | null
+          response_violations?: string[] | null
+          scope_contract?: Json | null
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+          validation_requirements?: Json | null
+        }
+        Update: {
+          allowed_facts?: Json
+          attribution_report_id?: string | null
+          created_at?: string
+          explanation_goals?: string[] | null
+          forbidden_topics?: string[]
+          id?: string
+          llm_response?: string | null
+          refusal_conditions?: Json | null
+          required_references?: Json | null
+          response_valid?: boolean | null
+          response_violations?: string[] | null
+          scope_contract?: Json | null
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+          validation_requirements?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_explanation_contracts_attribution_report_id_fkey"
+            columns: ["attribution_report_id"]
+            isOneToOne: false
+            referencedRelation: "attribution_reports"
             referencedColumns: ["id"]
           },
         ]
