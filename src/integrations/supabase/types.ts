@@ -115,6 +115,50 @@ export type Database = {
           },
         ]
       }
+      behavior_signals: {
+        Row: {
+          behavior: string
+          confidence: number
+          detected_at: string
+          id: string
+          strategy_id: string | null
+          strength: number
+          user_id: string
+          window_end: string | null
+          window_start: string | null
+        }
+        Insert: {
+          behavior: string
+          confidence: number
+          detected_at?: string
+          id?: string
+          strategy_id?: string | null
+          strength: number
+          user_id: string
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Update: {
+          behavior?: string
+          confidence?: number
+          detected_at?: string
+          id?: string
+          strategy_id?: string | null
+          strength?: number
+          user_id?: string
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "behavior_signals_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broker_connections: {
         Row: {
           access_token_encrypted: string | null
@@ -828,8 +872,10 @@ export type Database = {
           description: string | null
           entry_rules: Json
           exit_rules: Json
+          health_status: string | null
           id: string
           is_public: boolean | null
+          last_health_check: string | null
           market_type: string
           name: string
           position_sizing: Json | null
@@ -847,8 +893,10 @@ export type Database = {
           description?: string | null
           entry_rules?: Json
           exit_rules?: Json
+          health_status?: string | null
           id?: string
           is_public?: boolean | null
+          last_health_check?: string | null
           market_type: string
           name: string
           position_sizing?: Json | null
@@ -866,8 +914,10 @@ export type Database = {
           description?: string | null
           entry_rules?: Json
           exit_rules?: Json
+          health_status?: string | null
           id?: string
           is_public?: boolean | null
+          last_health_check?: string | null
           market_type?: string
           name?: string
           position_sizing?: Json | null
@@ -880,6 +930,71 @@ export type Database = {
           version?: number | null
         }
         Relationships: []
+      }
+      strategy_health_reports: {
+        Row: {
+          behavior_flags: Json | null
+          degradation_reasons: Json | null
+          execution_risk_breakdown: Json | null
+          generated_at: string
+          health_delta: number | null
+          health_score: number
+          health_status: string
+          id: string
+          is_deteriorating: boolean | null
+          is_improving: boolean | null
+          logic_stability_by_regime: Json | null
+          logic_stability_score: number | null
+          recommended_action: string
+          strategy_id: string
+          user_id: string
+          window_trades: number
+        }
+        Insert: {
+          behavior_flags?: Json | null
+          degradation_reasons?: Json | null
+          execution_risk_breakdown?: Json | null
+          generated_at?: string
+          health_delta?: number | null
+          health_score: number
+          health_status: string
+          id?: string
+          is_deteriorating?: boolean | null
+          is_improving?: boolean | null
+          logic_stability_by_regime?: Json | null
+          logic_stability_score?: number | null
+          recommended_action: string
+          strategy_id: string
+          user_id: string
+          window_trades: number
+        }
+        Update: {
+          behavior_flags?: Json | null
+          degradation_reasons?: Json | null
+          execution_risk_breakdown?: Json | null
+          generated_at?: string
+          health_delta?: number | null
+          health_score?: number
+          health_status?: string
+          id?: string
+          is_deteriorating?: boolean | null
+          is_improving?: boolean | null
+          logic_stability_by_regime?: Json | null
+          logic_stability_score?: number | null
+          recommended_action?: string
+          strategy_id?: string
+          user_id?: string
+          window_trades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_health_reports_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       strategy_versions: {
         Row: {
@@ -960,6 +1075,65 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      trade_attributions: {
+        Row: {
+          created_at: string
+          execution_sub_type: string | null
+          id: string
+          liquidity_regime: string | null
+          pnl: number
+          primary_cause: string
+          stop_loss_hit: boolean | null
+          strategy_id: string
+          take_profit_hit: boolean | null
+          timestamp: string
+          trade_id: string | null
+          trade_source: string | null
+          user_id: string
+          volatility_regime: string | null
+        }
+        Insert: {
+          created_at?: string
+          execution_sub_type?: string | null
+          id?: string
+          liquidity_regime?: string | null
+          pnl: number
+          primary_cause: string
+          stop_loss_hit?: boolean | null
+          strategy_id: string
+          take_profit_hit?: boolean | null
+          timestamp: string
+          trade_id?: string | null
+          trade_source?: string | null
+          user_id: string
+          volatility_regime?: string | null
+        }
+        Update: {
+          created_at?: string
+          execution_sub_type?: string | null
+          id?: string
+          liquidity_regime?: string | null
+          pnl?: number
+          primary_cause?: string
+          stop_loss_hit?: boolean | null
+          strategy_id?: string
+          take_profit_hit?: boolean | null
+          timestamp?: string
+          trade_id?: string | null
+          trade_source?: string | null
+          user_id?: string
+          volatility_regime?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_attributions_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

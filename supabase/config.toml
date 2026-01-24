@@ -1,1 +1,4 @@
 project_id = "axwhhazpvpkvheoruetu"
+
+[functions.strategy-health-engine]
+verify_jwt = false
