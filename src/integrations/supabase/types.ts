@@ -312,6 +312,126 @@ export type Database = {
         }
         Relationships: []
       }
+      data_integrity_logs: {
+        Row: {
+          created_at: string | null
+          error_code: string
+          error_message: string | null
+          id: string
+          symbol: string
+          tick_price: number | null
+          tick_timestamp: number | null
+          tick_volume: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_code: string
+          error_message?: string | null
+          id?: string
+          symbol: string
+          tick_price?: number | null
+          tick_timestamp?: number | null
+          tick_volume?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_code?: string
+          error_message?: string | null
+          id?: string
+          symbol?: string
+          tick_price?: number | null
+          tick_timestamp?: number | null
+          tick_volume?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emergency_events: {
+        Row: {
+          account_id: string | null
+          activated_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          positions_closed: number | null
+          reason: string
+          total_pnl: number | null
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          activated_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          positions_closed?: number | null
+          reason: string
+          total_pnl?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          activated_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          positions_closed?: number | null
+          reason?: string
+          total_pnl?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      execution_configs: {
+        Row: {
+          broker_mode: string
+          created_at: string | null
+          data_mode: string
+          id: string
+          is_active: boolean | null
+          latency_ms: number | null
+          name: string
+          partial_fill_rate: number | null
+          partial_fills_enabled: boolean | null
+          slippage_bps: number | null
+          updated_at: string | null
+          use_transaction_costs: boolean | null
+          user_id: string
+        }
+        Insert: {
+          broker_mode?: string
+          created_at?: string | null
+          data_mode?: string
+          id?: string
+          is_active?: boolean | null
+          latency_ms?: number | null
+          name?: string
+          partial_fill_rate?: number | null
+          partial_fills_enabled?: boolean | null
+          slippage_bps?: number | null
+          updated_at?: string | null
+          use_transaction_costs?: boolean | null
+          user_id: string
+        }
+        Update: {
+          broker_mode?: string
+          created_at?: string | null
+          data_mode?: string
+          id?: string
+          is_active?: boolean | null
+          latency_ms?: number | null
+          name?: string
+          partial_fill_rate?: number | null
+          partial_fills_enabled?: boolean | null
+          slippage_bps?: number | null
+          updated_at?: string | null
+          use_transaction_costs?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       fno_simulations: {
         Row: {
           breakeven_points: Json | null
@@ -380,6 +500,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      health_heartbeats: {
+        Row: {
+          account_id: string
+          accounts_status: Json | null
+          created_at: string | null
+          id: string
+          status: string
+          system_health: Json | null
+          uptime_seconds: number | null
+        }
+        Insert: {
+          account_id: string
+          accounts_status?: Json | null
+          created_at?: string | null
+          id?: string
+          status: string
+          system_health?: Json | null
+          uptime_seconds?: number | null
+        }
+        Update: {
+          account_id?: string
+          accounts_status?: Json | null
+          created_at?: string | null
+          id?: string
+          status?: string
+          system_health?: Json | null
+          uptime_seconds?: number | null
+        }
+        Relationships: []
+      }
+      immutable_configs: {
+        Row: {
+          account_id: string
+          config_data: Json
+          config_hash: string
+          created_at: string | null
+          id: string
+          run_id: string
+          time_source: string | null
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          account_id: string
+          config_data: Json
+          config_hash: string
+          created_at?: string | null
+          id?: string
+          run_id: string
+          time_source?: string | null
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          account_id?: string
+          config_data?: Json
+          config_hash?: string
+          created_at?: string | null
+          id?: string
+          run_id?: string
+          time_source?: string | null
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "immutable_configs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       live_orders: {
         Row: {
@@ -452,6 +646,65 @@ export type Database = {
             columns: ["strategy_id"]
             isOneToOne: false
             referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_safety_configs: {
+        Row: {
+          account_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          days_active: number | null
+          disable_auto_reenable: boolean | null
+          enabled: boolean | null
+          id: string
+          max_concurrent_positions: number | null
+          max_daily_loss_override: number | null
+          max_drawdown_override: number | null
+          position_size_multiplier: number | null
+          start_date: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          days_active?: number | null
+          disable_auto_reenable?: boolean | null
+          enabled?: boolean | null
+          id?: string
+          max_concurrent_positions?: number | null
+          max_daily_loss_override?: number | null
+          max_drawdown_override?: number | null
+          position_size_multiplier?: number | null
+          start_date?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          days_active?: number | null
+          disable_auto_reenable?: boolean | null
+          enabled?: boolean | null
+          id?: string
+          max_concurrent_positions?: number | null
+          max_daily_loss_override?: number | null
+          max_drawdown_override?: number | null
+          position_size_multiplier?: number | null
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_safety_configs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -892,6 +1145,59 @@ export type Database = {
           },
         ]
       }
+      position_sizing_configs: {
+        Row: {
+          account_id: string | null
+          atr_multiplier: number | null
+          confidence_weighting: boolean | null
+          created_at: string | null
+          id: string
+          max_position_size: number
+          min_position_size: number
+          risk_per_trade_pct: number
+          updated_at: string | null
+          use_atr_stops: boolean | null
+          user_id: string
+          volatility_adjustment: boolean | null
+        }
+        Insert: {
+          account_id?: string | null
+          atr_multiplier?: number | null
+          confidence_weighting?: boolean | null
+          created_at?: string | null
+          id?: string
+          max_position_size?: number
+          min_position_size?: number
+          risk_per_trade_pct?: number
+          updated_at?: string | null
+          use_atr_stops?: boolean | null
+          user_id: string
+          volatility_adjustment?: boolean | null
+        }
+        Update: {
+          account_id?: string | null
+          atr_multiplier?: number | null
+          confidence_weighting?: boolean | null
+          created_at?: string | null
+          id?: string
+          max_position_size?: number
+          min_position_size?: number
+          risk_per_trade_pct?: number
+          updated_at?: string | null
+          use_atr_stops?: boolean | null
+          user_id?: string
+          volatility_adjustment?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "position_sizing_configs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -921,6 +1227,145 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      signed_daily_summaries: {
+        Row: {
+          account_id: string
+          config_hash: string
+          created_at: string | null
+          data_hash: string
+          final_cash: number
+          final_equity: number
+          id: string
+          max_drawdown: number | null
+          num_trades: number
+          signature: string
+          summary_data: Json
+          summary_date: string
+          total_costs: number
+          total_gross_pnl: number
+          total_net_pnl: number
+          trade_hashes: Json | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          config_hash: string
+          created_at?: string | null
+          data_hash: string
+          final_cash: number
+          final_equity: number
+          id?: string
+          max_drawdown?: number | null
+          num_trades?: number
+          signature: string
+          summary_data: Json
+          summary_date: string
+          total_costs?: number
+          total_gross_pnl?: number
+          total_net_pnl?: number
+          trade_hashes?: Json | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          config_hash?: string
+          created_at?: string | null
+          data_hash?: string
+          final_cash?: number
+          final_equity?: number
+          id?: string
+          max_drawdown?: number | null
+          num_trades?: number
+          signature?: string
+          summary_data?: Json
+          summary_date?: string
+          total_costs?: number
+          total_gross_pnl?: number
+          total_net_pnl?: number
+          trade_hashes?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signed_daily_summaries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signed_trade_ledger: {
+        Row: {
+          account_id: string
+          config_hash: string
+          created_at: string | null
+          entry_price: number
+          exit_price: number
+          exit_reason: string
+          gross_pnl: number
+          id: string
+          net_pnl: number
+          quantity: number
+          signature: string
+          strategy: string
+          symbol: string
+          total_costs: number
+          trade_hash: string
+          trade_id: string | null
+          trade_timestamp: number
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          config_hash: string
+          created_at?: string | null
+          entry_price: number
+          exit_price: number
+          exit_reason: string
+          gross_pnl: number
+          id?: string
+          net_pnl: number
+          quantity: number
+          signature: string
+          strategy: string
+          symbol: string
+          total_costs: number
+          trade_hash: string
+          trade_id?: string | null
+          trade_timestamp: number
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          config_hash?: string
+          created_at?: string | null
+          entry_price?: number
+          exit_price?: number
+          exit_reason?: string
+          gross_pnl?: number
+          id?: string
+          net_pnl?: number
+          quantity?: number
+          signature?: string
+          strategy?: string
+          symbol?: string
+          total_costs?: number
+          trade_hash?: string
+          trade_id?: string | null
+          trade_timestamp?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signed_trade_ledger_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_rankings: {
         Row: {
@@ -1042,6 +1487,59 @@ export type Database = {
         }
         Relationships: []
       }
+      strategy_capital_allocations: {
+        Row: {
+          account_id: string
+          allocated_capital: number
+          allocated_pct: number
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          max_drawdown_pct: number
+          peak_capital: number
+          strategy: string
+          updated_at: string | null
+          used_capital: number
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          allocated_capital?: number
+          allocated_pct: number
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          max_drawdown_pct?: number
+          peak_capital?: number
+          strategy: string
+          updated_at?: string | null
+          used_capital?: number
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          allocated_capital?: number
+          allocated_pct?: number
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          max_drawdown_pct?: number
+          peak_capital?: number
+          strategy?: string
+          updated_at?: string | null
+          used_capital?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_capital_allocations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_health_reports: {
         Row: {
           behavior_flags: Json | null
@@ -1113,7 +1611,9 @@ export type Database = {
           config_snapshot: Json
           created_at: string
           created_by: string | null
+          frozen: boolean | null
           id: string
+          performance_metrics: Json | null
           strategy_id: string
           version: number
         }
@@ -1122,7 +1622,9 @@ export type Database = {
           config_snapshot: Json
           created_at?: string
           created_by?: string | null
+          frozen?: boolean | null
           id?: string
+          performance_metrics?: Json | null
           strategy_id: string
           version: number
         }
@@ -1131,7 +1633,9 @@ export type Database = {
           config_snapshot?: Json
           created_at?: string
           created_by?: string | null
+          frozen?: boolean | null
           id?: string
+          performance_metrics?: Json | null
           strategy_id?: string
           version?: number
         }
@@ -1184,6 +1688,45 @@ export type Database = {
           region?: string | null
           tier?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      system_health_logs: {
+        Row: {
+          account_id: string
+          cpu_percent: number | null
+          created_at: string | null
+          disk_free_gb: number | null
+          disk_percent: number | null
+          errors: Json | null
+          id: string
+          is_healthy: boolean | null
+          memory_percent: number | null
+          warnings: Json | null
+        }
+        Insert: {
+          account_id: string
+          cpu_percent?: number | null
+          created_at?: string | null
+          disk_free_gb?: number | null
+          disk_percent?: number | null
+          errors?: Json | null
+          id?: string
+          is_healthy?: boolean | null
+          memory_percent?: number | null
+          warnings?: Json | null
+        }
+        Update: {
+          account_id?: string
+          cpu_percent?: number | null
+          created_at?: string | null
+          disk_free_gb?: number | null
+          disk_percent?: number | null
+          errors?: Json | null
+          id?: string
+          is_healthy?: boolean | null
+          memory_percent?: number | null
+          warnings?: Json | null
         }
         Relationships: []
       }
@@ -1245,6 +1788,158 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trading_accounts: {
+        Row: {
+          account_name: string
+          account_type: string
+          broker_session_id: string | null
+          created_at: string | null
+          current_cash: number
+          enabled: boolean | null
+          id: string
+          initial_cash: number
+          isolation_mode: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_type?: string
+          broker_session_id?: string | null
+          created_at?: string | null
+          current_cash?: number
+          enabled?: boolean | null
+          id?: string
+          initial_cash?: number
+          isolation_mode?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_type?: string
+          broker_session_id?: string | null
+          created_at?: string | null
+          current_cash?: number
+          enabled?: boolean | null
+          id?: string
+          initial_cash?: number
+          isolation_mode?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trading_state_snapshots: {
+        Row: {
+          account_id: string
+          cash: number
+          config_hash: string
+          config_run_id: string
+          created_at: string | null
+          equity: number
+          id: string
+          is_latest: boolean | null
+          kill_switch_state: Json | null
+          ml_state: Json | null
+          open_orders: Json | null
+          positions: Json | null
+          strategy_allocations: Json | null
+          trades_count: number | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          cash: number
+          config_hash: string
+          config_run_id: string
+          created_at?: string | null
+          equity: number
+          id?: string
+          is_latest?: boolean | null
+          kill_switch_state?: Json | null
+          ml_state?: Json | null
+          open_orders?: Json | null
+          positions?: Json | null
+          strategy_allocations?: Json | null
+          trades_count?: number | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          cash?: number
+          config_hash?: string
+          config_run_id?: string
+          created_at?: string | null
+          equity?: number
+          id?: string
+          is_latest?: boolean | null
+          kill_switch_state?: Json | null
+          ml_state?: Json | null
+          open_orders?: Json | null
+          positions?: Json | null
+          strategy_allocations?: Json | null
+          trades_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trading_state_snapshots_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "paper_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_cost_configs: {
+        Row: {
+          brokerage_pct: number
+          created_at: string | null
+          exchange_txn_charge_pct: number
+          gst_pct: number
+          id: string
+          is_default: boolean | null
+          max_brokerage_per_order: number
+          name: string
+          sebi_charge_pct: number
+          stamp_duty_pct: number
+          stt_sell_pct: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          brokerage_pct?: number
+          created_at?: string | null
+          exchange_txn_charge_pct?: number
+          gst_pct?: number
+          id?: string
+          is_default?: boolean | null
+          max_brokerage_per_order?: number
+          name?: string
+          sebi_charge_pct?: number
+          stamp_duty_pct?: number
+          stt_sell_pct?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          brokerage_pct?: number
+          created_at?: string | null
+          exchange_txn_charge_pct?: number
+          gst_pct?: number
+          id?: string
+          is_default?: boolean | null
+          max_brokerage_per_order?: number
+          name?: string
+          sebi_charge_pct?: number
+          stamp_duty_pct?: number
+          stt_sell_pct?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

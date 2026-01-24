@@ -5,3 +5,15 @@ verify_jwt = false
 
 [functions.global-control-plane]
 verify_jwt = false
+
+[functions.transaction-costs]
+verify_jwt = false
+
+[functions.capital-allocation]
+verify_jwt = false
+
+[functions.position-sizing]
+verify_jwt = false
+
+[functions.trading-engine]
+verify_jwt = false
