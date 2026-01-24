@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, CreditCard, Bell, Shield, Check, ChevronRight } from "lucide-react";
+import { User, CreditCard, Bell, Shield, Check, ChevronRight, ShieldCheck, ShieldOff } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PRICING_PLANS, formatPrice } from "@/lib/pricing-config";
+import TwoFactorSetup from "@/components/settings/TwoFactorSetup";
 
 interface Profile {
   display_name: string | null;
@@ -16,6 +18,9 @@ const Settings = () => {
   const [profile, setProfile] = useState<Profile>({ display_name: "", avatar_url: null });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "billing" | "notifications" | "security">("profile");
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [has2FA, setHas2FA] = useState(false);
+  const [checking2FA, setChecking2FA] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -34,6 +39,23 @@ const Settings = () => {
 
     fetchProfile();
   }, [user]);
+
+  // Check if user has 2FA enabled
+  useEffect(() => {
+    const check2FAStatus = async () => {
+      setChecking2FA(true);
+      try {
+        const { data, error } = await supabase.auth.mfa.listFactors();
+        if (error) throw error;
+        setHas2FA(data.totp && data.totp.length > 0);
+      } catch {
+        console.error("Failed to check 2FA status");
+      } finally {
+        setChecking2FA(false);
+      }
+    };
+    check2FAStatus();
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -54,6 +76,27 @@ const Settings = () => {
     }
   };
 
+  const handle2FASuccess = () => {
+    setHas2FA(true);
+  };
+
+  const handleDisable2FA = async () => {
+    try {
+      const { data } = await supabase.auth.mfa.listFactors();
+      if (data?.totp && data.totp.length > 0) {
+        const { error } = await supabase.auth.mfa.unenroll({
+          factorId: data.totp[0].id,
+        });
+        if (error) throw error;
+        setHas2FA(false);
+        toast.success("Two-factor authentication disabled");
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to disable 2FA";
+      toast.error(message);
+    }
+  };
+
   const tabs = [
     { id: "profile" as const, label: "Profile", icon: User },
     { id: "billing" as const, label: "Billing & Plans", icon: CreditCard },
@@ -61,30 +104,8 @@ const Settings = () => {
     { id: "security" as const, label: "Security", icon: Shield },
   ];
 
-  const plans = [
-    {
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      features: ["3 strategies", "5 backtests/day", "Basic indicators"],
-      current: true,
-    },
-    {
-      name: "Retail",
-      price: "$29",
-      period: "/month",
-      features: ["10 strategies", "50 backtests/day", "Paper trading", "AI assistant"],
-      current: false,
-      recommended: true,
-    },
-    {
-      name: "Pro",
-      price: "$99",
-      period: "/month",
-      features: ["50 strategies", "Unlimited backtests", "F&O access", "Priority support"],
-      current: false,
-    },
-  ];
+  // Determine current user plan (hardcoded for now, would come from subscription data)
+  const currentPlanId = "free";
 
   return (
     <DashboardLayout>
@@ -191,45 +212,48 @@ const Settings = () => {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
-                  {plans.map((plan) => (
-                    <div
-                      key={plan.name}
-                      className={`bg-card border rounded-2xl p-6 relative ${
-                        plan.recommended
-                          ? "border-primary/30 ring-1 ring-primary/10"
-                          : "border-border"
-                      }`}
-                    >
-                      {plan.recommended && (
-                        <span className="absolute -top-3 left-4 text-xs bg-primary text-primary-foreground px-3 py-1 rounded-full font-medium">
-                          Recommended
-                        </span>
-                      )}
-                      <h4 className="text-xl font-medium text-foreground mb-2">{plan.name}</h4>
-                      <div className="mb-4">
-                        <span className="text-3xl font-light text-foreground">{plan.price}</span>
-                        <span className="text-muted-foreground">{plan.period}</span>
-                      </div>
-                      <ul className="space-y-2 mb-6">
-                        {plan.features.map((feature) => (
-                          <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                      <button
-                        className={`w-full py-2.5 rounded-full text-sm font-medium transition-colors ${
-                          plan.current
-                            ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  {PRICING_PLANS.map((plan) => {
+                    const isCurrent = plan.id === currentPlanId;
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`bg-card border rounded-2xl p-6 relative ${
+                          plan.popular
+                            ? "border-primary/30 ring-1 ring-primary/10"
+                            : "border-border"
                         }`}
-                        disabled={plan.current}
                       >
-                        {plan.current ? "Current Plan" : "Upgrade"}
-                      </button>
-                    </div>
-                  ))}
+                        {plan.popular && (
+                          <span className="absolute -top-3 left-4 text-xs bg-primary text-primary-foreground px-3 py-1 rounded-full font-medium">
+                            Recommended
+                          </span>
+                        )}
+                        <h4 className="text-xl font-medium text-foreground mb-2">{plan.name}</h4>
+                        <div className="mb-4">
+                          <span className="text-3xl font-light text-foreground">{formatPrice(plan.price)}</span>
+                          <span className="text-muted-foreground">{plan.period}</span>
+                        </div>
+                        <ul className="space-y-2 mb-6">
+                          {plan.features.map((feature) => (
+                            <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          className={`w-full py-2.5 rounded-full text-sm font-medium transition-colors ${
+                            isCurrent
+                              ? "bg-secondary text-muted-foreground cursor-not-allowed"
+                              : "bg-primary text-primary-foreground hover:bg-primary/90"
+                          }`}
+                          disabled={isCurrent}
+                        >
+                          {isCurrent ? "Current Plan" : "Upgrade"}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -275,21 +299,54 @@ const Settings = () => {
                 </div>
 
                 <div className="bg-card border border-border rounded-2xl p-6">
-                  <h3 className="text-foreground font-medium mb-2">Two-Factor Authentication</h3>
-                  <p className="text-muted-foreground text-sm mb-4">
-                    Add an extra layer of security to your account.
-                  </p>
-                  <button className="px-6 py-2.5 bg-secondary text-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-colors">
-                    Enable 2FA
-                  </button>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-foreground font-medium mb-2 flex items-center gap-2">
+                        Two-Factor Authentication
+                        {has2FA ? (
+                          <span className="flex items-center gap-1 text-xs font-normal bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            <ShieldCheck className="w-3 h-3" />
+                            Enabled
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs font-normal bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
+                            <ShieldOff className="w-3 h-3" />
+                            Disabled
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-4">
+                        {has2FA 
+                          ? "Your account is protected with two-factor authentication."
+                          : "Add an extra layer of security to your account."}
+                      </p>
+                    </div>
+                  </div>
+                  {checking2FA ? (
+                    <div className="text-sm text-muted-foreground">Checking 2FA status...</div>
+                  ) : has2FA ? (
+                    <button 
+                      onClick={handleDisable2FA}
+                      className="px-6 py-2.5 bg-destructive/10 text-destructive rounded-full text-sm font-medium hover:bg-destructive/20 transition-colors"
+                    >
+                      Disable 2FA
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => setShow2FASetup(true)}
+                      className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      Enable 2FA
+                    </button>
+                  )}
                 </div>
 
-                <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
-                  <h3 className="text-red-400 font-medium mb-2">Danger Zone</h3>
-                  <p className="text-red-400/70 text-sm mb-4">
+                <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6">
+                  <h3 className="text-destructive font-medium mb-2">Danger Zone</h3>
+                  <p className="text-destructive/70 text-sm mb-4">
                     Permanently delete your account and all associated data.
                   </p>
-                  <button className="px-6 py-2.5 bg-red-500/10 text-red-400 rounded-full text-sm font-medium hover:bg-red-500/20 transition-colors">
+                  <button className="px-6 py-2.5 bg-destructive/10 text-destructive rounded-full text-sm font-medium hover:bg-destructive/20 transition-colors">
                     Delete Account
                   </button>
                 </div>
@@ -298,6 +355,13 @@ const Settings = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* 2FA Setup Modal */}
+      <TwoFactorSetup
+        open={show2FASetup}
+        onOpenChange={setShow2FASetup}
+        onSuccess={handle2FASuccess}
+      />
     </DashboardLayout>
   );
 };
