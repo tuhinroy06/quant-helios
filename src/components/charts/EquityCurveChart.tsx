@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createChart, IChartApi, ISeriesApi } from "lightweight-charts";
+import { getLightweightChartTheme } from "@/lib/lightweight-charts-theme";
 
 interface EquityPoint {
   date: string;
@@ -19,37 +20,40 @@ export const EquityCurveChart = ({ data, height = 256 }: EquityCurveChartProps) 
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return;
 
+    const theme = getLightweightChartTheme();
+    const el = containerRef.current;
+
     // Create chart
-    const chart = createChart(containerRef.current, {
-      width: containerRef.current.clientWidth,
+    const chart = createChart(el, {
+      width: Math.max(1, el.clientWidth),
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(220, 10%, 50%)",
+        textColor: theme.text,
         fontFamily: "Inter, sans-serif",
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: "hsl(220, 15%, 14%)" },
-        horzLines: { color: "hsl(220, 15%, 14%)" },
+        vertLines: { color: theme.grid },
+        horzLines: { color: theme.grid },
       },
       rightPriceScale: {
-        borderColor: "hsl(220, 15%, 14%)",
+        borderColor: theme.border,
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: "hsl(220, 15%, 14%)",
+        borderColor: theme.border,
         timeVisible: true,
         secondsVisible: false,
       },
       crosshair: {
         vertLine: {
-          color: "hsl(220, 10%, 40%)",
-          labelBackgroundColor: "hsl(220, 18%, 10%)",
+          color: theme.crosshair,
+          labelBackgroundColor: theme.labelBg,
         },
         horzLine: {
-          color: "hsl(220, 10%, 40%)",
-          labelBackgroundColor: "hsl(220, 18%, 10%)",
+          color: theme.crosshair,
+          labelBackgroundColor: theme.labelBg,
         },
       },
     });
@@ -58,9 +62,9 @@ export const EquityCurveChart = ({ data, height = 256 }: EquityCurveChartProps) 
 
     // Create area series
     const areaSeries = chart.addAreaSeries({
-      lineColor: "hsl(38, 60%, 50%)",
-      topColor: "hsla(38, 60%, 50%, 0.25)",
-      bottomColor: "hsla(38, 60%, 50%, 0)",
+      lineColor: theme.primary,
+      topColor: theme.primarySoft,
+      bottomColor: "rgba(0, 0, 0, 0)",
       lineWidth: 2,
       priceFormat: {
         type: "custom",
@@ -88,16 +92,19 @@ export const EquityCurveChart = ({ data, height = 256 }: EquityCurveChartProps) 
       chart.timeScale().fitContent();
     }
 
-    // Handle resize
+    // Handle resize (important: container can be width=0 at mount)
     const handleResize = () => {
-      if (containerRef.current) {
-        chart.applyOptions({ width: containerRef.current.clientWidth });
-      }
+      const w = Math.floor(el.clientWidth);
+      if (w > 0) chart.applyOptions({ width: w });
     };
 
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(handleResize) : null;
+    ro?.observe(el);
     window.addEventListener("resize", handleResize);
+    requestAnimationFrame(handleResize);
 
     return () => {
+      ro?.disconnect();
       window.removeEventListener("resize", handleResize);
       chart.remove();
       chartRef.current = null;
@@ -116,5 +123,5 @@ export const EquityCurveChart = ({ data, height = 256 }: EquityCurveChartProps) 
     );
   }
 
-  return <div ref={containerRef} style={{ height }} />;
+  return <div ref={containerRef} className="w-full" style={{ height }} />;
 };

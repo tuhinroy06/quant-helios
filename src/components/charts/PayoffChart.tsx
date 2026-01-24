@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo } from "react";
 import { createChart, IChartApi, ISeriesApi } from "lightweight-charts";
 import { OptionLeg, generatePayoffDiagram, calculateBreakevens, calculateMaxProfitLoss } from "@/lib/options-calculator";
+import { getLightweightChartTheme } from "@/lib/lightweight-charts-theme";
 
 interface PayoffChartProps {
   legs: OptionLeg[];
@@ -32,35 +33,38 @@ export const PayoffChart = ({
   useEffect(() => {
     if (!containerRef.current || legs.length === 0) return;
 
-    const chart = createChart(containerRef.current, {
-      width: containerRef.current.clientWidth,
+    const theme = getLightweightChartTheme();
+    const el = containerRef.current;
+
+    const chart = createChart(el, {
+      width: Math.max(1, el.clientWidth),
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(220, 10%, 50%)",
+        textColor: theme.text,
         fontFamily: "Inter, sans-serif",
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: "hsl(220, 15%, 14%)" },
-        horzLines: { color: "hsl(220, 15%, 14%)" },
+        vertLines: { color: theme.grid },
+        horzLines: { color: theme.grid },
       },
       rightPriceScale: {
-        borderColor: "hsl(220, 15%, 14%)",
+        borderColor: theme.border,
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: "hsl(220, 15%, 14%)",
+        borderColor: theme.border,
         visible: false,
       },
       crosshair: {
         vertLine: {
-          color: "hsl(220, 10%, 40%)",
-          labelBackgroundColor: "hsl(220, 18%, 10%)",
+          color: theme.crosshair,
+          labelBackgroundColor: theme.labelBg,
         },
         horzLine: {
-          color: "hsl(220, 10%, 40%)",
-          labelBackgroundColor: "hsl(220, 18%, 10%)",
+          color: theme.crosshair,
+          labelBackgroundColor: theme.labelBg,
         },
       },
     });
@@ -72,7 +76,7 @@ export const PayoffChart = ({
 
     // Use LineSeries for the payoff
     const lineSeries = chart.addLineSeries({
-      color: "hsl(142, 71%, 45%)",
+      color: theme.primary,
       lineWidth: 2,
       priceFormat: {
         type: "custom",
@@ -97,7 +101,7 @@ export const PayoffChart = ({
     // Add zero line
     lineSeries.createPriceLine({
       price: 0,
-      color: "hsl(220, 15%, 25%)",
+      color: theme.border,
       lineWidth: 1,
       lineStyle: 2,
       axisLabelVisible: false,
@@ -106,14 +110,18 @@ export const PayoffChart = ({
     chart.timeScale().fitContent();
 
     const handleResize = () => {
-      if (containerRef.current) {
-        chart.applyOptions({ width: containerRef.current.clientWidth });
-      }
+      const w = Math.floor(el.clientWidth);
+      if (w > 0) chart.applyOptions({ width: w });
     };
 
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(handleResize) : null;
+    ro?.observe(el);
     window.addEventListener("resize", handleResize);
+    // Ensure a post-layout resize in case initial width was 0
+    requestAnimationFrame(handleResize);
 
     return () => {
+      ro?.disconnect();
       window.removeEventListener("resize", handleResize);
       chart.remove();
       chartRef.current = null;
@@ -167,7 +175,7 @@ export const PayoffChart = ({
       </div>
 
       {/* Chart */}
-      <div ref={containerRef} style={{ height }} />
+      <div ref={containerRef} className="w-full" style={{ height }} />
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 text-sm">
