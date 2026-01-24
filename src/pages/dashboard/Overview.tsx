@@ -5,9 +5,9 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays } from "date-fns";
 import { StatCard } from "@/components/ui/stat-card";
+import { PerformanceChart } from "@/components/charts";
 
 const Overview = () => {
   const { user } = useAuth();
@@ -238,48 +238,7 @@ const Overview = () => {
           className="bg-card border border-border rounded-2xl p-6"
         >
           <h3 className="text-foreground font-medium mb-6">Backtest Performance</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={performanceData}>
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(38 60% 50%)" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="hsl(38 60% 50%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis 
-                  dataKey="date" 
-                  stroke="hsl(220 15% 25%)" 
-                  tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }} 
-                  axisLine={false} 
-                  tickLine={false} 
-                />
-                <YAxis 
-                  stroke="hsl(220 15% 25%)" 
-                  tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }} 
-                  tickFormatter={(v) => `${v}%`} 
-                  axisLine={false} 
-                  tickLine={false} 
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "hsl(220 18% 6%)", 
-                    border: "1px solid hsl(220 15% 14%)", 
-                    borderRadius: "12px",
-                    boxShadow: "0 8px 30px -10px hsl(220 20% 5% / 0.5)"
-                  }}
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, "Return"]} 
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(38 60% 50%)" 
-                  fill="url(#colorValue)" 
-                  strokeWidth={2} 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <PerformanceChart data={performanceData} height={224} />
         </motion.div>
 
         {/* Recent Activity & Quick Links */}
