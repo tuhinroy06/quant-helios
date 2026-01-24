@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ChatInterface } from '@/components/stoxo/ChatInterface';
 import { ResponsePanel } from '@/components/stoxo/ResponsePanel';
 import { ConversationSidebar, Conversation } from '@/components/stoxo/ConversationSidebar';
 import { useStoxoAI, StoxoResponse } from '@/hooks/useStoxoAI';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Menu } from 'lucide-react';
 
 const StoxoAI = () => {
   const {
@@ -27,7 +27,6 @@ const StoxoAI = () => {
   } = useStoxoAI();
   
   const [activeResponse, setActiveResponse] = useState<StoxoResponse | undefined>();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const isMobile = useIsMobile();
 
@@ -44,6 +43,8 @@ const StoxoAI = () => {
     const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
     if (lastAssistantMessage?.response) {
       setActiveResponse(lastAssistantMessage.response);
+    } else {
+      setActiveResponse(undefined);
     }
   }, [messages]);
 
@@ -73,127 +74,134 @@ const StoxoAI = () => {
     />
   );
 
+  const hasMessages = messages.length > 0;
+
   return (
     <DashboardLayout>
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between p-4 lg:p-6 border-b border-border/50"
-        >
-          <div className="flex items-center gap-3 lg:gap-4">
-            {/* Mobile menu button */}
-            {isMobile ? (
-              <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
-                    <PanelLeft className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72">
-                  {SidebarContent}
-                </SheetContent>
-              </Sheet>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="hidden lg:flex"
-              >
-                {sidebarOpen ? (
-                  <PanelLeftClose className="h-5 w-5" />
-                ) : (
-                  <PanelLeft className="h-5 w-5" />
-                )}
-              </Button>
-            )}
-            
-            <div className="p-2 lg:p-3 rounded-xl lg:rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/25">
-              <Sparkles className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl lg:text-2xl font-display font-bold text-foreground">Stoxo AI</h1>
-              <p className="text-xs lg:text-sm text-muted-foreground hidden sm:block">AI-powered Stock Research Assistant</p>
-            </div>
-          </div>
-          <Badge variant="outline" className="text-xs border-warning/30 text-warning/80">
-            <Shield className="h-3 w-3 mr-1" />
-            Educational Only
-          </Badge>
-        </motion.div>
-
-        {/* Main Content - Three-Column Layout on Desktop */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Conversation Sidebar - Desktop Only */}
-          {!isMobile && sidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 256 }}
-              exit={{ opacity: 0, width: 0 }}
-              className="hidden lg:block w-64 shrink-0"
-            >
-              {SidebarContent}
-            </motion.div>
-          )}
-
-          {/* Chat Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="w-full lg:w-[40%] lg:min-w-[350px] border-r border-border/50 flex flex-col"
-          >
-            <ChatInterface
-              messages={messages}
-              isLoading={isLoading}
-              onSend={sendMessage}
-              onClear={clearMessages}
-            />
-          </motion.div>
-
-          {/* Response Panel - Right */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="hidden lg:flex flex-1 flex-col"
-          >
-            <div className="flex-1 overflow-auto p-6">
-              {activeResponse ? (
-                <ResponsePanel
-                  response={activeResponse}
-                  onPromptSelect={handlePromptSelect}
-                  isLoading={isLoading}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center max-w-md">
-                    <div className="inline-flex p-4 rounded-2xl bg-muted/50 mb-4">
-                      <Sparkles className="h-8 w-8 text-muted-foreground/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                      Analysis Panel
-                    </h3>
-                    <p className="text-sm text-muted-foreground/70">
-                      Ask a question in the chat to see detailed stock analysis, 
-                      comparisons, and sector insights here.
-                    </p>
-                  </div>
+      <div className="h-full flex">
+        {/* Left Sidebar - Desktop */}
+        {!isMobile && (
+          <div className="w-64 shrink-0 border-r border-border/30">
+            <div className="p-4 border-b border-border/30">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
+                  <Sparkles className="h-4 w-4 text-white" />
                 </div>
-              )}
+                <span className="font-semibold text-foreground">Helios AI</span>
+              </div>
             </div>
+            {SidebarContent}
+          </div>
+        )}
 
-            {/* SEBI Disclaimer */}
-            <div className="p-4 border-t border-border/50 bg-muted/20">
-              <p className="text-xs text-muted-foreground text-center">
-                <span className="text-warning">⚠️</span> This tool is for educational purposes only. 
-                Past performance is not indicative of future results. 
-                Consult a SEBI-registered investment advisor before making investment decisions.
+        {/* Mobile Header */}
+        {isMobile && (
+          <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+            <SheetTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="fixed top-4 left-4 z-50 lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-72">
+              <div className="p-4 border-b border-border/30">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="font-semibold text-foreground">Helios AI</span>
+                </div>
+              </div>
+              {SidebarContent}
+            </SheetContent>
+          </Sheet>
+        )}
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {!hasMessages ? (
+            /* Welcome State - Centered Layout */
+            <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-2xl text-center"
+              >
+                <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-8 leading-tight">
+                  Got a question about markets,<br />
+                  stocks or mutual funds?
+                </h1>
+                
+                <ChatInterface
+                  messages={messages}
+                  isLoading={isLoading}
+                  onSend={sendMessage}
+                  onClear={clearMessages}
+                  variant="welcome"
+                />
+              </motion.div>
+
+              {/* Subtle Footer */}
+              <p className="absolute bottom-6 text-xs text-muted-foreground/60">
+                To err is human, I am just an AI
               </p>
             </div>
-          </motion.div>
+          ) : (
+            /* Chat State - Split Layout */
+            <div className="flex-1 flex overflow-hidden">
+              {/* Chat Panel */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full lg:w-[45%] lg:min-w-[400px] flex flex-col border-r border-border/30"
+              >
+                <ChatInterface
+                  messages={messages}
+                  isLoading={isLoading}
+                  onSend={sendMessage}
+                  onClear={clearMessages}
+                  variant="chat"
+                />
+              </motion.div>
+
+              {/* Response Panel - Desktop Only */}
+              <div className="hidden lg:flex flex-1 flex-col">
+                <div className="flex-1 overflow-auto p-6">
+                  {activeResponse ? (
+                    <ResponsePanel
+                      response={activeResponse}
+                      onPromptSelect={handlePromptSelect}
+                      isLoading={isLoading}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center max-w-md">
+                        <div className="inline-flex p-4 rounded-2xl bg-muted/50 mb-4">
+                          <Sparkles className="h-8 w-8 text-muted-foreground/50" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                          Analysis Panel
+                        </h3>
+                        <p className="text-sm text-muted-foreground/70">
+                          Your detailed stock analysis and insights will appear here.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Subtle Footer */}
+                <div className="p-3 text-center">
+                  <p className="text-xs text-muted-foreground/60">
+                    To err is human, I am just an AI
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

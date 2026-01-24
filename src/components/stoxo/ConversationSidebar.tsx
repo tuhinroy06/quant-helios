@@ -92,16 +92,16 @@ export const ConversationSidebar = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-card/50 border-r border-border/50">
+    <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="p-3 border-b border-border/50">
+      <div className="p-3 border-b border-border/30">
         <Button
           onClick={onNew}
-          className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20 text-primary"
           variant="ghost"
+          className="w-full justify-start gap-2 text-foreground hover:bg-muted"
         >
           <Plus className="h-4 w-4" />
-          New Chat
+          Start a New Thread
         </Button>
       </div>
 

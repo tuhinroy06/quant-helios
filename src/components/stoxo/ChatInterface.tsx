@@ -13,9 +13,16 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   onSend: (message: string) => void;
   onClear: () => void;
+  variant?: 'welcome' | 'chat';
 }
 
-export const ChatInterface = ({ messages, isLoading, onSend, onClear }: ChatInterfaceProps) => {
+export const ChatInterface = ({ 
+  messages, 
+  isLoading, 
+  onSend, 
+  onClear,
+  variant = 'chat'
+}: ChatInterfaceProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,16 +33,27 @@ export const ChatInterface = ({ messages, isLoading, onSend, onClear }: ChatInte
 
   const hasMessages = messages.length > 0;
 
+  // Welcome variant - centered input with suggestions below
+  if (variant === 'welcome') {
+    return (
+      <div className="w-full space-y-6">
+        <ChatInput onSend={onSend} isLoading={isLoading} variant="welcome" />
+        <WelcomePrompts onSelect={onSend} />
+      </div>
+    );
+  }
+
+  // Chat variant - full chat interface
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50">
+      <div className="flex items-center justify-between p-4 border-b border-border/30">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-foreground">Stoxo AI</h2>
+            <h2 className="font-semibold text-foreground">Helios AI</h2>
             <p className="text-xs text-muted-foreground">AI Stock Research Assistant</p>
           </div>
         </div>
@@ -54,48 +72,16 @@ export const ChatInterface = ({ messages, isLoading, onSend, onClear }: ChatInte
 
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        {!hasMessages ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            {/* Welcome Message */}
-            <div className="text-center py-8">
-              <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 mb-4">
-                <Sparkles className="h-8 w-8 text-violet-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Welcome to Stoxo AI
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Your AI-powered research assistant for the Indian stock market. 
-                Ask me about stocks, sectors, or market trends.
-              </p>
-            </div>
-
-            {/* Welcome Prompts */}
-            <WelcomePrompts onSelect={onSend} />
-
-            {/* Disclaimer */}
-            <div className="mt-8 p-3 bg-warning/5 border border-warning/20 rounded-xl">
-              <p className="text-xs text-warning/80 text-center">
-                ⚠️ For educational purposes only. Not financial advice. SEBI registered advisors should be consulted for investment decisions.
-              </p>
-            </div>
-          </motion.div>
-        ) : (
-          <div className="space-y-1">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-            {isLoading && <TypingIndicator />}
-          </div>
-        )}
+        <div className="space-y-1">
+          {messages.map((message) => (
+            <ChatMessage key={message.id} message={message} />
+          ))}
+          {isLoading && <TypingIndicator />}
+        </div>
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-border/50">
+      <div className="p-4 border-t border-border/30">
         <ChatInput onSend={onSend} isLoading={isLoading} />
       </div>
     </div>
