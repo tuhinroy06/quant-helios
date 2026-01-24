@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  ArrowLeft, Zap, Shield, Link2,
-  Activity, ExternalLink, CheckCircle, Clock
-} from "lucide-react";
+import { ArrowLeft, Zap, Shield, Link2, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { GlobalKillSwitch } from "@/components/control-plane/GlobalKillSwitch";
 import { ControlStatusSummary } from "@/components/control-plane/ControlStatusSummary";
 import { useControlPlane } from "@/hooks/useControlPlane";
+import { useBrokerConnection } from "@/hooks/useBrokerConnection";
+import { BrokerCard } from "@/components/live-trading/BrokerCard";
+import { BrokerConnectionDialog } from "@/components/live-trading/BrokerConnectionDialog";
 
 interface Broker {
   name: string;
@@ -19,6 +19,13 @@ interface Broker {
 }
 
 const INDIAN_BROKERS: Broker[] = [
+  {
+    name: "Angel One",
+    apiName: "SmartAPI",
+    features: ["Options chain", "GTT orders", "Basket orders"],
+    status: "ready",
+    color: "bg-blue-500",
+  },
   {
     name: "Zerodha",
     apiName: "Kite Connect",
@@ -32,13 +39,6 @@ const INDIAN_BROKERS: Broker[] = [
     features: ["Realtime streaming", "Historical data", "Options trading"],
     status: "ready",
     color: "bg-purple-500",
-  },
-  {
-    name: "Angel One",
-    apiName: "SmartAPI",
-    features: ["Options chain", "GTT orders", "Basket orders"],
-    status: "ready",
-    color: "bg-blue-500",
   },
   {
     name: "ICICI Direct",
@@ -59,17 +59,46 @@ const INDIAN_BROKERS: Broker[] = [
     apiName: "Partner API",
     features: ["Equity investing", "Mutual funds"],
     status: "coming_soon",
-    color: "bg-green-500",
+    color: "bg-emerald-500",
   },
 ];
 
 const LiveTrading = () => {
   const [selectedBroker, setSelectedBroker] = useState<string | null>(null);
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const [brokerToConnect, setBrokerToConnect] = useState<Broker | null>(null);
+  
   const { getStatus, status, loading } = useControlPlane();
+  const { 
+    connections, 
+    fetchConnections, 
+    disconnect, 
+    refreshToken,
+    loading: brokerLoading,
+    getConnection
+  } = useBrokerConnection();
   
   useEffect(() => {
     getStatus();
+    fetchConnections();
   }, []);
+
+  const handleConnect = (broker: Broker) => {
+    setBrokerToConnect(broker);
+    setConnectDialogOpen(true);
+  };
+
+  const handleDisconnect = async (connectionId: string) => {
+    await disconnect(connectionId);
+  };
+
+  const handleRefresh = async (connectionId: string) => {
+    await refreshToken(connectionId);
+  };
+
+  const getBrokerKey = (name: string) => {
+    return name.toLowerCase().replace(/\s+/g, "");
+  };
 
   return (
     <DashboardLayout>
@@ -90,7 +119,7 @@ const LiveTrading = () => {
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-2">
-            <Zap className="w-8 h-8 text-yellow-500" />
+            <Zap className="w-8 h-8 text-amber-500" />
             <h1 className="font-display text-3xl font-light text-foreground">
               Live Trading
             </h1>
@@ -106,56 +135,26 @@ const LiveTrading = () => {
               Supported Indian Brokers
             </h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {INDIAN_BROKERS.map((broker) => (
-                <div
-                  key={broker.name}
-                  onClick={() => broker.status === "ready" && setSelectedBroker(broker.name)}
-                  className={`p-4 rounded-xl border transition-all ${
-                    selectedBroker === broker.name
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-secondary hover:bg-secondary/80"
-                  } ${broker.status === "ready" ? "cursor-pointer" : "opacity-60"}`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg ${broker.color} flex items-center justify-center`}>
-                        <span className="text-lg font-bold text-white">{broker.name[0]}</span>
-                      </div>
-                      <div>
-                        <p className="text-foreground font-medium">{broker.name}</p>
-                        <p className="text-xs text-muted-foreground">{broker.apiName}</p>
-                      </div>
-                    </div>
-                    {broker.status === "ready" ? (
-                      <span className="flex items-center gap-1 text-xs text-green-500">
-                        <CheckCircle className="w-3 h-3" />
-                        Ready
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        Soon
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {broker.features.slice(0, 3).map((feature, idx) => (
-                      <span
-                        key={idx}
-                        className="text-xs px-2 py-0.5 bg-white/5 rounded-full text-muted-foreground"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
-                  {broker.status === "ready" && (
-                    <button className="mt-3 w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
-                      Connect
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
+              {INDIAN_BROKERS.map((broker) => {
+                const brokerKey = getBrokerKey(broker.name);
+                const connection = connections.find(
+                  c => c.broker_name === brokerKey && c.is_active
+                );
+                
+                return (
+                  <BrokerCard
+                    key={broker.name}
+                    broker={broker}
+                    connection={connection}
+                    isSelected={selectedBroker === broker.name}
+                    onSelect={() => setSelectedBroker(broker.name)}
+                    onConnect={() => handleConnect(broker)}
+                    onDisconnect={handleDisconnect}
+                    onRefresh={handleRefresh}
+                    isLoading={brokerLoading}
+                  />
+                );
+              })}
             </div>
           </div>
 
@@ -224,7 +223,6 @@ const LiveTrading = () => {
             </div>
           </div>
 
-
           {/* Back to Dashboard */}
           <Link
             to="/dashboard/overview"
@@ -235,6 +233,17 @@ const LiveTrading = () => {
           </Link>
         </motion.div>
       </div>
+
+      {/* Connection Dialog */}
+      <BrokerConnectionDialog
+        open={connectDialogOpen}
+        onOpenChange={setConnectDialogOpen}
+        broker={brokerToConnect}
+        onConnected={() => {
+          fetchConnections();
+          setConnectDialogOpen(false);
+        }}
+      />
     </DashboardLayout>
   );
 };
