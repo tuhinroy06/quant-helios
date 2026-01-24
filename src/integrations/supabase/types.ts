@@ -1228,6 +1228,390 @@ export type Database = {
         }
         Relationships: []
       }
+      reconciliation_broker_fills: {
+        Row: {
+          broker_account_id: string
+          broker_name: string
+          broker_order_id: string
+          commission: number | null
+          created_at: string
+          fill_id: string
+          id: string
+          is_reconciled: boolean | null
+          price: number
+          quantity: number
+          raw_data: Json | null
+          reconciled_at: string | null
+          side: string
+          strategy_id: string | null
+          symbol: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          broker_account_id: string
+          broker_name: string
+          broker_order_id: string
+          commission?: number | null
+          created_at?: string
+          fill_id: string
+          id?: string
+          is_reconciled?: boolean | null
+          price: number
+          quantity: number
+          raw_data?: Json | null
+          reconciled_at?: string | null
+          side: string
+          strategy_id?: string | null
+          symbol: string
+          timestamp: string
+          user_id: string
+        }
+        Update: {
+          broker_account_id?: string
+          broker_name?: string
+          broker_order_id?: string
+          commission?: number | null
+          created_at?: string
+          fill_id?: string
+          id?: string
+          is_reconciled?: boolean | null
+          price?: number
+          quantity?: number
+          raw_data?: Json | null
+          reconciled_at?: string | null
+          side?: string
+          strategy_id?: string | null
+          symbol?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reconciliation_capital_snapshots: {
+        Row: {
+          available_capital: number
+          broker_account_id: string
+          broker_name: string
+          cash_balance: number
+          created_at: string
+          discrepancy: number | null
+          discrepancy_pct: number | null
+          id: string
+          internal_equity: number | null
+          is_reconciled: boolean | null
+          positions_value: number | null
+          snapshot_timestamp: string
+          total_equity: number
+          unrealized_pnl: number | null
+          used_margin: number | null
+          user_id: string
+        }
+        Insert: {
+          available_capital: number
+          broker_account_id: string
+          broker_name: string
+          cash_balance: number
+          created_at?: string
+          discrepancy?: number | null
+          discrepancy_pct?: number | null
+          id?: string
+          internal_equity?: number | null
+          is_reconciled?: boolean | null
+          positions_value?: number | null
+          snapshot_timestamp: string
+          total_equity: number
+          unrealized_pnl?: number | null
+          used_margin?: number | null
+          user_id: string
+        }
+        Update: {
+          available_capital?: number
+          broker_account_id?: string
+          broker_name?: string
+          cash_balance?: number
+          created_at?: string
+          discrepancy?: number | null
+          discrepancy_pct?: number | null
+          id?: string
+          internal_equity?: number | null
+          is_reconciled?: boolean | null
+          positions_value?: number | null
+          snapshot_timestamp?: string
+          total_equity?: number
+          unrealized_pnl?: number | null
+          used_margin?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reconciliation_cycles: {
+        Row: {
+          capital_checked: boolean | null
+          completed_at: string | null
+          created_at: string
+          cycle_number: number
+          diffs_found: number | null
+          error_message: string | null
+          escalations_created: number | null
+          fills_checked: number | null
+          global_freeze_triggered: boolean | null
+          id: string
+          metrics: Json | null
+          mode: string
+          orders_checked: number | null
+          positions_checked: number | null
+          repairs_applied: number | null
+          started_at: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          capital_checked?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          cycle_number: number
+          diffs_found?: number | null
+          error_message?: string | null
+          escalations_created?: number | null
+          fills_checked?: number | null
+          global_freeze_triggered?: boolean | null
+          id?: string
+          metrics?: Json | null
+          mode: string
+          orders_checked?: number | null
+          positions_checked?: number | null
+          repairs_applied?: number | null
+          started_at?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          capital_checked?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          cycle_number?: number
+          diffs_found?: number | null
+          error_message?: string | null
+          escalations_created?: number | null
+          fills_checked?: number | null
+          global_freeze_triggered?: boolean | null
+          id?: string
+          metrics?: Json | null
+          mode?: string
+          orders_checked?: number | null
+          positions_checked?: number | null
+          repairs_applied?: number | null
+          started_at?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      reconciliation_escalation_events: {
+        Row: {
+          action_taken: string
+          broker_account_id: string
+          created_at: string
+          diff_count: number | null
+          event_id: string
+          id: string
+          is_resolved: boolean | null
+          metadata: Json | null
+          reason: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          strategy_id: string | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action_taken: string
+          broker_account_id: string
+          created_at?: string
+          diff_count?: number | null
+          event_id: string
+          id?: string
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          reason: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          strategy_id?: string | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action_taken?: string
+          broker_account_id?: string
+          created_at?: string
+          diff_count?: number | null
+          event_id?: string
+          id?: string
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          reason?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          strategy_id?: string | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reconciliation_fingerprint_cache: {
+        Row: {
+          applied_at: string
+          created_at: string
+          diff_type: string | null
+          expires_at: string
+          fingerprint: string
+          id: string
+          strategy_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          applied_at?: string
+          created_at?: string
+          diff_type?: string | null
+          expires_at: string
+          fingerprint: string
+          id?: string
+          strategy_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          applied_at?: string
+          created_at?: string
+          diff_type?: string | null
+          expires_at?: string
+          fingerprint?: string
+          id?: string
+          strategy_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      reconciliation_freeze_states: {
+        Row: {
+          created_at: string
+          frozen_at: string
+          frozen_by: string | null
+          frozen_reason: string
+          id: string
+          is_frozen: boolean
+          metadata: Json | null
+          requires_manual_reset: boolean | null
+          scope: string
+          target_id: string
+          unfrozen_at: string | null
+          unfrozen_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          frozen_at?: string
+          frozen_by?: string | null
+          frozen_reason: string
+          id?: string
+          is_frozen?: boolean
+          metadata?: Json | null
+          requires_manual_reset?: boolean | null
+          scope: string
+          target_id: string
+          unfrozen_at?: string | null
+          unfrozen_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          frozen_at?: string
+          frozen_by?: string | null
+          frozen_reason?: string
+          id?: string
+          is_frozen?: boolean
+          metadata?: Json | null
+          requires_manual_reset?: boolean | null
+          scope?: string
+          target_id?: string
+          unfrozen_at?: string | null
+          unfrozen_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reconciliation_repair_records: {
+        Row: {
+          action_taken: string
+          broker_account_id: string
+          confidence: string
+          created_at: string
+          description: string
+          diff_severity: string
+          diff_status: string
+          fingerprint: string
+          id: string
+          metadata: Json | null
+          mode: string
+          monetary_impact: number | null
+          reason: string
+          repair_id: string
+          side_effects: Json
+          strategy_id: string | null
+          timestamp: string
+          user_id: string
+          was_applied: boolean
+        }
+        Insert: {
+          action_taken: string
+          broker_account_id: string
+          confidence: string
+          created_at?: string
+          description: string
+          diff_severity: string
+          diff_status: string
+          fingerprint: string
+          id?: string
+          metadata?: Json | null
+          mode: string
+          monetary_impact?: number | null
+          reason: string
+          repair_id: string
+          side_effects?: Json
+          strategy_id?: string | null
+          timestamp?: string
+          user_id: string
+          was_applied?: boolean
+        }
+        Update: {
+          action_taken?: string
+          broker_account_id?: string
+          confidence?: string
+          created_at?: string
+          description?: string
+          diff_severity?: string
+          diff_status?: string
+          fingerprint?: string
+          id?: string
+          metadata?: Json | null
+          mode?: string
+          monetary_impact?: number | null
+          reason?: string
+          repair_id?: string
+          side_effects?: Json
+          strategy_id?: string | null
+          timestamp?: string
+          user_id?: string
+          was_applied?: boolean
+        }
+        Relationships: []
+      }
       signed_daily_summaries: {
         Row: {
           account_id: string
@@ -2059,6 +2443,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_fingerprints: { Args: never; Returns: undefined }
       create_audit_log: {
         Args: {
           _action: string
