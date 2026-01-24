@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, RefreshCw, X } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, RefreshCw, X, Calculator } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,12 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
 import { useLivePrices } from "@/hooks/useLivePrices";
+import { useTransactionCosts } from "@/hooks/useTransactionCosts";
 
 // New components
 import { MarketTicker } from "@/components/paper-trading/MarketTicker";
 import { Watchlist } from "@/components/paper-trading/Watchlist";
 import { PriceChart } from "@/components/paper-trading/PriceChart";
 import { QuickTradePanel } from "@/components/paper-trading/QuickTradePanel";
+import { SafetyModeStatus } from "@/components/trading/SafetyModeStatus";
 
 interface PaperAccount {
   id: string;
@@ -55,6 +57,9 @@ const PaperTrading = () => {
   const [trades, setTrades] = useState<PaperTrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSymbol, setSelectedSymbol] = useState("RELIANCE");
+
+  // Transaction costs hook
+  const { calculateCosts } = useTransactionCosts();
 
   const fetchData = async () => {
     if (!user) return;
@@ -148,15 +153,22 @@ const PaperTrading = () => {
     const livePrice = livePrices[position.symbol];
     const exitPrice = livePrice?.price || INDIAN_STOCKS.find((s) => s.symbol === position.symbol)?.price || position.entry_price;
 
-    let pnl: number;
+    // Calculate transaction costs on exit
+    const exitCosts = await calculateCosts(position.quantity, exitPrice, "sell");
+    const transactionCosts = exitCosts?.total_charges || 0;
+
+    let grossPnl: number;
     if (position.side === "buy") {
-      pnl = (exitPrice - position.entry_price) * position.quantity;
+      grossPnl = (exitPrice - position.entry_price) * position.quantity;
     } else {
-      pnl = (position.entry_price - exitPrice) * position.quantity;
+      grossPnl = (position.entry_price - exitPrice) * position.quantity;
     }
 
+    // Net P&L after deducting exit costs
+    const netPnl = grossPnl - transactionCosts;
+
     try {
-      // Insert into paper_trades
+      // Insert into paper_trades with fee tracking
       const { error: tradeError } = await supabase.from("paper_trades").insert({
         account_id: account.id,
         symbol: position.symbol,
@@ -165,17 +177,19 @@ const PaperTrading = () => {
         entry_price: position.entry_price,
         exit_price: exitPrice,
         status: "closed",
-        pnl,
+        pnl: netPnl,
+        fees: transactionCosts,
         stop_loss: position.stop_loss,
         take_profit: position.take_profit,
         closed_at: new Date().toISOString(),
+        reason: "MANUAL_CLOSE",
       });
 
       if (tradeError) throw tradeError;
 
-      // Update account balance
+      // Update account balance (add back position value minus costs)
       const tradeValue = position.side === "buy" ? exitPrice * position.quantity : 0;
-      const newBalance = account.current_balance + tradeValue + (position.side === "sell" ? pnl : 0);
+      const newBalance = account.current_balance + tradeValue - transactionCosts + (position.side === "sell" ? grossPnl : 0);
       
       const { error: balanceError } = await supabase
         .from("paper_accounts")
@@ -192,7 +206,14 @@ const PaperTrading = () => {
 
       if (deleteError) throw deleteError;
 
-      toast.success(`Position closed with ${pnl >= 0 ? "profit" : "loss"} of ${formatINRSimple(Math.abs(pnl))}`);
+      toast.success(
+        <div className="space-y-1">
+          <p>Position closed: {netPnl >= 0 ? "+" : ""}{formatINRSimple(netPnl)}</p>
+          <p className="text-xs text-muted-foreground">
+            Gross: {formatINRSimple(grossPnl)} • Fees: {formatINRSimple(transactionCosts)}
+          </p>
+        </div>
+      );
       fetchData();
     } catch (error) {
       console.error("Close position error:", error);
@@ -233,9 +254,9 @@ const PaperTrading = () => {
               Practice with virtual ₹10L • Learn risk management
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-            <span className="w-2 h-2 bg-green-500 rounded-full pulse-dot" />
-            <span className="text-green-500 text-xs font-medium">PAPER</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+            <span className="w-2 h-2 bg-primary rounded-full pulse-dot" />
+            <span className="text-primary text-xs font-medium">PAPER</span>
           </div>
         </motion.div>
 
@@ -279,6 +300,11 @@ const PaperTrading = () => {
 
             {/* Watchlist */}
             <Watchlist onSymbolSelect={setSelectedSymbol} selectedSymbol={selectedSymbol} />
+
+            {/* Safety Mode Status */}
+            {account && (
+              <SafetyModeStatus accountId={account.id} compact />
+            )}
           </motion.div>
         </div>
 
@@ -302,13 +328,13 @@ const PaperTrading = () => {
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               {totalPnL >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-green-500" />
+                <TrendingUp className="w-4 h-4 text-primary" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-red-500" />
+                <TrendingDown className="w-4 h-4 text-destructive" />
               )}
               <span className="text-muted-foreground text-xs">Total P&L</span>
             </div>
-            <p className={`text-xl font-semibold ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
+            <p className={`text-xl font-semibold ${totalPnL >= 0 ? "text-primary" : "text-destructive"}`}>
               {totalPnL >= 0 ? "+" : ""}{formatINRSimple(totalPnL)}
               <span className="text-sm ml-1">({totalPnLPercent}%)</span>
             </p>
@@ -335,7 +361,7 @@ const PaperTrading = () => {
           >
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-500" />
+                <Activity className="w-4 h-4 text-primary" />
                 <h3 className="font-medium text-foreground text-sm">Open Positions</h3>
               </div>
               <div className="flex items-center gap-2">
@@ -365,7 +391,7 @@ const PaperTrading = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground text-sm">{position.symbol}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${position.side === "buy" ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}`}>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${position.side === "buy" ? "bg-primary/20 text-primary" : "bg-destructive/20 text-destructive"}`}>
                           {position.side.toUpperCase()}
                         </span>
                       </div>
@@ -378,10 +404,10 @@ const PaperTrading = () => {
                       <p className="text-xs text-muted-foreground">Current</p>
                     </div>
                     <div className="text-right">
-                      <p className={`font-medium text-sm ${unrealizedPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
+                      <p className={`font-medium text-sm ${unrealizedPnL >= 0 ? "text-primary" : "text-destructive"}`}>
                         {unrealizedPnL >= 0 ? "+" : ""}{formatINRSimple(unrealizedPnL)}
                       </p>
-                      <p className={`text-xs ${unrealizedPnL >= 0 ? "text-green-500/70" : "text-red-500/70"}`}>
+                      <p className={`text-xs ${unrealizedPnL >= 0 ? "text-primary/70" : "text-destructive/70"}`}>
                         {unrealizedPnL >= 0 ? "+" : ""}{pnlPercent}%
                       </p>
                     </div>
@@ -432,7 +458,7 @@ const PaperTrading = () => {
                     <tr key={trade.id} className="hover:bg-secondary/30">
                       <td className="px-4 py-3 font-medium text-foreground">{trade.symbol}</td>
                       <td className="px-4 py-3">
-                        <span className={trade.side === "buy" ? "text-green-500" : "text-red-500"}>
+                        <span className={trade.side === "buy" ? "text-primary" : "text-destructive"}>
                           {trade.side.toUpperCase()}
                         </span>
                       </td>
@@ -443,7 +469,7 @@ const PaperTrading = () => {
                       </td>
                       <td className="px-4 py-3">
                         {trade.pnl !== null ? (
-                          <span className={trade.pnl >= 0 ? "text-green-500" : "text-red-500"}>
+                          <span className={trade.pnl >= 0 ? "text-primary" : "text-destructive"}>
                             {trade.pnl >= 0 ? "+" : ""}{formatINRSimple(trade.pnl)}
                           </span>
                         ) : (

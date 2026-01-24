@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -10,12 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RiskCalculator } from "./RiskCalculator";
-import { INDIAN_STOCKS } from "@/lib/indian-stocks";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
+import { AlertCircle, Loader2, Calculator, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTransactionCosts } from "@/hooks/useTransactionCosts";
+import { usePositionSizing } from "@/hooks/usePositionSizing";
 
 interface TradeFormProps {
   accountBalance: number;
+  accountId?: string;
   onSubmit: (trade: {
     symbol: string;
     side: "buy" | "sell";
@@ -23,6 +28,7 @@ interface TradeFormProps {
     entry_price: number;
     stop_loss: number;
     take_profit?: number;
+    transaction_costs?: number;
   }) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
@@ -30,6 +36,7 @@ interface TradeFormProps {
 
 export const TradeForm = ({
   accountBalance,
+  accountId,
   onSubmit,
   isSubmitting,
   onCancel,
@@ -41,6 +48,57 @@ export const TradeForm = ({
   const [stopLoss, setStopLoss] = useState("");
   const [takeProfit, setTakeProfit] = useState("");
   const [error, setError] = useState("");
+  const [useAutoSize, setUseAutoSize] = useState(false);
+
+  // Transaction costs and position sizing
+  const { calculateCosts } = useTransactionCosts();
+  const { calculate: calculateSize } = usePositionSizing(accountId);
+  const [transactionCosts, setTransactionCosts] = useState(0);
+
+  // Auto-fill entry price when symbol changes
+  useEffect(() => {
+    if (symbol) {
+      const stock = INDIAN_STOCKS.find((s) => s.symbol === symbol);
+      if (stock) {
+        setEntryPrice(stock.price.toString());
+      }
+    }
+  }, [symbol]);
+
+  // Calculate transaction costs
+  useEffect(() => {
+    const qty = parseFloat(quantity);
+    const price = parseFloat(entryPrice);
+    if (qty > 0 && price > 0) {
+      calculateCosts(qty, price, side).then((result) => {
+        if (result) {
+          setTransactionCosts(result.total_charges);
+        }
+      });
+    }
+  }, [quantity, entryPrice, side, calculateCosts]);
+
+  // Auto position sizing
+  useEffect(() => {
+    if (useAutoSize && entryPrice && stopLoss) {
+      const entry = parseFloat(entryPrice);
+      const sl = parseFloat(stopLoss);
+      const tp = takeProfit ? parseFloat(takeProfit) : undefined;
+
+      if (entry > 0 && sl > 0) {
+        calculateSize({
+          account_capital: accountBalance,
+          entry_price: entry,
+          stop_loss: sl,
+          take_profit: tp,
+        }).then((result) => {
+          if (result) {
+            setQuantity(result.quantity.toString());
+          }
+        });
+      }
+    }
+  }, [useAutoSize, entryPrice, stopLoss, takeProfit, accountBalance, calculateSize]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,10 +144,11 @@ export const TradeForm = ({
       return;
     }
 
-    // Check balance
+    // Check balance (including transaction costs)
     const tradeValue = entryNum * qtyNum;
-    if (tradeValue > accountBalance) {
-      setError("Insufficient virtual balance for this trade");
+    const totalRequired = tradeValue + transactionCosts;
+    if (totalRequired > accountBalance) {
+      setError(`Insufficient virtual balance. Need ${formatINRSimple(totalRequired)} (includes ${formatINRSimple(transactionCosts)} in fees)`);
       return;
     }
 
@@ -101,6 +160,7 @@ export const TradeForm = ({
         entry_price: entryNum,
         stop_loss: slNum,
         take_profit: tpNum,
+        transaction_costs: transactionCosts,
       });
     } catch (err: any) {
       setError(err.message || "Failed to place trade");
@@ -110,6 +170,17 @@ export const TradeForm = ({
   const entryNum = parseFloat(entryPrice) || 0;
   const slNum = parseFloat(stopLoss) || 0;
   const qtyNum = parseFloat(quantity) || 0;
+  const tradeValue = entryNum * qtyNum;
+  const totalRequired = tradeValue + transactionCosts;
+
+  // Calculate R:R ratio
+  const riskRewardRatio = useMemo(() => {
+    const tp = parseFloat(takeProfit);
+    if (!entryNum || !slNum || !tp) return null;
+    const riskDistance = Math.abs(entryNum - slNum);
+    const rewardDistance = Math.abs(tp - entryNum);
+    return riskDistance > 0 ? (rewardDistance / riskDistance).toFixed(2) : null;
+  }, [entryNum, slNum, takeProfit]);
 
   return (
     <Card className="border-border">
@@ -149,6 +220,27 @@ export const TradeForm = ({
             </div>
           </div>
 
+          {/* Auto Position Sizing */}
+          <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Auto Position Sizing (1% risk)</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs max-w-xs">
+                      Automatically calculates the optimal quantity based on your stop loss and 1% risk per trade.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Switch checked={useAutoSize} onCheckedChange={setUseAutoSize} />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity *</Label>
@@ -160,6 +252,7 @@ export const TradeForm = ({
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="e.g., 10"
+                disabled={useAutoSize}
               />
             </div>
 
@@ -212,6 +305,34 @@ export const TradeForm = ({
             </div>
           </div>
 
+          {/* Trade Summary with Costs */}
+          {entryNum > 0 && qtyNum > 0 && (
+            <div className="p-3 bg-secondary/50 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Trade Value</span>
+                <span className="text-foreground font-medium">{formatINRSimple(tradeValue)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Transaction Costs</span>
+                <span className="text-destructive">-{formatINRSimple(transactionCosts)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-1 border-t border-border">
+                <span className="text-muted-foreground">Total Required</span>
+                <span className={`font-medium ${totalRequired <= accountBalance ? "text-foreground" : "text-destructive"}`}>
+                  {formatINRSimple(totalRequired)}
+                </span>
+              </div>
+              {riskRewardRatio && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Risk:Reward</span>
+                  <span className={parseFloat(riskRewardRatio) >= 2 ? "text-primary" : "text-foreground"}>
+                    1:{riskRewardRatio}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {entryNum > 0 && slNum > 0 && qtyNum > 0 && (
             <RiskCalculator
               entryPrice={entryNum}
@@ -246,7 +367,7 @@ export const TradeForm = ({
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
-            This trade uses virtual funds only. No real money is involved.
+            Realistic simulation with India-specific transaction costs (STT, GST, SEBI fees)
           </p>
         </form>
       </CardContent>
