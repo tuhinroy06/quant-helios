@@ -7,17 +7,21 @@ export interface LivePrice {
   change: number;
   changePercent: number;
   timestamp: string;
+  marketStatus?: 'open' | 'closed' | 'pre-market' | 'post-market';
+  source?: 'alpha_vantage' | 'websocket' | 'cache' | 'simulated';
 }
 
 interface UseWebSocketPricesOptions {
   symbols: string[];
   enabled?: boolean;
   fallbackToPolling?: boolean;
+  useAlphaVantage?: boolean;
 }
 
 interface WebSocketMessage {
   type: string;
   symbol?: string;
+  yahooSymbol?: string;
   price?: number;
   change?: number;
   changePercent?: number;
@@ -27,12 +31,13 @@ interface WebSocketMessage {
 }
 
 const WEBSOCKET_URL = `wss://axwhhazpvpkvheoruetu.supabase.co/functions/v1/price-stream`;
-const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000]; // Exponential backoff
+const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];
 
 export const useWebSocketPrices = ({
   symbols,
   enabled = true,
   fallbackToPolling = true,
+  useAlphaVantage = true, // Default to using Alpha Vantage
 }: UseWebSocketPricesOptions) => {
   const [prices, setPrices] = useState<Record<string, LivePrice>>({});
   const [connected, setConnected] = useState(false);
@@ -45,6 +50,8 @@ export const useWebSocketPrices = ({
   const reconnectTimeoutRef = useRef<number | null>(null);
   const symbolsRef = useRef<string[]>(symbols);
   const enabledRef = useRef(enabled);
+  const alphaVantagePricesRef = useRef<Record<string, LivePrice>>({});
+  const pollingIntervalRef = useRef<number | null>(null);
 
   // Keep refs updated
   useEffect(() => {
@@ -54,6 +61,90 @@ export const useWebSocketPrices = ({
   useEffect(() => {
     enabledRef.current = enabled;
   }, [enabled]);
+
+  // Fetch prices from Alpha Vantage edge function
+  const fetchAlphaVantagePrices = useCallback(async (symbolsToFetch: string[]) => {
+    if (symbolsToFetch.length === 0) return;
+
+    try {
+      // Fetch in batches to avoid overwhelming the API
+      const batchSize = 5;
+      const batches: string[][] = [];
+      for (let i = 0; i < symbolsToFetch.length; i += batchSize) {
+        batches.push(symbolsToFetch.slice(i, i + batchSize));
+      }
+
+      for (const batch of batches) {
+        const pricePromises = batch.map(async (symbol) => {
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-prices?symbol=${symbol}&type=current`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                },
+              }
+            );
+
+            if (!response.ok) return null;
+            return response.json();
+          } catch {
+            return null;
+          }
+        });
+
+        const results = await Promise.all(pricePromises);
+
+        results.forEach((result) => {
+          if (result && result.symbol) {
+            const priceData: LivePrice = {
+              symbol: result.symbol,
+              price: result.price,
+              change: result.change,
+              changePercent: result.changePercent,
+              timestamp: result.timestamp,
+              marketStatus: result.marketStatus,
+              source: result.source === 'alpha_vantage' ? 'alpha_vantage' : result.source,
+            };
+
+            alphaVantagePricesRef.current[result.symbol] = priceData;
+
+            setPrices((prev) => ({
+              ...prev,
+              [result.symbol]: priceData,
+            }));
+          }
+        });
+
+        setLastUpdated(new Date());
+      }
+    } catch (err) {
+      console.error("[Alpha Vantage] Fetch error:", err);
+    }
+  }, []);
+
+  // Initial Alpha Vantage fetch
+  useEffect(() => {
+    if (enabled && useAlphaVantage && symbols.length > 0) {
+      fetchAlphaVantagePrices(symbols);
+    }
+  }, [enabled, useAlphaVantage, symbols, fetchAlphaVantagePrices]);
+
+  // Periodic Alpha Vantage refresh (every 60 seconds)
+  useEffect(() => {
+    if (!enabled || !useAlphaVantage || symbols.length === 0) return;
+
+    pollingIntervalRef.current = window.setInterval(() => {
+      fetchAlphaVantagePrices(symbols);
+    }, 60000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [enabled, useAlphaVantage, symbols, fetchAlphaVantagePrices]);
 
   const connect = useCallback(() => {
     if (!enabledRef.current || symbolsRef.current.length === 0) return;
@@ -74,7 +165,6 @@ export const useWebSocketPrices = ({
         setError(null);
         reconnectAttemptRef.current = 0;
 
-        // Subscribe to symbols
         if (symbolsRef.current.length > 0) {
           ws.send(JSON.stringify({
             action: "subscribe",
@@ -88,15 +178,34 @@ export const useWebSocketPrices = ({
           const message: WebSocketMessage = JSON.parse(event.data);
 
           if (message.type === "price" && message.symbol) {
+            // Check if we have fresh Alpha Vantage data (< 2 minutes old)
+            const alphaPrice = alphaVantagePricesRef.current[message.symbol];
+            const isAlphaFresh = alphaPrice && 
+              (Date.now() - new Date(alphaPrice.timestamp).getTime() < 2 * 60 * 1000);
+
+            // Use Alpha Vantage as base when available
+            const finalPrice: LivePrice = isAlphaFresh ? {
+              symbol: message.symbol,
+              yahooSymbol: message.yahooSymbol,
+              price: alphaPrice.price,
+              change: alphaPrice.change,
+              changePercent: alphaPrice.changePercent,
+              timestamp: message.timestamp || new Date().toISOString(),
+              marketStatus: alphaPrice.marketStatus,
+              source: 'alpha_vantage',
+            } : {
+              symbol: message.symbol,
+              yahooSymbol: message.yahooSymbol,
+              price: message.price || 0,
+              change: message.change || 0,
+              changePercent: message.changePercent || 0,
+              timestamp: message.timestamp || new Date().toISOString(),
+              source: 'websocket',
+            };
+
             setPrices((prev) => ({
               ...prev,
-              [message.symbol!]: {
-                symbol: message.symbol!,
-                price: message.price || 0,
-                change: message.change || 0,
-                changePercent: message.changePercent || 0,
-                timestamp: message.timestamp || new Date().toISOString(),
-              },
+              [message.symbol!]: finalPrice,
             }));
             setLastUpdated(new Date());
           } else if (message.type === "subscribed") {
@@ -116,11 +225,10 @@ export const useWebSocketPrices = ({
         setConnecting(false);
         wsRef.current = null;
 
-        // Attempt reconnection if enabled
         if (enabledRef.current && reconnectAttemptRef.current < RECONNECT_DELAYS.length) {
           const delay = RECONNECT_DELAYS[reconnectAttemptRef.current];
           console.log(`[WS Hook] Reconnecting in ${delay}ms...`);
-          
+
           reconnectTimeoutRef.current = window.setTimeout(() => {
             reconnectAttemptRef.current++;
             connect();
@@ -145,6 +253,11 @@ export const useWebSocketPrices = ({
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
+    }
+
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
 
     if (wsRef.current) {
@@ -195,7 +308,15 @@ export const useWebSocketPrices = ({
         symbols,
       }));
     }
-  }, [symbols, connected]);
+
+    // Also fetch Alpha Vantage for new symbols
+    if (useAlphaVantage && symbols.length > 0) {
+      const newSymbols = symbols.filter(s => !alphaVantagePricesRef.current[s]);
+      if (newSymbols.length > 0) {
+        fetchAlphaVantagePrices(newSymbols);
+      }
+    }
+  }, [symbols, connected, useAlphaVantage, fetchAlphaVantagePrices]);
 
   const getPrice = useCallback(
     (symbol: string): LivePrice | null => {
@@ -205,10 +326,16 @@ export const useWebSocketPrices = ({
   );
 
   const refresh = useCallback(() => {
+    // Refresh Alpha Vantage prices
+    if (useAlphaVantage) {
+      fetchAlphaVantagePrices(symbolsRef.current);
+    }
+    
+    // Reconnect WebSocket
     disconnect();
     reconnectAttemptRef.current = 0;
     setTimeout(connect, 100);
-  }, [connect, disconnect]);
+  }, [connect, disconnect, useAlphaVantage, fetchAlphaVantagePrices]);
 
   return {
     prices,
