@@ -103,12 +103,20 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
   useEffect(() => {
     if (!chartRef.current || data.length === 0) return;
 
-    // Remove old series
-    if (seriesRef.current) {
-      chartRef.current.removeSeries(seriesRef.current);
+    // Remove old series safely (check if chart still has the series)
+    try {
+      if (seriesRef.current) {
+        chartRef.current.removeSeries(seriesRef.current);
+      }
+    } catch (e) {
+      // Series already removed or chart destroyed
     }
-    if (volumeSeriesRef.current) {
-      chartRef.current.removeSeries(volumeSeriesRef.current);
+    try {
+      if (volumeSeriesRef.current) {
+        chartRef.current.removeSeries(volumeSeriesRef.current);
+      }
+    } catch (e) {
+      // Series already removed or chart destroyed
     }
 
     // Add new series based on chart type
