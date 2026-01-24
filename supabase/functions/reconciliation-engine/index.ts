@@ -891,7 +891,17 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const body = await req.json();
+    // Handle requests without body (GET requests or empty POST)
+    let body: Record<string, unknown> = {};
+    try {
+      const text = await req.text();
+      if (text && text.trim()) {
+        body = JSON.parse(text);
+      }
+    } catch {
+      // No body or invalid JSON - use empty object
+    }
+    
     const { action } = body;
 
     console.log(`[RECONCILIATION-ENGINE] Action: ${action}`);
@@ -907,10 +917,10 @@ Deno.serve(async (req) => {
 
         const result = await runReconciliation(
           supabase,
-          user_id,
+          user_id as string | null,
           mode as RepairMode,
-          broker_fills,
-          capital_snapshot
+          broker_fills as BrokerFill[],
+          capital_snapshot as CapitalSnapshot | null
         );
 
         return new Response(JSON.stringify(result), {
@@ -928,7 +938,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        const result = await manualReset(supabase, admin_id, scope, target_id);
+        const result = await manualReset(supabase, admin_id as string, ((scope as string) || 'GLOBAL') as 'GLOBAL' | 'STRATEGY', (target_id as string) || 'GLOBAL');
 
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -945,7 +955,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        const records = await getAuditTrail(supabase, user_id, strategy_id, limit);
+        const records = await getAuditTrail(supabase, user_id as string, strategy_id as string | undefined, limit as number);
 
         return new Response(JSON.stringify({ records }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -954,7 +964,7 @@ Deno.serve(async (req) => {
 
       case 'metrics': {
         const { user_id } = body;
-        const metrics = await getMetrics(supabase, user_id);
+        const metrics = await getMetrics(supabase, user_id as string | undefined);
 
         return new Response(JSON.stringify(metrics), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -962,22 +972,22 @@ Deno.serve(async (req) => {
       }
 
       case 'freeze_status': {
-        const { strategy_ids = [] } = body;
+        const strategyIds = (body.strategy_ids || []) as string[];
 
         const { data: freezeStates } = await supabase
           .from('reconciliation_freeze_states')
           .select('*')
           .eq('is_frozen', true);
 
-        const globalFreeze = freezeStates?.some(s => s.scope === 'GLOBAL') || false;
+        const globalFreeze = freezeStates?.some((s: { scope: string }) => s.scope === 'GLOBAL') || false;
         const frozenStrategies = freezeStates
-          ?.filter(s => s.scope === 'STRATEGY')
-          .map(s => s.target_id) || [];
+          ?.filter((s: { scope: string }) => s.scope === 'STRATEGY')
+          .map((s: { target_id: string }) => s.target_id) || [];
 
         return new Response(JSON.stringify({
           global_freeze: globalFreeze,
           frozen_strategies: frozenStrategies,
-          requested_status: strategy_ids.map((id: string) => ({
+          requested_status: strategyIds.map((id: string) => ({
             strategy_id: id,
             is_frozen: globalFreeze || frozenStrategies.includes(id),
           })),
