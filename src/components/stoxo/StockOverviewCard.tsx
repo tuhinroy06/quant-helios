@@ -1,17 +1,46 @@
-import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Radio } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { StockData } from '@/hooks/useStoxoAI';
 import { formatINR } from '@/lib/indian-stocks';
+import { LivePrice } from '@/hooks/useWebSocketPrices';
 
 interface StockOverviewCardProps {
   stock: StockData;
   index?: number;
+  livePrice?: LivePrice | null;
 }
 
-export const StockOverviewCard = ({ stock, index = 0 }: StockOverviewCardProps) => {
+export const StockOverviewCard = ({ stock, index = 0, livePrice }: StockOverviewCardProps) => {
+  const [priceFlash, setPriceFlash] = useState<'up' | 'down' | null>(null);
+  const [prevPrice, setPrevPrice] = useState<number | null>(null);
+
+  // Detect price changes for flash animation
+  useEffect(() => {
+    if (livePrice && prevPrice !== null) {
+      if (livePrice.price > prevPrice) {
+        setPriceFlash('up');
+      } else if (livePrice.price < prevPrice) {
+        setPriceFlash('down');
+      }
+      
+      const timer = setTimeout(() => setPriceFlash(null), 500);
+      return () => clearTimeout(timer);
+    }
+    if (livePrice) {
+      setPrevPrice(livePrice.price);
+    }
+  }, [livePrice?.price]);
+
+  // Use live price if available, otherwise fall back to stock data
+  const displayPrice = livePrice?.price ?? stock.price;
+  const displayChange = livePrice?.change ?? stock.change;
+  const displayChangePercent = livePrice?.changePercent ?? stock.changePercent;
+  const isLive = !!livePrice;
+
   const getSentimentStyles = (sentiment: string) => {
     switch (sentiment) {
       case 'bullish':
@@ -40,7 +69,7 @@ export const StockOverviewCard = ({ stock, index = 0 }: StockOverviewCardProps) 
 
   const sentimentStyles = getSentimentStyles(stock.sentiment);
   const SentimentIcon = sentimentStyles.icon;
-  const isPositive = stock.changePercent >= 0;
+  const isPositive = displayChangePercent >= 0;
 
   return (
     <motion.div
@@ -62,6 +91,12 @@ export const StockOverviewCard = ({ stock, index = 0 }: StockOverviewCardProps) 
                 <Badge variant="outline" className="text-xs">
                   {stock.sector}
                 </Badge>
+                {isLive && (
+                  <div className="flex items-center gap-1">
+                    <Radio className="h-3 w-3 text-success animate-pulse" />
+                    <span className="text-[10px] text-success font-medium">LIVE</span>
+                  </div>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{stock.name}</p>
             </div>
@@ -78,9 +113,21 @@ export const StockOverviewCard = ({ stock, index = 0 }: StockOverviewCardProps) 
           {/* Price */}
           <div className="flex items-end justify-between mb-4">
             <div>
-              <p className="text-2xl font-bold text-foreground">
-                {formatINR(stock.price)}
-              </p>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={displayPrice}
+                  initial={{ opacity: 0.8 }}
+                  animate={{ opacity: 1 }}
+                  className={cn(
+                    "text-2xl font-bold transition-colors duration-300",
+                    priceFlash === 'up' && "text-success",
+                    priceFlash === 'down' && "text-destructive",
+                    !priceFlash && "text-foreground"
+                  )}
+                >
+                  {formatINR(displayPrice)}
+                </motion.p>
+              </AnimatePresence>
               <div className={cn(
                 "flex items-center gap-1 text-sm",
                 isPositive ? "text-success" : "text-destructive"
@@ -90,7 +137,12 @@ export const StockOverviewCard = ({ stock, index = 0 }: StockOverviewCardProps) 
                 ) : (
                   <ArrowDownRight className="h-4 w-4" />
                 )}
-                <span>{isPositive ? '+' : ''}{stock.changePercent.toFixed(2)}%</span>
+                <span>{isPositive ? '+' : ''}{displayChangePercent.toFixed(2)}%</span>
+                {isLive && (
+                  <span className="text-muted-foreground text-xs ml-1">
+                    ({isPositive ? '+' : ''}{formatINR(displayChange)})
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-right">
