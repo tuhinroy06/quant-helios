@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, RefreshCw, X, Calculator } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, RefreshCw, X, Calculator, Brain, Sparkles, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +9,10 @@ import { toast } from "sonner";
 import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import { useTransactionCosts } from "@/hooks/useTransactionCosts";
+import { useTradeExplanation, TradeData } from "@/hooks/useTradeExplanation";
+import { TradeExplanationCard } from "@/components/trading/TradeExplanationCard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // New components
 import { MarketTicker } from "@/components/paper-trading/MarketTicker";
@@ -50,6 +54,21 @@ interface PaperTrade {
   closed_at: string | null;
 }
 
+interface ClosedTradeResult {
+  tradeId: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+  entryPrice: number;
+  exitPrice: number;
+  grossPnl: number;
+  netPnl: number;
+  fees: number;
+  holdingMinutes: number;
+  openedAt: string;
+  closedAt: string;
+}
+
 const PaperTrading = () => {
   const { user } = useAuth();
   const [account, setAccount] = useState<PaperAccount | null>(null);
@@ -57,6 +76,11 @@ const PaperTrading = () => {
   const [trades, setTrades] = useState<PaperTrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSymbol, setSelectedSymbol] = useState("RELIANCE");
+  
+  // AI Explanation state
+  const [showExplanationDialog, setShowExplanationDialog] = useState(false);
+  const [closedTradeResult, setClosedTradeResult] = useState<ClosedTradeResult | null>(null);
+  const { explainTradeExit, isLoading: isExplaining, explanation } = useTradeExplanation();
 
   // Transaction costs hook
   const { calculateCosts } = useTransactionCosts();
@@ -152,6 +176,9 @@ const PaperTrading = () => {
 
     const livePrice = livePrices[position.symbol];
     const exitPrice = livePrice?.price || INDIAN_STOCKS.find((s) => s.symbol === position.symbol)?.price || position.entry_price;
+    const closedAt = new Date().toISOString();
+    const openedAt = position.opened_at;
+    const holdingMinutes = Math.round((new Date(closedAt).getTime() - new Date(openedAt).getTime()) / 60000);
 
     // Calculate transaction costs on exit
     const exitCosts = await calculateCosts(position.quantity, exitPrice, "sell");
@@ -169,7 +196,7 @@ const PaperTrading = () => {
 
     try {
       // Insert into paper_trades with fee tracking
-      const { error: tradeError } = await supabase.from("paper_trades").insert({
+      const { data: tradeData, error: tradeError } = await supabase.from("paper_trades").insert({
         account_id: account.id,
         symbol: position.symbol,
         side: position.side,
@@ -181,9 +208,9 @@ const PaperTrading = () => {
         fees: transactionCosts,
         stop_loss: position.stop_loss,
         take_profit: position.take_profit,
-        closed_at: new Date().toISOString(),
-        reason: "MANUAL_CLOSE",
-      });
+        closed_at: closedAt,
+        reason: "MANUAL_EXIT",
+      }).select().single();
 
       if (tradeError) throw tradeError;
 
@@ -206,6 +233,25 @@ const PaperTrading = () => {
 
       if (deleteError) throw deleteError;
 
+      // Store closed trade result for AI explanation
+      const result: ClosedTradeResult = {
+        tradeId: tradeData.id,
+        symbol: position.symbol,
+        side: position.side,
+        quantity: position.quantity,
+        entryPrice: position.entry_price,
+        exitPrice,
+        grossPnl,
+        netPnl,
+        fees: transactionCosts,
+        holdingMinutes,
+        openedAt,
+        closedAt,
+      };
+      
+      setClosedTradeResult(result);
+      setShowExplanationDialog(true);
+
       toast.success(
         <div className="space-y-1">
           <p>Position closed: {netPnl >= 0 ? "+" : ""}{formatINRSimple(netPnl)}</p>
@@ -219,6 +265,31 @@ const PaperTrading = () => {
       console.error("Close position error:", error);
       toast.error("Failed to close position");
     }
+  };
+
+  // Generate AI explanation for closed trade
+  const generateExplanation = async () => {
+    if (!closedTradeResult) return;
+
+    const tradeData: TradeData = {
+      tradeId: closedTradeResult.tradeId,
+      strategyId: 'manual',
+      strategyName: 'Manual Paper Trade',
+      assetClass: 'EQUITY',
+      timeframe: '5m',
+      symbol: closedTradeResult.symbol,
+      direction: closedTradeResult.side === 'buy' ? 'LONG' : 'SHORT',
+      entryPrice: closedTradeResult.entryPrice,
+      exitPrice: closedTradeResult.exitPrice,
+      quantity: closedTradeResult.quantity,
+      entryTimestamp: closedTradeResult.openedAt,
+      exitTimestamp: closedTradeResult.closedAt,
+      exitReason: 'MANUAL_EXIT',
+      holdingMinutes: closedTradeResult.holdingMinutes,
+      riskPercent: 1.0
+    };
+
+    await explainTradeExit(tradeData);
   };
 
   if (loading) {
@@ -489,6 +560,7 @@ const PaperTrading = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.35 }}
+          className="flex flex-wrap gap-3"
         >
           <Link
             to="/dashboard/fno"
@@ -497,8 +569,134 @@ const PaperTrading = () => {
             View Advanced Markets (F&O)
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
+          <Link
+            to="/dashboard/journal"
+            className="group flex items-center justify-center gap-3 bg-primary/10 border border-primary/20 text-primary px-6 py-3 rounded-xl text-sm font-medium hover:bg-primary/20 transition-all"
+          >
+            <BookOpen className="w-4 h-4" />
+            Trade Journal
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </Link>
         </motion.div>
       </div>
+
+      {/* AI Explanation Dialog */}
+      <Dialog open={showExplanationDialog} onOpenChange={setShowExplanationDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Trade Closed
+            </DialogTitle>
+            <DialogDescription>
+              {closedTradeResult && (
+                <span className={closedTradeResult.netPnl >= 0 ? 'text-primary' : 'text-destructive'}>
+                  {closedTradeResult.netPnl >= 0 ? '+' : ''}{formatINRSimple(closedTradeResult.netPnl)} P&L
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {closedTradeResult && (
+            <div className="space-y-4">
+              {/* Trade Summary */}
+              <div className="grid grid-cols-2 gap-3 p-4 bg-secondary/30 rounded-xl text-sm">
+                <div>
+                  <span className="text-muted-foreground">Symbol:</span>
+                  <span className="ml-2 font-medium text-foreground">{closedTradeResult.symbol}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Side:</span>
+                  <span className={`ml-2 font-medium ${closedTradeResult.side === 'buy' ? 'text-primary' : 'text-destructive'}`}>
+                    {closedTradeResult.side.toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Entry:</span>
+                  <span className="ml-2 text-foreground">{formatINRSimple(closedTradeResult.entryPrice)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Exit:</span>
+                  <span className="ml-2 text-foreground">{formatINRSimple(closedTradeResult.exitPrice)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Gross P&L:</span>
+                  <span className={`ml-2 ${closedTradeResult.grossPnl >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                    {closedTradeResult.grossPnl >= 0 ? '+' : ''}{formatINRSimple(closedTradeResult.grossPnl)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Fees:</span>
+                  <span className="ml-2 text-destructive">-{formatINRSimple(closedTradeResult.fees)}</span>
+                </div>
+              </div>
+              
+              {/* AI Explanation */}
+              <AnimatePresence mode="wait">
+                {explanation ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <TradeExplanationCard explanation={explanation} compact />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="p-4 rounded-xl bg-secondary/30 border border-border text-center"
+                  >
+                    <Brain className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Want to understand why this trade performed the way it did?
+                    </p>
+                    <Button
+                      onClick={generateExplanation}
+                      disabled={isExplaining}
+                      className="gap-2"
+                    >
+                      {isExplaining ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Generate AI Explanation
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowExplanationDialog(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="secondary"
+                  asChild
+                  className="flex-1 gap-2"
+                >
+                  <Link to="/dashboard/journal">
+                    <BookOpen className="w-4 h-4" />
+                    View Journal
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
