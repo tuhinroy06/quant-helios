@@ -65,3 +65,9 @@ verify_jwt = false
 
 [functions.paper-trading-overview]
 verify_jwt = false
+
+[functions.broker-oauth]
+verify_jwt = false
+
+[functions.stoxo-ai]
+verify_jwt = false
