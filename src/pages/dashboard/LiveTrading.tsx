@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
-  ArrowLeft, Zap, Shield, Link2, TrendingUp, StopCircle,
+  ArrowLeft, Zap, Shield, Link2,
   Activity, ExternalLink, CheckCircle, Clock
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { GlobalKillSwitch } from "@/components/control-plane/GlobalKillSwitch";
+import { ControlStatusSummary } from "@/components/control-plane/ControlStatusSummary";
+import { useControlPlane } from "@/hooks/useControlPlane";
 
 interface Broker {
   name: string;
@@ -62,6 +65,11 @@ const INDIAN_BROKERS: Broker[] = [
 
 const LiveTrading = () => {
   const [selectedBroker, setSelectedBroker] = useState<string | null>(null);
+  const { getStatus, status, loading } = useControlPlane();
+  
+  useEffect(() => {
+    getStatus();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -151,22 +159,14 @@ const LiveTrading = () => {
             </div>
           </div>
 
-          {/* Kill Switch */}
-          <div className="bg-card/50 border border-border rounded-xl p-6 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <StopCircle className="w-6 h-6 text-red-500" />
-                <div>
-                  <h3 className="text-foreground font-medium">Emergency Stop</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Immediately halt all automated trading
-                  </p>
-                </div>
-              </div>
-              <button className="px-6 py-3 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors">
-                STOP ALL TRADING
-              </button>
-            </div>
+          {/* Global Kill Switch */}
+          <div className="mb-6">
+            <GlobalKillSwitch status={status} onStatusChange={() => getStatus()} />
+          </div>
+          
+          {/* Control Status Summary */}
+          <div className="mb-6">
+            <ControlStatusSummary status={status} loading={loading} />
           </div>
 
           {/* Active Strategies */}
