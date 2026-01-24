@@ -263,11 +263,11 @@ const Overview = () => {
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: "hsl(220 18% 8%)", 
-                    border: "1px solid hsl(220 15% 16%)", 
+                    backgroundColor: "hsl(220 18% 6%)", 
+                    border: "1px solid hsl(220 15% 14%)", 
                     borderRadius: "12px",
-                    boxShadow: "0 8px 30px -10px rgba(0,0,0,0.5)"
-                  }} 
+                    boxShadow: "0 8px 30px -10px hsl(220 20% 5% / 0.5)"
+                  }}
                   formatter={(value: number) => [`${value.toFixed(1)}%`, "Return"]} 
                 />
                 <Area 

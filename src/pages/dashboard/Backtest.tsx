@@ -126,8 +126,8 @@ const Backtest = () => {
   }
 
   const metrics = [
-    { label: "Total Return", value: `+${results?.totalReturn}%`, icon: TrendingUp, color: "text-green-500", bgColor: "bg-green-500/10" },
-    { label: "Max Drawdown", value: `${results?.maxDrawdown}%`, icon: TrendingDown, color: "text-red-500", bgColor: "bg-red-500/10" },
+    { label: "Total Return", value: `+${results?.totalReturn}%`, icon: TrendingUp, color: "text-[hsl(142_71%_45%)]", bgColor: "bg-[hsl(142_71%_45%/0.1)]" },
+    { label: "Max Drawdown", value: `${results?.maxDrawdown}%`, icon: TrendingDown, color: "text-destructive", bgColor: "bg-destructive/10" },
     { label: "Win Rate", value: `${results?.winRate}%`, icon: BarChart3, color: "text-foreground", bgColor: "bg-secondary" },
     { label: "Total Trades", value: results?.totalTrades, icon: BarChart3, color: "text-foreground", bgColor: "bg-secondary" },
     { label: "Sharpe Ratio", value: results?.sharpeRatio, icon: BarChart3, color: "text-foreground", bgColor: "bg-secondary" },
@@ -215,37 +215,37 @@ const Backtest = () => {
                   <AreaChart data={equityCurve}>
                     <defs>
                       <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(0 0% 100%)" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="hsl(0 0% 100%)" stopOpacity={0} />
+                        <stop offset="5%" stopColor="hsl(38 60% 50%)" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="hsl(38 60% 50%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis 
                       dataKey="date" 
-                      stroke="hsl(0 0% 30%)" 
-                      tick={{ fill: "hsl(0 0% 50%)", fontSize: 12 }} 
+                      stroke="hsl(220 15% 25%)" 
+                      tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }} 
                       axisLine={false} 
                       tickLine={false} 
                     />
                     <YAxis 
-                      stroke="hsl(0 0% 30%)" 
-                      tick={{ fill: "hsl(0 0% 50%)", fontSize: 12 }} 
+                      stroke="hsl(220 15% 25%)" 
+                      tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }} 
                       tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`}
                       axisLine={false} 
                       tickLine={false} 
                     />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: "hsl(0 0% 8%)", 
-                        border: "1px solid hsl(0 0% 15%)", 
+                        backgroundColor: "hsl(220 18% 6%)", 
+                        border: "1px solid hsl(220 15% 14%)", 
                         borderRadius: "12px",
-                        boxShadow: "0 8px 30px -10px rgba(0,0,0,0.5)"
+                        boxShadow: "0 8px 30px -10px hsl(220 20% 5% / 0.5)"
                       }} 
                       formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, "Portfolio Value"]} 
                     />
                     <Area 
                       type="monotone" 
                       dataKey="value" 
-                      stroke="hsl(0 0% 100%)" 
+                      stroke="hsl(38 60% 50%)" 
                       fill="url(#equityGradient)" 
                       strokeWidth={2} 
                     />

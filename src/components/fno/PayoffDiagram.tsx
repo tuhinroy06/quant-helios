@@ -45,13 +45,13 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
       <div className="grid grid-cols-3 gap-4">
         <div className="p-3 bg-secondary rounded-lg">
           <p className="text-xs text-muted-foreground">Max Profit</p>
-          <p className={`text-lg font-medium ${maxProfit >= 0 ? "text-green-500" : "text-red-500"}`}>
+          <p className={`text-lg font-medium ${maxProfit >= 0 ? "text-[hsl(142_71%_45%)]" : "text-destructive"}`}>
             {maxProfit === Infinity ? "Unlimited" : `₹${maxProfit.toFixed(2)}`}
           </p>
         </div>
         <div className="p-3 bg-secondary rounded-lg">
           <p className="text-xs text-muted-foreground">Max Loss</p>
-          <p className={`text-lg font-medium ${maxLoss >= 0 ? "text-green-500" : "text-red-500"}`}>
+          <p className={`text-lg font-medium ${maxLoss >= 0 ? "text-[hsl(142_71%_45%)]" : "text-destructive"}`}>
             {maxLoss === -Infinity ? "Unlimited" : `₹${maxLoss.toFixed(2)}`}
           </p>
         </div>
@@ -69,31 +69,31 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
           <AreaChart data={payoffData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
-                <stop offset="50%" stopColor="#22c55e" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(142 71% 45%)" stopOpacity={0.3} />
+                <stop offset="50%" stopColor="hsl(142 71% 45%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="lossGradient" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
-                <stop offset="50%" stopColor="#ef4444" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(0 72% 51%)" stopOpacity={0.3} />
+                <stop offset="50%" stopColor="hsl(0 72% 51%)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 15% 14%)" />
             <XAxis
               dataKey="price"
-              stroke="#666"
-              tick={{ fill: "#888", fontSize: 12 }}
+              stroke="hsl(220 15% 25%)"
+              tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }}
               tickFormatter={(value) => `₹${value}`}
             />
             <YAxis
-              stroke="#666"
-              tick={{ fill: "#888", fontSize: 12 }}
+              stroke="hsl(220 15% 25%)"
+              tick={{ fill: "hsl(220 10% 50%)", fontSize: 12 }}
               domain={yAxisDomain}
               tickFormatter={(value) => `₹${value}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#1a1a1a",
-                border: "1px solid #333",
+                backgroundColor: "hsl(220 18% 6%)",
+                border: "1px solid hsl(220 15% 14%)",
                 borderRadius: "8px",
               }}
               labelFormatter={(value) => `Stock Price: ₹${value}`}
@@ -104,16 +104,16 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
             />
             
             {/* Zero line */}
-            <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
+            <ReferenceLine y={0} stroke="hsl(220 15% 25%)" strokeDasharray="3 3" />
             
             {/* Current price line */}
             <ReferenceLine
               x={currentPrice}
-              stroke="#fff"
+              stroke="hsl(0 0% 98%)"
               strokeDasharray="5 5"
               label={{
                 value: "Current",
-                fill: "#fff",
+                fill: "hsl(0 0% 98%)",
                 fontSize: 12,
                 position: "top"
               }}
@@ -124,7 +124,7 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
               <ReferenceLine
                 key={idx}
                 x={be}
-                stroke="#fbbf24"
+                stroke="hsl(38 92% 50%)"
                 strokeDasharray="3 3"
               />
             ))}
@@ -133,12 +133,12 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
             <Area
               type="monotone"
               dataKey="netPayoff"
-              stroke="#22c55e"
+              stroke="hsl(142 71% 45%)"
               fill="url(#profitGradient)"
               strokeWidth={2}
               isAnimationActive={false}
               dot={false}
-              activeDot={{ r: 4, fill: "#22c55e" }}
+              activeDot={{ r: 4, fill: "hsl(142 71% 45%)" }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -147,15 +147,15 @@ export const PayoffDiagram = ({ legs, currentPrice, priceRange = 0.3 }: PayoffDi
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 text-sm">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-white rounded-full" />
+          <div className="w-3 h-3 bg-foreground rounded-full" />
           <span className="text-muted-foreground">Current Price</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+          <div className="w-3 h-3 bg-accent rounded-full" />
           <span className="text-muted-foreground">Breakeven</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full" />
+          <div className="w-3 h-3 bg-[hsl(142_71%_45%)] rounded-full" />
           <span className="text-muted-foreground">Profit Zone</span>
         </div>
       </div>

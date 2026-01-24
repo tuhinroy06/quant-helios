@@ -114,12 +114,12 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
     // Add new series based on chart type
     if (chartType === "candlestick") {
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: "#22c55e",
-        downColor: "#ef4444",
-        borderUpColor: "#22c55e",
-        borderDownColor: "#ef4444",
-        wickUpColor: "#22c55e",
-        wickDownColor: "#ef4444",
+        upColor: "hsl(142 71% 45%)",
+        downColor: "hsl(0 72% 51%)",
+        borderUpColor: "hsl(142 71% 45%)",
+        borderDownColor: "hsl(0 72% 51%)",
+        wickUpColor: "hsl(142 71% 45%)",
+        wickDownColor: "hsl(0 72% 51%)",
       });
 
       const candleData: CandlestickData[] = data.map((d) => ({
@@ -167,7 +167,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
       const volumeData = data.map((d) => ({
         time: d.time as any,
         value: d.volume || 0,
-        color: d.close >= d.open ? "rgba(34, 197, 94, 0.4)" : "rgba(239, 68, 68, 0.4)",
+        color: d.close >= d.open ? "hsl(142 71% 45% / 0.4)" : "hsl(0 72% 51% / 0.4)",
       }));
 
       volumeSeries.setData(volumeData);
@@ -203,7 +203,7 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
               </span>
               <span
                 className={`flex items-center gap-1 text-sm font-medium ${
-                  isPositive ? "text-green-500" : "text-red-500"
+                  isPositive ? "text-[hsl(142_71%_45%)]" : "text-destructive"
                 }`}
               >
                 {isPositive ? (
