@@ -24,30 +24,30 @@ export const PerformanceChart = ({ data, height = 224 }: PerformanceChartProps) 
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(220 10% 50%)",
+        textColor: "#71717a",
         fontFamily: "Inter, sans-serif",
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: "hsl(220 15% 14%)" },
-        horzLines: { color: "hsl(220 15% 14%)" },
+        vertLines: { color: "rgba(255, 255, 255, 0.06)" },
+        horzLines: { color: "rgba(255, 255, 255, 0.06)" },
       },
       rightPriceScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "rgba(255, 255, 255, 0.06)",
         scaleMargins: { top: 0.15, bottom: 0.15 },
       },
       timeScale: {
-        borderColor: "hsl(220 15% 14%)",
+        borderColor: "rgba(255, 255, 255, 0.06)",
         timeVisible: false,
       },
       crosshair: {
         vertLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "#52525b",
+          labelBackgroundColor: "#18181b",
         },
         horzLine: {
-          color: "hsl(220 10% 40%)",
-          labelBackgroundColor: "hsl(220 18% 10%)",
+          color: "#52525b",
+          labelBackgroundColor: "#18181b",
         },
       },
     });
@@ -55,9 +55,9 @@ export const PerformanceChart = ({ data, height = 224 }: PerformanceChartProps) 
     chartRef.current = chart;
 
     const areaSeries = chart.addAreaSeries({
-      lineColor: "hsl(38 60% 50%)",
-      topColor: "hsla(38, 60%, 50%, 0.2)",
-      bottomColor: "hsla(38, 60%, 50%, 0)",
+      lineColor: "#c9913a",
+      topColor: "rgba(201, 145, 58, 0.2)",
+      bottomColor: "rgba(201, 145, 58, 0)",
       lineWidth: 2,
       priceFormat: {
         type: "custom",
