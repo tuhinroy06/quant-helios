@@ -1900,6 +1900,45 @@ export type Database = {
           },
         ]
       }
+      stock_price_cache: {
+        Row: {
+          change: number | null
+          change_percent: number | null
+          day_high: number | null
+          day_low: number | null
+          last_updated: string | null
+          price: number
+          source: string | null
+          symbol: string
+          volume: number | null
+          yahoo_symbol: string | null
+        }
+        Insert: {
+          change?: number | null
+          change_percent?: number | null
+          day_high?: number | null
+          day_low?: number | null
+          last_updated?: string | null
+          price: number
+          source?: string | null
+          symbol: string
+          volume?: number | null
+          yahoo_symbol?: string | null
+        }
+        Update: {
+          change?: number | null
+          change_percent?: number | null
+          day_high?: number | null
+          day_low?: number | null
+          last_updated?: string | null
+          price?: number
+          source?: string | null
+          symbol?: string
+          volume?: number | null
+          yahoo_symbol?: string | null
+        }
+        Relationships: []
+      }
       stock_rankings: {
         Row: {
           ai_analysis: string | null

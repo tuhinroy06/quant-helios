@@ -1,25 +1,30 @@
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
-import { useLivePrices } from "@/hooks/useLivePrices";
+import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { ConnectionStatus } from "./ConnectionStatus";
 
 interface MarketTickerProps {
   onSymbolClick?: (symbol: string) => void;
   selectedSymbol?: string;
 }
 
-const TICKER_SYMBOLS = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "ITC"];
+const TICKER_SYMBOLS = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "ITC", "SBIN", "LT"];
 
 export const MarketTicker = ({ onSymbolClick, selectedSymbol }: MarketTickerProps) => {
-  const { prices, loading } = useLivePrices({
+  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
     symbols: TICKER_SYMBOLS,
-    refreshInterval: 10000,
     enabled: true,
   });
 
+  const loading = !connected && Object.keys(prices).length === 0;
+
   return (
     <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-secondary/30">
+        <span className="text-xs text-muted-foreground font-medium">Market Overview</span>
+        <ConnectionStatus connected={connected} connecting={connecting} lastUpdated={lastUpdated} />
+      </div>
       <div className="flex items-center gap-1 px-2 py-2 overflow-x-auto scrollbar-hide">
         {TICKER_SYMBOLS.map((symbol) => {
           const priceData = prices[symbol];

@@ -3,9 +3,10 @@ import { createChart, IChartApi, ISeriesApi, CandlestickData, LineData } from "l
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, BarChart3, LineChart, RefreshCw } from "lucide-react";
 import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
-import { useLivePrices } from "@/hooks/useLivePrices";
-import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
+import { useWebSocketPrices } from "@/hooks/useWebSocketPrices";
+import { INDIAN_STOCKS, formatINRSimple, getStockBySymbol } from "@/lib/indian-stocks";
 import { Button } from "@/components/ui/button";
+import { ConnectionStatus } from "./ConnectionStatus";
 
 interface PriceChartProps {
   symbol: string;
@@ -37,14 +38,13 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
     enabled: !!symbol,
   });
 
-  const { prices } = useLivePrices({
-    symbols: [symbol],
-    refreshInterval: 5000,
+  const { prices, connected, connecting, lastUpdated } = useWebSocketPrices({
+    symbols: symbol ? [symbol] : [],
     enabled: !!symbol,
   });
 
   const currentPrice = prices[symbol];
-  const stockInfo = INDIAN_STOCKS.find((s) => s.symbol === symbol);
+  const stockInfo = getStockBySymbol(symbol);
   const price = currentPrice?.price || stockInfo?.price || 0;
   const changePercent = currentPrice?.changePercent || 0;
   const isPositive = changePercent >= 0;
@@ -204,11 +204,17 @@ export const PriceChart = ({ symbol }: PriceChartProps) => {
               <span className="text-sm text-muted-foreground">
                 {stockInfo?.name || symbol}
               </span>
+              <ConnectionStatus connected={connected} connecting={connecting} lastUpdated={lastUpdated} />
             </div>
             <div className="flex items-center gap-3 mt-1">
-              <span className="text-2xl font-semibold text-foreground">
+              <motion.span 
+                key={price}
+                initial={{ scale: 1.05 }}
+                animate={{ scale: 1 }}
+                className="text-2xl font-semibold text-foreground"
+              >
                 {formatINRSimple(price)}
-              </span>
+              </motion.span>
               <span
                 className={`flex items-center gap-1 text-sm font-medium ${
                   isPositive ? "text-[hsl(142_71%_45%)]" : "text-destructive"

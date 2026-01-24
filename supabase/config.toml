@@ -38,3 +38,30 @@ verify_jwt = false
 
 [functions.outcome-attribution-engine]
 verify_jwt = false
+
+[functions.price-stream]
+verify_jwt = false
+
+[functions.fetch-prices]
+verify_jwt = false
+
+[functions.run-backtest]
+verify_jwt = false
+
+[functions.stock-ranker]
+verify_jwt = false
+
+[functions.generate-strategy]
+verify_jwt = false
+
+[functions.strategy-compiler]
+verify_jwt = false
+
+[functions.paper-trading-trade]
+verify_jwt = false
+
+[functions.paper-trading-close]
+verify_jwt = false
+
+[functions.paper-trading-overview]
+verify_jwt = false
