@@ -27,6 +27,7 @@ import StockRanking from "./pages/dashboard/StockRanking";
 import LiveTrading from "./pages/dashboard/LiveTrading";
 import Organization from "./pages/dashboard/Organization";
 import TradeJournal from "./pages/dashboard/TradeJournal";
+import StrategyPerformance from "./pages/dashboard/StrategyPerformance";
 
 const queryClient = new QueryClient();
 
@@ -154,6 +155,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TradeJournal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/performance"
+              element={
+                <ProtectedRoute>
+                  <StrategyPerformance />
                 </ProtectedRoute>
               }
             />
