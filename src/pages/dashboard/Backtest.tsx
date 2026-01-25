@@ -109,7 +109,6 @@ const Backtest = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('run-backtest', {
-      const { data, error } = await supabase.functions.invoke("run-backtest", {
         body: {
           strategyId: strategy.id,
           startDate: '2024-01-01',
@@ -125,26 +124,15 @@ const Backtest = () => {
       if (error) {
         console.error('Backtest error:', error);
         toast.error(error.message || 'Failed to run backtest');
-        const status = error.context?.status ?? error.status;
-        const body = error.context?.body;
-        const errorBody = typeof body === "string" ? body : body ? JSON.stringify(body) : "";
-        const statusLabel = status ? `Status ${status}` : "Status unavailable";
-        toast.error(`Backtest failed (${statusLabel}): ${errorBody || error.message}`);
         setIsRunning(false);
         return;
       }
 
-      if (data?.error) {
-        toast.error(data.error);
-        setIsRunning(false);
-        return;
-      }
-
-      setResults(data?.metrics ?? null);
-      setEquityCurve(data?.equityCurve || []);
-      setTrades(data?.trades || []);
-      setMetadata(data?.metadata ?? null);
-      setRejectedSignals(data?.rejectedSignals || []);
+      setResults(data.metrics);
+      setEquityCurve(data.equityCurve || []);
+      setTrades(data.trades || []);
+      setMetadata(data.metadata);
+      setRejectedSignals(data.rejectedSignals || []);
       toast.success('Backtest completed successfully!');
     } catch (error) {
       clearInterval(interval);
