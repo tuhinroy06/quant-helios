@@ -43,9 +43,6 @@ function Footer() {
           <p className="text-sm text-muted-foreground/60">
             © {new Date().getFullYear()} AlgoTrade Pro. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground/40 max-w-md">
-            This platform is for educational purposes. Not financial advice. Always do your own research.
-          </p>
         </div>
       </div>
     </footer>
