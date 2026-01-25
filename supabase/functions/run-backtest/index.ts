@@ -1067,68 +1067,6 @@ function generateSampleData(days: number = 365, symbol: string = "NIFTY"): OHLCV
   return data;
 }
 
-function parseIsoDate(value?: string): Date | null {
-  if (!value) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-async function fetchHistoricalPrices(
-  supabaseUrl: string,
-  supabaseKey: string,
-  symbol: string,
-  startDate?: string,
-  endDate?: string
-): Promise<OHLCV[]> {
-  const start = parseIsoDate(startDate);
-  const end = parseIsoDate(endDate);
-  const endDateValue = end ?? new Date();
-  const startDateValue = start ?? new Date(endDateValue.getTime() - 365 * 24 * 60 * 60 * 1000);
-  const days = Math.max(
-    1,
-    Math.ceil((endDateValue.getTime() - startDateValue.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  );
-
-  const url = new URL(`${supabaseUrl}/functions/v1/fetch-prices`);
-  url.searchParams.set("symbol", symbol);
-  url.searchParams.set("days", String(days));
-  url.searchParams.set("type", "historical");
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${supabaseKey}`,
-      "apikey": supabaseKey,
-    },
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Price fetch failed (${response.status}): ${text}`);
-  }
-
-  const payload = await response.json();
-  const rows = payload?.data ?? [];
-  const filteredRows = Array.isArray(rows)
-    ? rows.filter((row: { date?: string }) => {
-        const date = parseIsoDate(row.date);
-        if (!date) return false;
-        if (start && date < start) return false;
-        if (end && date > end) return false;
-        return true;
-      })
-    : [];
-
-  return filteredRows.map((row: { date: string; open: number; high: number; low: number; close: number; volume: number }) => ({
-    timestamp: new Date(row.date).toISOString(),
-    open: Number(row.open),
-    high: Number(row.high),
-    low: Number(row.low),
-    close: Number(row.close),
-    volume: Number(row.volume ?? 0),
-  }));
-}
-
 function parseStrategyConfig(strategy: Record<string, unknown>): StrategyConfig {
   const config: StrategyConfig = {
     entryRules: [],
@@ -1226,24 +1164,10 @@ serve(async (req) => {
     const strategyConfig = parseStrategyConfig(strategy);
     console.log("[Backtest] Strategy config parsed:", strategyConfig);
 
-    let priceData: OHLCV[] = [];
-    try {
-      priceData = await fetchHistoricalPrices(supabaseUrl, supabaseKey, symbol, startDate, endDate);
-      console.log(`[Backtest] Retrieved ${priceData.length} price bars`);
-    } catch (fetchError) {
-      console.error("[Backtest] Price fetch failed:", fetchError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch historical price data." }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (priceData.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No historical price data available for the selected range." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Generate sample data (in production, would fetch real data)
+    const days = 365;
+    const priceData = generateSampleData(days, symbol);
+    console.log(`[Backtest] Generated ${priceData.length} price bars`);
 
     // Configure engine with production settings
     const config: BacktestConfig = {
