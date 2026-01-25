@@ -299,10 +299,10 @@ const PaperTrading = () => {
           {/* Header skeleton */}
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <div className="h-8 w-48 bg-muted rounded-xl" />
-              <div className="h-4 w-64 bg-muted/70 rounded-lg" />
+              <div className="h-8 w-48 bg-secondary rounded-xl" />
+              <div className="h-4 w-64 bg-secondary/70 rounded-lg" />
             </div>
-            <div className="h-8 w-20 bg-muted rounded-full" />
+            <div className="h-8 w-20 bg-secondary rounded-full" />
           </div>
           
           {/* Market Ticker skeleton */}
@@ -310,8 +310,8 @@ const PaperTrading = () => {
             <div className="flex items-center gap-4">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <div className="w-16 h-4 bg-muted rounded" />
-                  <div className="w-12 h-4 bg-muted/70 rounded" />
+                  <div className="w-16 h-4 bg-secondary rounded" />
+                  <div className="w-12 h-4 bg-secondary/70 rounded" />
                 </div>
               ))}
             </div>
@@ -324,17 +324,17 @@ const PaperTrading = () => {
               <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between mb-3">
                   <div className="space-y-2">
-                    <div className="h-5 w-32 bg-muted rounded" />
-                    <div className="h-7 w-24 bg-muted/70 rounded" />
+                    <div className="h-5 w-32 bg-secondary rounded" />
+                    <div className="h-7 w-24 bg-secondary/70 rounded" />
                   </div>
-                  <div className="h-8 w-8 bg-muted rounded" />
+                  <div className="h-8 w-8 bg-secondary rounded" />
                 </div>
                 <div className="flex gap-2">
-                  <div className="h-8 w-28 bg-muted rounded-lg" />
-                  <div className="h-8 w-16 bg-muted/70 rounded-lg" />
+                  <div className="h-8 w-28 bg-secondary rounded-lg" />
+                  <div className="h-8 w-16 bg-secondary/70 rounded-lg" />
                 </div>
               </div>
-              <div className="h-[350px] bg-muted/20 flex items-center justify-center">
+              <div className="h-[350px] bg-secondary/20 flex items-center justify-center">
                 <div className="text-muted-foreground text-sm">Loading chart...</div>
               </div>
             </div>
@@ -343,29 +343,29 @@ const PaperTrading = () => {
             <div className="space-y-4">
               <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="space-y-4">
-                  <div className="h-5 w-20 bg-muted rounded" />
-                  <div className="h-10 w-full bg-muted/70 rounded-lg" />
+                  <div className="h-5 w-20 bg-secondary rounded" />
+                  <div className="h-10 w-full bg-secondary/70 rounded-lg" />
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="h-10 bg-muted rounded-lg" />
-                    <div className="h-10 bg-muted rounded-lg" />
+                    <div className="h-10 bg-secondary rounded-lg" />
+                    <div className="h-10 bg-secondary rounded-lg" />
                   </div>
                   <div className="space-y-2">
-                    <div className="h-4 w-16 bg-muted/70 rounded" />
-                    <div className="h-16 bg-muted rounded-lg" />
+                    <div className="h-4 w-16 bg-secondary/70 rounded" />
+                    <div className="h-16 bg-secondary rounded-lg" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="h-10 bg-muted rounded-lg" />
-                    <div className="h-10 bg-muted rounded-lg" />
+                    <div className="h-10 bg-secondary rounded-lg" />
+                    <div className="h-10 bg-secondary rounded-lg" />
                   </div>
                 </div>
               </div>
               <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="space-y-3">
-                  <div className="h-5 w-24 bg-muted rounded" />
+                  <div className="h-5 w-24 bg-secondary rounded" />
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex justify-between">
-                      <div className="h-4 w-20 bg-muted/70 rounded" />
-                      <div className="h-4 w-16 bg-muted rounded" />
+                      <div className="h-4 w-20 bg-secondary/70 rounded" />
+                      <div className="h-4 w-16 bg-secondary rounded" />
                     </div>
                   ))}
                 </div>
