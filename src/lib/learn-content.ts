@@ -38,11 +38,15 @@ export interface Module {
   description: string;
   icon: string;
   color: string;
+  category: 'Beginner' | 'Intermediate' | 'Advanced' | 'Essential';
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   lessonCount: number;
   estimatedTime: string;
   lessons: LessonContent[];
 }
+
+// Alias for simpler usage
+export type Lesson = LessonContent;
 
 // ============================================
 // MODULE 1: TRADING FUNDAMENTALS
@@ -5952,6 +5956,7 @@ export const MODULES: Module[] = [
     description: 'Master the basics of algorithmic trading and Indian markets',
     icon: 'BookOpen',
     color: 'from-blue-500 to-cyan-500',
+    category: 'Beginner',
     difficulty: 'beginner',
     lessonCount: tradingFundamentalsLessons.length,
     estimatedTime: '1.5 hours',
@@ -5963,6 +5968,7 @@ export const MODULES: Module[] = [
     description: 'Learn to use SMA, EMA, RSI, MACD, Bollinger Bands, and more',
     icon: 'TrendingUp',
     color: 'from-purple-500 to-pink-500',
+    category: 'Intermediate',
     difficulty: 'intermediate',
     lessonCount: technicalIndicatorsLessons.length,
     estimatedTime: '2 hours',
@@ -5974,6 +5980,7 @@ export const MODULES: Module[] = [
     description: 'Protect your capital with position sizing and stop-losses',
     icon: 'Shield',
     color: 'from-green-500 to-emerald-500',
+    category: 'Essential',
     difficulty: 'intermediate',
     lessonCount: riskManagementLessons.length,
     estimatedTime: '1.5 hours',
@@ -5985,6 +5992,7 @@ export const MODULES: Module[] = [
     description: 'Design, backtest, and optimize trading strategies',
     icon: 'Cpu',
     color: 'from-orange-500 to-amber-500',
+    category: 'Intermediate',
     difficulty: 'intermediate',
     lessonCount: strategyBuildingLessons.length,
     estimatedTime: '2 hours',
@@ -5996,6 +6004,7 @@ export const MODULES: Module[] = [
     description: 'Introduction to futures, options, and derivatives trading',
     icon: 'BarChart3',
     color: 'from-red-500 to-rose-500',
+    category: 'Advanced',
     difficulty: 'advanced',
     lessonCount: fnoBasicsLessons.length,
     estimatedTime: '2.5 hours',
@@ -6007,6 +6016,7 @@ export const MODULES: Module[] = [
     description: 'Practice trading without risking real money',
     icon: 'FileText',
     color: 'from-indigo-500 to-violet-500',
+    category: 'Beginner',
     difficulty: 'beginner',
     lessonCount: paperTradingLessons.length,
     estimatedTime: '45 min',
@@ -6058,4 +6068,24 @@ export function getTotalLessonCount(): number {
 export function getTotalEstimatedTime(): string {
   // Sum up all module times
   return '~10 hours';
+}
+
+// Helper function to get lesson by module and lesson ID
+export function getLesson(moduleId: string, lessonId: string): LessonContent | undefined {
+  const module = getModuleById(moduleId);
+  return module?.lessons.find(l => l.id === lessonId);
+}
+
+// Helper function to get adjacent lessons for navigation
+export function getAdjacentLessons(moduleId: string, lessonId: string): { prev: LessonContent | undefined; next: LessonContent | undefined } {
+  const module = getModuleById(moduleId);
+  if (!module) return { prev: undefined, next: undefined };
+  
+  const lessonIndex = module.lessons.findIndex(l => l.id === lessonId);
+  if (lessonIndex === -1) return { prev: undefined, next: undefined };
+  
+  return {
+    prev: lessonIndex > 0 ? module.lessons[lessonIndex - 1] : undefined,
+    next: lessonIndex < module.lessons.length - 1 ? module.lessons[lessonIndex + 1] : undefined,
+  };
 }

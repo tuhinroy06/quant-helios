@@ -23,6 +23,7 @@ import PaperTrading from "./pages/dashboard/PaperTrading";
 import FNOSimulator from "./pages/dashboard/FNOSimulator";
 import Settings from "./pages/dashboard/Settings";
 import LearnDashboard from "./pages/dashboard/LearnDashboard";
+import LessonViewer from "@/components/learn/LessonViewer";
 import StoxoAI from "./pages/dashboard/StoxoAI";
 import LiveTrading from "./pages/dashboard/LiveTrading";
 
@@ -172,6 +173,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <LearnDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/learn/:moduleId/:lessonId"
+              element={
+                <ProtectedRoute>
+                  <LessonViewer />
                 </ProtectedRoute>
               }
             />
