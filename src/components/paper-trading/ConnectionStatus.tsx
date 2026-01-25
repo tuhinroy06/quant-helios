@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, Loader2, Clock } from "lucide-react";
+import { Wifi, WifiOff, Loader2, Clock, AlertTriangle } from "lucide-react";
 
 interface ConnectionStatusProps {
   loading?: boolean;
@@ -40,7 +40,17 @@ export const ConnectionStatus = ({
     return (
       <div className="flex items-center gap-1.5 text-xs text-destructive">
         <WifiOff className="w-3 h-3" />
-        <span>Error</span>
+        <span>Live Data Unavailable</span>
+      </div>
+    );
+  }
+
+  // No data yet state
+  if (!isFresh && !lastUpdated) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-yellow-500">
+        <AlertTriangle className="w-3 h-3" />
+        <span>Connecting...</span>
       </div>
     );
   }
