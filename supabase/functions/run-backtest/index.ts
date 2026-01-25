@@ -96,6 +96,19 @@ interface OHLCV {
   volume: number;
 }
 
+interface HistoricalPriceResponse {
+  data?: Array<{
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+  }>;
+  error?: string;
+  reason?: string;
+}
+
 interface BacktestConfig {
   initialCapital: number;
   slippage: number; // 0.1% = 0.001
@@ -1120,6 +1133,17 @@ function parseStrategyConfig(strategy: Record<string, unknown>): StrategyConfig 
   return config;
 }
 
+function parseDateInput(value: string | undefined, label: string): Date | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`${label} is not a valid date`);
+  }
+  return parsed;
+}
+
 // ============================================================================
 // 9. MAIN HANDLER
 // ============================================================================
@@ -1164,10 +1188,107 @@ serve(async (req) => {
     const strategyConfig = parseStrategyConfig(strategy);
     console.log("[Backtest] Strategy config parsed:", strategyConfig);
 
-    // Generate sample data (in production, would fetch real data)
-    const days = 365;
-    const priceData = generateSampleData(days, symbol);
-    console.log(`[Backtest] Generated ${priceData.length} price bars`);
+    const fallbackDays = 365;
+    let startFilter: Date | null = null;
+    let endFilter: Date | null = null;
+    try {
+      startFilter = parseDateInput(startDate, "startDate");
+      endFilter = parseDateInput(endDate, "endDate");
+    } catch (dateError) {
+      const message = dateError instanceof Error ? dateError.message : "Invalid date range";
+      return new Response(
+        JSON.stringify({ error: message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (startFilter && endFilter && startFilter.getTime() > endFilter.getTime()) {
+      return new Response(
+        JSON.stringify({ error: "startDate must be before endDate" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const endForDays = endFilter ?? new Date();
+    const startForDays = startFilter ?? new Date(endForDays.getTime() - fallbackDays * msPerDay);
+    const days = Math.max(
+      1,
+      Math.ceil((endForDays.getTime() - startForDays.getTime()) / msPerDay) + 1
+    );
+
+    const fetchUrl = new URL(`${supabaseUrl}/functions/v1/fetch-prices`);
+    fetchUrl.searchParams.set("symbol", symbol);
+    fetchUrl.searchParams.set("days", String(days));
+    fetchUrl.searchParams.set("type", "historical");
+
+    const priceResponse = await fetch(fetchUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${supabaseKey}`,
+        apikey: supabaseKey,
+      },
+    });
+
+    let pricePayload: HistoricalPriceResponse | null = null;
+    try {
+      pricePayload = await priceResponse.json();
+    } catch {
+      pricePayload = null;
+    }
+
+    if (!priceResponse.ok || pricePayload?.error) {
+      const message =
+        pricePayload?.error ||
+        pricePayload?.reason ||
+        `Failed to fetch historical prices for ${symbol}`;
+      const status = priceResponse.status >= 500 ? 503 : 400;
+      return new Response(
+        JSON.stringify({ error: message }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const sourceData = Array.isArray(pricePayload?.data) ? pricePayload?.data : [];
+    if (sourceData.length === 0) {
+      return new Response(
+        JSON.stringify({ error: `No historical price data returned for ${symbol}` }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const mappedData: OHLCV[] = sourceData.map((bar) => ({
+      timestamp: bar.date,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume,
+    }));
+
+    const priceData = mappedData.filter((bar) => {
+      const timestamp = new Date(bar.timestamp).getTime();
+      if (Number.isNaN(timestamp)) {
+        return false;
+      }
+      if (startFilter && timestamp < startFilter.getTime()) {
+        return false;
+      }
+      if (endFilter && timestamp > endFilter.getTime()) {
+        return false;
+      }
+      return true;
+    });
+
+    if (priceData.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: `No historical data for ${symbol} within the requested date range`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[Backtest] Fetched ${priceData.length} historical price bars`);
 
     // Configure engine with production settings
     const config: BacktestConfig = {
