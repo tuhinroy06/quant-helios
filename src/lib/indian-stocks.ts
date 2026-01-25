@@ -57,7 +57,6 @@ export const INDIAN_STOCKS: IndianStock[] = [
   { symbol: "KARURVYSYA", yahooSymbol: "KARURVYSYA.NS", name: "Karur Vysya Bank", price: 185, sector: "Banking", marketCap: 14800, marketCapCategory: "mid", pe: 8.5, pb: 1.2, dividendYield: 1.8, week52High: 225, week52Low: 125 },
   { symbol: "DCBBANK", yahooSymbol: "DCBBANK.NS", name: "DCB Bank", price: 118, sector: "Banking", marketCap: 3680, marketCapCategory: "small", pe: 8.8, pb: 0.8, dividendYield: 1.2, week52High: 165, week52Low: 95 },
   { symbol: "SOUTHBANK", yahooSymbol: "SOUTHBANK.NS", name: "South Indian Bank", price: 28, sector: "Banking", marketCap: 5850, marketCapCategory: "mid", pe: 6.5, pb: 0.7, dividendYield: 2.5, week52High: 38, week52Low: 18 },
-  { symbol: "TMBANK", yahooSymbol: "TMBANK.NS", name: "Tamilnad Mercantile Bank", price: 485, sector: "Banking", marketCap: 7650, marketCapCategory: "mid", pe: 7.2, pb: 1.0, dividendYield: 2.2, week52High: 585, week52Low: 385 },
   { symbol: "CSBBANK", yahooSymbol: "CSBBANK.NS", name: "CSB Bank", price: 325, sector: "Banking", marketCap: 5650, marketCapCategory: "mid", pe: 12.5, pb: 1.8, dividendYield: 0.8, week52High: 425, week52Low: 245 },
   { symbol: "RBLBANK", yahooSymbol: "RBLBANK.NS", name: "RBL Bank", price: 185, sector: "Banking", marketCap: 11200, marketCapCategory: "mid", pe: 12.8, pb: 0.8, dividendYield: 0, week52High: 295, week52Low: 145 },
   { symbol: "EQUITASBNK", yahooSymbol: "EQUITASBNK.NS", name: "Equitas Small Finance Bank", price: 85, sector: "Banking", marketCap: 9850, marketCapCategory: "mid", pe: 14.5, pb: 1.5, dividendYield: 0, week52High: 125, week52Low: 62 },
@@ -80,8 +79,6 @@ export const INDIAN_STOCKS: IndianStock[] = [
   { symbol: "CYIENT", yahooSymbol: "CYIENT.NS", name: "Cyient", price: 1920, sector: "IT", marketCap: 21200, marketCapCategory: "large", pe: 24.8, pb: 4.2, dividendYield: 1.5, week52High: 2285, week52Low: 1485 },
   { symbol: "ECLERX", yahooSymbol: "ECLERX.NS", name: "eClerx Services", price: 2850, sector: "IT", marketCap: 14200, marketCapCategory: "mid", pe: 22.5, pb: 6.8, dividendYield: 2.8, week52High: 3285, week52Low: 1985 },
   { symbol: "TATAELXSI", yahooSymbol: "TATAELXSI.NS", name: "Tata Elxsi", price: 6850, sector: "IT", marketCap: 42700, marketCapCategory: "large", pe: 52.5, pb: 18.5, dividendYield: 0.8, week52High: 9585, week52Low: 5185 },
-  { symbol: "BIRLASOFT", yahooSymbol: "BIRLASOFT.NS", name: "Birlasoft", price: 585, sector: "IT", marketCap: 16200, marketCapCategory: "mid", pe: 25.8, pb: 4.5, dividendYield: 1.2, week52High: 785, week52Low: 425 },
-  { symbol: "ZENSAR", yahooSymbol: "ZENSAR.NS", name: "Zensar Technologies", price: 685, sector: "IT", marketCap: 15500, marketCapCategory: "mid", pe: 28.5, pb: 4.8, dividendYield: 1.0, week52High: 885, week52Low: 485 },
   { symbol: "SONATSOFTW", yahooSymbol: "SONATSOFTW.NS", name: "Sonata Software", price: 585, sector: "IT", marketCap: 8500, marketCapCategory: "mid", pe: 32.5, pb: 8.5, dividendYield: 1.5, week52High: 825, week52Low: 425 },
   { symbol: "NEWGEN", yahooSymbol: "NEWGEN.NS", name: "Newgen Software", price: 1285, sector: "IT", marketCap: 9200, marketCapCategory: "mid", pe: 42.5, pb: 12.5, dividendYield: 0.5, week52High: 1585, week52Low: 785 },
   { symbol: "HAPPSTMNDS", yahooSymbol: "HAPPSTMNDS.NS", name: "Happiest Minds", price: 785, sector: "IT", marketCap: 11800, marketCapCategory: "mid", pe: 45.2, pb: 12.8, dividendYield: 0.8, week52High: 985, week52Low: 585 },
@@ -107,7 +104,6 @@ export const INDIAN_STOCKS: IndianStock[] = [
   { symbol: "MRPL", yahooSymbol: "MRPL.NS", name: "Mangalore Refinery", price: 185, sector: "Oil & Gas", marketCap: 32400, marketCapCategory: "large", pe: 8.5, pb: 1.5, dividendYield: 2.5, week52High: 265, week52Low: 125 },
   { symbol: "CHENNPETRO", yahooSymbol: "CHENNPETRO.NS", name: "Chennai Petroleum", price: 685, sector: "Oil & Gas", marketCap: 10200, marketCapCategory: "mid", pe: 4.5, pb: 1.2, dividendYield: 4.5, week52High: 985, week52Low: 385 },
   { symbol: "CASTROLIND", yahooSymbol: "CASTROLIND.NS", name: "Castrol India", price: 185, sector: "Oil & Gas", marketCap: 18300, marketCapCategory: "mid", pe: 22.5, pb: 12.5, dividendYield: 4.2, week52High: 225, week52Low: 125 },
-  { symbol: "AEGISCHEM", yahooSymbol: "AEGISCHEM.NS", name: "Aegis Logistics", price: 385, sector: "Oil & Gas", marketCap: 12850, marketCapCategory: "mid", pe: 28.5, pb: 5.8, dividendYield: 0.8, week52High: 485, week52Low: 285 },
   { symbol: "GSPL", yahooSymbol: "GSPL.NS", name: "Gujarat State Petronet", price: 385, sector: "Oil & Gas", marketCap: 21700, marketCapCategory: "large", pe: 12.5, pb: 1.8, dividendYield: 2.5, week52High: 485, week52Low: 285 },
 
   // ============ FMCG ============
