@@ -108,40 +108,40 @@ const Backtest = () => {
     }, 150);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-backtest`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            strategyId: strategy.id,
-            startDate: '2024-01-01',
-            endDate: '2024-12-31',
-            symbol: 'NIFTY',
-            initialCapital: 1000000
-          }),
+      const { data, error } = await supabase.functions.invoke("run-backtest", {
+        body: {
+          strategyId: strategy.id,
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          symbol: 'NIFTY',
+          initialCapital: 1000000
         }
-      );
+      });
 
       clearInterval(interval);
       setProgress(100);
 
-      const data = await response.json();
+      if (error) {
+        const status = error.context?.status ?? error.status;
+        const body = error.context?.body;
+        const errorBody = typeof body === "string" ? body : body ? JSON.stringify(body) : "";
+        const statusLabel = status ? `Status ${status}` : "Status unavailable";
+        toast.error(`Backtest failed (${statusLabel}): ${errorBody || error.message}`);
+        setIsRunning(false);
+        return;
+      }
 
-      if (data.error) {
+      if (data?.error) {
         toast.error(data.error);
         setIsRunning(false);
         return;
       }
 
-      setResults(data.metrics);
-      setEquityCurve(data.equityCurve || []);
-      setTrades(data.trades || []);
-      setMetadata(data.metadata);
-      setRejectedSignals(data.rejectedSignals || []);
+      setResults(data?.metrics ?? null);
+      setEquityCurve(data?.equityCurve || []);
+      setTrades(data?.trades || []);
+      setMetadata(data?.metadata ?? null);
+      setRejectedSignals(data?.rejectedSignals || []);
       toast.success('Backtest completed successfully!');
     } catch (error) {
       clearInterval(interval);
