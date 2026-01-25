@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,10 +27,10 @@ interface CurrentPriceData {
   volume: number;
   timestamp: string;
   marketStatus: 'open' | 'closed' | 'pre-market' | 'post-market';
-  source: 'alpha_vantage' | 'cache' | 'simulated';
+  source: 'alpha_vantage' | 'cache';
 }
 
-// Complete mapping of internal symbols to Alpha Vantage format (400+ stocks)
+// Complete mapping of internal symbols to Alpha Vantage format
 const SYMBOL_MAP: Record<string, string> = {
   // Indices
   'NIFTY': 'NIFTY50.NS',
@@ -441,177 +440,8 @@ const SYMBOL_MAP: Record<string, string> = {
   'RITES': 'RITES.BSE',
 };
 
-// Complete base prices for simulation fallback (all 400+ stocks)
-const STOCK_BASE_PRICES: Record<string, number> = {
-  // Indices
-  'NIFTY': 24500, 'BANKNIFTY': 51800, 'NIFTYIT': 41500, 'NIFTYMIDCAP': 15800, 'NIFTYSMLCAP': 18200,
-  'NIFTYPHARMA': 21500, 'NIFTYMETAL': 9200, 'NIFTYAUTO': 23500, 'NIFTYREALTY': 1050, 'NIFTYFMCG': 58500,
-  
-  // Banking
-  'HDFCBANK': 1680, 'ICICIBANK': 1120, 'SBIN': 780, 'KOTAKBANK': 1850, 'AXISBANK': 1080,
-  'INDUSINDBK': 1420, 'BANDHANBNK': 195, 'FEDERALBNK': 165, 'IDFCFIRSTB': 78, 'PNB': 105,
-  'BANKBARODA': 245, 'CANBK': 108, 'AUBANK': 620, 'YESBANK': 22, 'UNIONBANK': 125,
-  'INDIANB': 485, 'CENTRALBK': 52, 'MAHABANK': 58, 'IOB': 52, 'UCOBANK': 48,
-  'PSB': 58, 'KARURVYSYA': 185, 'DCBBANK': 118, 'SOUTHBANK': 28, 'TMBANK': 485,
-  'CSBBANK': 325, 'RBLBANK': 185, 'EQUITASBNK': 85, 'UJJIVANSFB': 42, 'SURYODAY': 145, 'ESAFSFB': 58,
-  
-  // IT
-  'TCS': 3950, 'INFY': 1520, 'WIPRO': 445, 'HCLTECH': 1780, 'TECHM': 1650,
-  'LTIM': 5850, 'MPHASIS': 2680, 'COFORGE': 5450, 'PERSISTENT': 5200, 'LTTS': 4850,
-  'OFSS': 9800, 'CYIENT': 1920, 'ECLERX': 2850, 'TATAELXSI': 6850, 'BIRLASOFT': 585,
-  'ZENSAR': 685, 'SONATSOFTW': 585, 'NEWGEN': 1285, 'HAPPSTMNDS': 785, 'ROUTE': 1650,
-  'INTELLECT': 785, 'KPITTECH': 1485, 'MASTEK': 2850, 'RATEGAIN': 685, 'TANLA': 985,
-  'REDINGTON': 185, 'MAPMYINDIA': 1850, 'LATENTVIEW': 485,
-  
-  // Oil & Gas
-  'RELIANCE': 2850, 'ONGC': 265, 'BPCL': 585, 'IOC': 168, 'HINDPETRO': 385,
-  'GAIL': 195, 'PETRONET': 345, 'OIL': 520, 'MGL': 1450, 'IGL': 485,
-  'GUJGAS': 545, 'MRPL': 185, 'CHENNPETRO': 685, 'CASTROLIND': 185, 'AEGISCHEM': 385, 'GSPL': 385,
-  
-  // FMCG
-  'HINDUNILVR': 2450, 'ITC': 460, 'NESTLEIND': 2480, 'BRITANNIA': 5200, 'DABUR': 585,
-  'MARICO': 635, 'GODREJCP': 1280, 'COLPAL': 2850, 'TATACONSUM': 1120, 'VBL': 1580,
-  'PGHH': 15800, 'GILLETTE': 6850, 'EMAMILTD': 585, 'JYOTHYLAB': 485, 'RADICO': 1850,
-  'UNITDSPR': 1185, 'MCDOWELL-N': 1850, 'ZYDUSWELL': 1850, 'BIKAJI': 685, 'CCL': 685, 'GODFRYPHLP': 4850,
-  
-  // Pharma
-  'SUNPHARMA': 1620, 'DRREDDY': 6200, 'CIPLA': 1480, 'DIVISLAB': 4950, 'APOLLOHOSP': 6800,
-  'LUPIN': 1680, 'BIOCON': 285, 'TORNTPHARM': 2850, 'ALKEM': 5450, 'AUROPHARMA': 1280,
-  'ZYDUSLIFE': 985, 'GLENMARK': 1185, 'IPCALAB': 1450, 'ABBOTINDIA': 26500, 'SANOFI': 6850,
-  'GLAND': 1850, 'LALPATHLAB': 2850, 'METROPOLIS': 1850, 'NATCOPHARM': 1185, 'GRANULES': 485,
-  'LAURUSLABS': 485, 'SYNGENE': 785, 'ASTRAZEN': 6850, 'PFIZER': 4850, 'GLAXO': 2450,
-  'MANKIND': 2185, 'JBCHEPHARM': 1850, 'ERIS': 985,
-  
-  // Auto
-  'TATAMOTORS': 920, 'MARUTI': 10800, 'M&M': 2850, 'BAJAJ-AUTO': 9200, 'EICHERMOT': 4850,
-  'HEROMOTOCO': 4200, 'TVSMOTOR': 2450, 'ASHOKLEY': 185, 'MOTHERSON': 145, 'BHARATFORG': 1350,
-  'MRF': 128500, 'APOLLOTYRE': 485, 'BALKRISIND': 2850, 'BOSCHLTD': 32500, 'EXIDEIND': 485,
-  'AMARAJABAT': 1185, 'CEATLTD': 2850, 'SUNDRMFAST': 1085, 'ENDURANCE': 2185, 'SWARAJENG': 2850,
-  'FORCEMOT': 6850, 'OLECTRA': 1450,
-  
-  // Metals
-  'TATASTEEL': 145, 'JSWSTEEL': 890, 'HINDALCO': 620, 'VEDL': 445, 'COALINDIA': 420,
-  'NMDC': 225, 'SAIL': 125, 'JINDALSTEL': 920, 'NATIONALUM': 185, 'HINDCOPPER': 285,
-  'MOIL': 385, 'WELCORP': 585, 'APLAPOLLO': 1585, 'RATNAMANI': 3250, 'JSLHISAR': 685, 'GMRINFRA': 85,
-  
-  // Power
-  'NTPC': 385, 'POWERGRID': 295, 'ADANIGREEN': 1850, 'TATAPOWER': 420, 'ADANIPOWER': 585,
-  'NHPC': 85, 'SJVN': 125, 'CESC': 145, 'TORNTPOWER': 1650, 'JSL': 785, 'NLCINDIA': 265, 'JSWENERGY': 585,
-  
-  // Infra & Construction
-  'LT': 3400, 'ADANIENT': 2850, 'ADANIPORTS': 1280, 'ULTRACEMCO': 11200, 'GRASIM': 2450,
-  'SHREECEM': 26500, 'AMBUJACEM': 585, 'ACC': 2450, 'DALMIACEM': 1850, 'JKCEMENT': 4250,
-  'RAMCOCEM': 985, 'BIRLACORPN': 1450, 'HEIDELBCEM': 185, 'DLF': 850, 'GODREJPROP': 2650,
-  'OBEROIRLTY': 1650, 'PRESTIGE': 1450, 'LODHA': 1285, 'BRIGADE': 1185, 'PHOENIXLTD': 1850,
-  'SOBHA': 1650, 'SUNTECK': 485, 'KOLTEPATIL': 485, 'ASHIANA': 285,
-  
-  // Consumer Durables
-  'TITAN': 3200, 'HAVELLS': 1450, 'VOLTAS': 1250, 'BLUESTARCO': 1650, 'CROMPTON': 385,
-  'WHIRLPOOL': 1350, 'BATAINDIA': 1450, 'RELAXO': 785, 'RAJESHEXPO': 785, 'VGUARD': 385,
-  'ORIENTELEC': 285, 'POLYCAB': 6450, 'DIXON': 12500, 'AMBER': 4850, 'KAJARIACER': 1285,
-  
-  // NBFC/Finance
-  'BAJFINANCE': 6800, 'BAJAJFINSV': 1650, 'SHRIRAMFIN': 2450, 'MUTHOOTFIN': 1650, 'MANAPPURAM': 185,
-  'CHOLAFIN': 1250, 'M&MFIN': 285, 'LICHSGFIN': 585, 'CANFINHOME': 785, 'AAVAS': 1650,
-  'HOMEFIRST': 985, 'APTUS': 385, 'POONAWALLA': 385, 'JMFINANCIL': 85, 'CREDITACC': 1185, 'PNBHOUSING': 785,
-  
-  // Insurance
-  'LICI': 985, 'SBILIFE': 1550, 'HDFCLIFE': 685, 'ICICIPRULI': 585, 'ICICIGI': 1750,
-  'BAJAJHFL': 145, 'STARHEALTH': 585, 'MAXHEALTH': 785, 'NIACL': 185, 'GICRE': 385,
-  
-  // Telecom
-  'BHARTIARTL': 1620, 'IDEA': 14, 'TTML': 85, 'INDUSTOWER': 385,
-  
-  // Retail
-  'DMART': 3850, 'TRENT': 5450, 'SHOPERSTOP': 785, 'ABFRL': 285, 'VMART': 2450, 'METRO': 185, 'KALYANKJIL': 585,
-  
-  // Capital Goods
-  'HONAUT': 52500, 'AIAENG': 3850, 'ELGIEQUIP': 685, 'KAYNES': 4850, 'TRIVENI': 585,
-  'KENNAMET': 2450, 'CARBORUNIV': 1285, 'WENDT': 7850, 'BEL': 285, 'HAL': 4250,
-  'MAZDA': 4850, 'COCHINSHIP': 1850, 'GRSE': 1650, 'PARAS': 985, 'DATAPATT': 2450, 'ZENTEC': 1650,
-  
-  // Chemicals
-  'PIDILITIND': 2950, 'SRF': 2450, 'ATUL': 6850, 'NAVINFLUOR': 3450, 'DEEPAKFERT': 585,
-  'DEEPAKNTR': 2450, 'FINEORG': 4850, 'CLEAN': 1450, 'TATACHEM': 1085, 'BASF': 6850,
-  'ANURAS': 885, 'GALAXYSURF': 2850, 'PIIND': 3850, 'AARTIIND': 485, 'SUMICHEM': 485,
-  'ALKYLAMINE': 2250, 'BALAJI': 2450, 'VINATI': 1850, 'IOLCP': 385,
-  'ASIANPAINT': 2950, 'BERGEPAINT': 485, 'KANSAINER': 385, 'AKZONOBEL': 3850,
-  
-  // Fintech
-  'PAYTM': 385, 'POLICYBZR': 1450, 'CARTRADE': 885, 'EASEMYTRIP': 38, 'INFIBEAM': 28,
-  'ANGELONE': 2850, 'CDSL': 1450, 'BSE': 4850, 'CAMS': 3850, 'KFINTECH': 985,
-  'MCX': 5850, 'IIFL': 485, 'MOTILALOFS': 785, 'HDFCAMC': 4250, 'NIPPONIND': 585,
-  'UTIAMC': 1085, 'ABSLAMC': 485,
-  
-  // Textiles
-  'PAGEIND': 42000, 'RAYMOND': 1650, 'ARVIND': 385, 'WELSPUNIND': 145, 'KPRMILL': 885,
-  'VARDHMAN': 485, 'SOMANYCERA': 685, 'CERA': 8850, 'TRIDENT': 32, 'GOKEX': 985,
-  
-  // Media
-  'SUNTV': 685, 'ZEEL': 145, 'PVR': 1450, 'NAZARA': 985, 'TIPS': 685, 'SAREGAMA': 485,
-  'NETWORK18': 78, 'TV18BRDCST': 42,
-  
-  // Agriculture
-  'UPL': 545, 'COROMANDEL': 1650, 'CHAMBAL': 485, 'GNFC': 585, 'GSFC': 185,
-  'RCF': 145, 'FACT': 785, 'ZUARI': 185, 'KAVERI': 785, 'DHANUKA': 1450, 'RALLIS': 285, 'BAYER': 6850,
-  
-  // Hotels & E-commerce
-  'INDIANHOTEL': 685, 'LEMON': 145, 'CHALET': 785, 'EIH': 385, 'INDIAMART': 2850,
-  'JUSTDIAL': 1085, 'AFFLE': 1450,
-  
-  // Finance
-  'IRFC': 165, 'RECLTD': 485, 'PFC': 485, 'HUDCO': 245, 'IREDA': 185,
-  'CGCL': 185, 'SUNDARM': 4250, 'RITES': 685,
-};
-
-// Sector-based volatility for simulation
-const SECTOR_VOLATILITY: Record<string, number> = {
-  'Index': 0.008,
-  'Banking': 0.016,
-  'IT': 0.015,
-  'Oil & Gas': 0.018,
-  'FMCG': 0.010,
-  'Pharma': 0.015,
-  'Auto': 0.018,
-  'Metals': 0.022,
-  'Power': 0.014,
-  'Infrastructure': 0.016,
-  'Consumer': 0.014,
-  'Finance': 0.018,
-  'Insurance': 0.012,
-  'Telecom': 0.020,
-  'Retail': 0.016,
-  'Chemicals': 0.015,
-  'Fintech': 0.025,
-  'Textiles': 0.018,
-  'Media': 0.020,
-  'Agriculture': 0.015,
-  'Hotels': 0.018,
-  'default': 0.015,
-};
-
 // In-memory cache for quick lookups
 const priceCache: Map<string, { data: any; expiresAt: number }> = new Map();
-
-// Seeded random number generator for deterministic simulated data
-function createSeededRandom(seed: number): () => number {
-  let currentSeed = seed;
-  return function() {
-    currentSeed = (currentSeed * 1103515245 + 12345) & 0x7fffffff;
-    return currentSeed / 0x7fffffff;
-  };
-}
-
-// Create a consistent seed from a symbol string
-function getSymbolSeed(symbol: string): number {
-  return symbol.toUpperCase().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-}
-
-// Create a date seed for consistent daily prices
-function getDateSeed(date: Date): number {
-  const dateStr = date.toISOString().split('T')[0];
-  return dateStr.split('-').reduce((acc, p) => acc + parseInt(p), 0);
-}
 
 function isMarketOpen(): { status: 'open' | 'closed' | 'pre-market' | 'post-market'; message: string } {
   const now = new Date();
@@ -727,147 +557,6 @@ async function fetchFromAlphaVantage(
   }
 }
 
-function getVolatility(symbol: string): number {
-  const upperSymbol = symbol.toUpperCase();
-  
-  // Index volatility
-  if (upperSymbol.includes('NIFTY')) return SECTOR_VOLATILITY['Index'];
-  
-  // Get from base prices to determine sector
-  if (STOCK_BASE_PRICES[upperSymbol]) {
-    const price = STOCK_BASE_PRICES[upperSymbol];
-    // Higher priced stocks tend to have lower volatility
-    if (price > 10000) return 0.012;
-    if (price > 5000) return 0.014;
-    if (price > 1000) return 0.016;
-    if (price > 100) return 0.018;
-    return 0.025; // Penny stocks
-  }
-  
-  return SECTOR_VOLATILITY['default'];
-}
-
-// Cache for simulated historical data to ensure consistency
-const simulatedHistoricalCache: Map<string, { data: PriceData[]; expiresAt: number }> = new Map();
-
-function generateSimulatedHistorical(symbol: string, days: number = 365): { data: PriceData[]; source: 'simulated' } {
-  const cacheKey = `sim_hist_${symbol.toUpperCase()}_${days}`;
-  const cached = simulatedHistoricalCache.get(cacheKey);
-  
-  // Cache for 1 hour to ensure consistency across requests
-  if (cached && cached.expiresAt > Date.now()) {
-    return { data: cached.data, source: 'simulated' };
-  }
-  
-  const data: PriceData[] = [];
-  const basePrice = STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
-  let price = basePrice;
-  
-  const isIndex = symbol.toUpperCase().includes('NIFTY');
-  const volatility = getVolatility(symbol);
-  const trend = 0.0002;
-  
-  // Use seeded random for consistent data
-  const symbolSeed = getSymbolSeed(symbol);
-  const random = createSeededRandom(symbolSeed);
-
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
-  for (let i = 0; i < days; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    
-    if (date.getDay() === 0 || date.getDay() === 6) continue;
-
-    const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
-    const seasonal = Math.sin(dayOfYear / 365 * Math.PI * 2) * 0.002;
-    
-    // Use seeded random instead of Math.random()
-    const change = (random() - 0.5) * 2 * volatility + trend + seasonal;
-    const open = price;
-    price = price * (1 + change);
-    const close = price;
-    
-    const range = Math.abs(close - open) + price * (random() * 0.01);
-    const high = Math.max(open, close) + random() * range * 0.5;
-    const low = Math.min(open, close) - random() * range * 0.5;
-    
-    const baseVolume = isIndex ? 500000 : 100000;
-    const volume = Math.floor(baseVolume + random() * baseVolume * 2 * (Math.abs(change) * 50));
-
-    data.push({
-      symbol: symbol.toUpperCase(),
-      date: date.toISOString().split('T')[0],
-      open: Math.round(open * 100) / 100,
-      high: Math.round(high * 100) / 100,
-      low: Math.round(low * 100) / 100,
-      close: Math.round(close * 100) / 100,
-      volume
-    });
-  }
-
-  // Cache the result for consistency
-  simulatedHistoricalCache.set(cacheKey, { data, expiresAt: Date.now() + 3600000 });
-
-  return { data, source: 'simulated' };
-}
-
-function generateSimulatedPrice(symbol: string): CurrentPriceData {
-  // First, get the historical data to ensure current price aligns with last close
-  const historicalResult = generateSimulatedHistorical(symbol, 365);
-  const historicalData = historicalResult.data;
-  
-  // Get the last historical close as the previous close
-  const lastHistorical = historicalData.length > 0 
-    ? historicalData[historicalData.length - 1] 
-    : null;
-  
-  const previousClose = lastHistorical?.close || STOCK_BASE_PRICES[symbol.toUpperCase()] || 1000;
-  const volatility = getVolatility(symbol);
-  
-  // Create a seed based on symbol + today's date for consistent intraday price
-  const now = new Date();
-  const symbolSeed = getSymbolSeed(symbol);
-  const dateSeed = getDateSeed(now);
-  const combinedSeed = symbolSeed + dateSeed;
-  
-  const random = createSeededRandom(combinedSeed);
-  
-  // Generate consistent intraday movement from previous close
-  const changePercent = (random() - 0.5) * 2 * volatility * 100;
-  const change = previousClose * (changePercent / 100);
-  const price = previousClose + change;
-  
-  // Generate OHLC that makes sense
-  const openVariation = (random() - 0.5) * 0.005;
-  const open = previousClose * (1 + openVariation);
-  
-  const dayRange = Math.abs(change) + price * 0.005;
-  const high = Math.max(open, price) + random() * dayRange;
-  const low = Math.min(open, price) - random() * dayRange;
-  
-  const baseVolume = symbol.toUpperCase().includes('NIFTY') ? 500000 : 100000;
-  const volume = Math.floor(baseVolume + random() * baseVolume * 4);
-  
-  const marketStatus = isMarketOpen();
-  
-  return {
-    symbol: symbol.toUpperCase(),
-    price: Math.round(price * 100) / 100,
-    change: Math.round(change * 100) / 100,
-    changePercent: Math.round(changePercent * 100) / 100,
-    open: Math.round(open * 100) / 100,
-    high: Math.round(high * 100) / 100,
-    low: Math.round(low * 100) / 100,
-    previousClose: Math.round(previousClose * 100) / 100,
-    volume,
-    timestamp: now.toISOString(),
-    marketStatus: marketStatus.status,
-    source: 'simulated',
-  };
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -883,6 +572,7 @@ serve(async (req) => {
     const marketStatus = isMarketOpen();
     const cacheKey = `${symbol}-${type}`;
     
+    // Check cache first
     const cached = priceCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       console.log(`Cache hit for ${cacheKey}`);
@@ -903,69 +593,86 @@ serve(async (req) => {
       );
     }
 
-    if (type === 'current') {
-      if (apiKey) {
-        const alphaData = await fetchFromAlphaVantage(symbol, 'current', apiKey);
-        if (alphaData) {
-          const response: CurrentPriceData = {
-            ...alphaData,
-            timestamp: new Date().toISOString(),
-            marketStatus: marketStatus.status,
-          };
-          
-          const ttl = marketStatus.status === 'open' ? 60000 : 300000;
-          priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + ttl });
-          
-          return new Response(
-            JSON.stringify(response),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-      
-      console.log(`Falling back to simulated data for ${symbol}`);
-      const simulatedData = generateSimulatedPrice(symbol);
-      
+    // Check if API key is configured
+    if (!apiKey) {
+      console.error('ALPHA_VANTAGE_API_KEY not configured');
       return new Response(
-        JSON.stringify(simulatedData),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          error: 'Live data unavailable',
+          symbol: symbol.toUpperCase(),
+          reason: 'API key not configured',
+          marketStatus: marketStatus.status,
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (apiKey) {
-      const alphaData = await fetchFromAlphaVantage(symbol, 'historical', apiKey);
+    if (type === 'current') {
+      const alphaData = await fetchFromAlphaVantage(symbol, 'current', apiKey);
+      
       if (alphaData) {
-        const filteredData = alphaData.data.slice(-days);
-        
-        const response = {
-          symbol: symbol.toUpperCase(),
-          count: filteredData.length,
-          source: alphaData.source,
+        const response: CurrentPriceData = {
+          ...alphaData,
+          timestamp: new Date().toISOString(),
           marketStatus: marketStatus.status,
-          data: filteredData,
         };
         
-        priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + 3600000 });
+        // Cache: 1 min when open, 5 min when closed
+        const ttl = marketStatus.status === 'open' ? 60000 : 300000;
+        priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + ttl });
         
         return new Response(
           JSON.stringify(response),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      
+      // No fallback - return error
+      console.error(`Unable to fetch live price for ${symbol}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Live data unavailable',
+          symbol: symbol.toUpperCase(),
+          reason: 'API rate limit or data unavailable',
+          marketStatus: marketStatus.status,
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Historical data
+    const alphaData = await fetchFromAlphaVantage(symbol, 'historical', apiKey);
+    
+    if (alphaData) {
+      const filteredData = alphaData.data.slice(-days);
+      
+      const response = {
+        symbol: symbol.toUpperCase(),
+        count: filteredData.length,
+        source: alphaData.source,
+        marketStatus: marketStatus.status,
+        data: filteredData,
+      };
+      
+      // Cache historical data for 1 hour
+      priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + 3600000 });
+      
+      return new Response(
+        JSON.stringify(response),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     
-    console.log(`Falling back to simulated historical data for ${symbol}`);
-    const simulatedHistorical = generateSimulatedHistorical(symbol, days);
-    
+    // No fallback - return error
+    console.error(`Unable to fetch live historical data for ${symbol}`);
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
+        error: 'Live historical data unavailable',
         symbol: symbol.toUpperCase(),
-        count: simulatedHistorical.data.length,
-        source: simulatedHistorical.source,
+        reason: 'API rate limit or data unavailable',
         marketStatus: marketStatus.status,
-        data: simulatedHistorical.data,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: unknown) {

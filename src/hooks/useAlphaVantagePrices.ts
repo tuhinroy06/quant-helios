@@ -66,9 +66,17 @@ export const useAlphaVantagePrices = ({
               }
             );
 
-            if (!response.ok) return null;
-            return response.json();
-          } catch {
+            const result = await response.json();
+            
+            // Check for API errors (503 = live data unavailable)
+            if (!response.ok || result.error) {
+              console.warn(`[Price] ${symbol}: ${result.error || response.statusText}`);
+              return null;
+            }
+            
+            return result;
+          } catch (err) {
+            console.error(`[Price] ${symbol} fetch error:`, err);
             return null;
           }
         });
