@@ -27,7 +27,7 @@ interface CurrentPriceData {
   volume: number;
   timestamp: string;
   marketStatus: 'open' | 'closed' | 'pre-market' | 'post-market';
-  source: 'alpha_vantage' | 'yahoo' | 'cache';
+  source: 'alpha_vantage' | 'yahoo' | 'nsetools' | 'cache';
 }
 
 // Symbol mapping for Alpha Vantage
@@ -611,6 +611,164 @@ async function fetchFromAlphaVantage(
   }
 }
 
+function parseSetCookieHeader(header: string | null): string {
+  if (!header) return "";
+  const cookies = header
+    .split(",")
+    .map((part) => part.trim())
+    .map((part) => part.split(";")[0])
+    .filter(Boolean);
+  return cookies.join("; ");
+}
+
+function toNseDate(date: Date): string {
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${day}-${month}-${date.getFullYear()}`;
+}
+
+function normalizeNseSymbol(symbol: string): string {
+  return symbol.replace(/[^A-Z0-9&-]/gi, '').toUpperCase();
+}
+
+const NSE_INDEX_MAP: Record<string, string> = {
+  NIFTY: "NIFTY 50",
+  BANKNIFTY: "NIFTY BANK",
+  NIFTYIT: "NIFTY IT",
+  NIFTYMIDCAP: "NIFTY MIDCAP 50",
+  NIFTYSMLCAP: "NIFTY SMALLCAP 100",
+  NIFTYPHARMA: "NIFTY PHARMA",
+  NIFTYMETAL: "NIFTY METAL",
+  NIFTYAUTO: "NIFTY AUTO",
+  NIFTYREALTY: "NIFTY REALTY",
+  NIFTYFMCG: "NIFTY FMCG",
+};
+
+async function fetchNseCookies(): Promise<string> {
+  const response = await fetch("https://www.nseindia.com", {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Accept": "text/html,application/xhtml+xml",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
+
+  const setCookie = response.headers.get("set-cookie");
+  return parseSetCookieHeader(setCookie);
+}
+
+async function fetchFromNse(
+  symbol: string,
+  type: 'current' | 'historical'
+): Promise<any> {
+  const normalizedSymbol = normalizeNseSymbol(symbol);
+  const cookie = await fetchNseCookies();
+
+  if (!cookie) {
+    console.warn("[NSE] Missing cookies, skipping NSE fetch.");
+    return null;
+  }
+
+  const baseHeaders = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "application/json,text/plain,*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.nseindia.com/",
+    "Connection": "keep-alive",
+    "Cookie": cookie,
+  };
+
+  try {
+    if (type === 'current') {
+      const url = `https://www.nseindia.com/api/quote-equity?symbol=${encodeURIComponent(normalizedSymbol)}`;
+      console.log(`[NSE] Fetching current price for ${normalizedSymbol}`);
+
+      const response = await fetch(url, { headers: baseHeaders });
+      if (!response.ok) {
+        console.warn(`[NSE] HTTP error for ${normalizedSymbol}: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json();
+      const priceInfo = data?.priceInfo;
+      if (!priceInfo) {
+        console.warn(`[NSE] No priceInfo for ${normalizedSymbol}`);
+        return null;
+      }
+
+      const previousClose = Number(priceInfo.previousClose ?? 0);
+      const currentPrice = Number(priceInfo.lastPrice ?? 0);
+      const change = currentPrice - previousClose;
+      const changePercent = previousClose ? (change / previousClose) * 100 : 0;
+
+      return {
+        symbol: normalizedSymbol,
+        price: currentPrice,
+        change: Math.round(change * 100) / 100,
+        changePercent: Math.round(changePercent * 100) / 100,
+        open: Number(priceInfo.open ?? currentPrice),
+        high: Number(priceInfo.intraDayHighLow?.max ?? currentPrice),
+        low: Number(priceInfo.intraDayHighLow?.min ?? currentPrice),
+        previousClose,
+        volume: Number(priceInfo.totalTradedVolume ?? 0),
+        source: 'nsetools' as const,
+      };
+    }
+
+    const now = new Date();
+    const fromDate = new Date(now);
+    fromDate.setFullYear(now.getFullYear() - 2);
+
+    const from = toNseDate(fromDate);
+    const to = toNseDate(now);
+    const indexName = NSE_INDEX_MAP[normalizedSymbol];
+    const url = indexName
+      ? `https://www.nseindia.com/api/historical/indices?indexType=${encodeURIComponent(indexName)}&from=${from}&to=${to}`
+      : `https://www.nseindia.com/api/historical/cm/equity?symbol=${encodeURIComponent(normalizedSymbol)}&series=[%22EQ%22]&from=${from}&to=${to}`;
+    console.log(`[NSE] Fetching historical data for ${normalizedSymbol}`);
+
+    const response = await fetch(url, { headers: baseHeaders });
+    if (!response.ok) {
+      console.warn(`[NSE] HTTP error for historical ${normalizedSymbol}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const rows = data?.data || [];
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      console.warn(`[NSE] No historical data for ${normalizedSymbol}`);
+      return null;
+    }
+
+    const historicalData: PriceData[] = rows
+      .map((row: any) => ({
+        symbol: normalizedSymbol,
+        date: row?.CH_TIMESTAMP
+          ? new Date(row.CH_TIMESTAMP).toISOString().split("T")[0]
+          : row?.TIMESTAMP
+            ? new Date(row.TIMESTAMP).toISOString().split("T")[0]
+            : row?.indexDate
+              ? new Date(row.indexDate).toISOString().split("T")[0]
+              : "",
+        open: Number(row.CH_OPEN ?? row.CH_OPENING_INDEX ?? row.open ?? 0),
+        high: Number(row.CH_HIGH ?? row.CH_TRADE_HIGH_PRICE ?? row.high ?? 0),
+        low: Number(row.CH_LOW ?? row.CH_TRADE_LOW_PRICE ?? row.low ?? 0),
+        close: Number(row.CH_CLOSE ?? row.CH_CLOSING_INDEX ?? row.close ?? 0),
+        volume: Number(row.CH_TOT_TRADED_QTY ?? row.turnover ?? row.volume ?? 0),
+      }))
+      .filter((entry: PriceData) => entry.date && entry.close > 0);
+
+    return {
+      data: historicalData,
+      source: 'nsetools' as const,
+    };
+  } catch (error) {
+    console.error('[NSE] API error:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -648,8 +806,13 @@ serve(async (req) => {
     }
 
     if (type === 'current') {
-      // Try Yahoo Finance first (no rate limits)
-      let result = await fetchFromYahoo(symbol, 'current');
+      // Try NSE first (nsetools-style data)
+      let result = await fetchFromNse(symbol, 'current');
+
+      // Try Yahoo Finance as fallback (no rate limits)
+      if (!result) {
+        result = await fetchFromYahoo(symbol, 'current');
+      }
       
       // If Yahoo fails, try Alpha Vantage
       if (!result && apiKey) {
@@ -687,8 +850,13 @@ serve(async (req) => {
     }
 
     // Historical data
-    // Try Yahoo first
-    let result = await fetchFromYahoo(symbol, 'historical');
+    // Try NSE first (nsetools-style data)
+    let result = await fetchFromNse(symbol, 'historical');
+
+    // Try Yahoo as fallback
+    if (!result) {
+      result = await fetchFromYahoo(symbol, 'historical');
+    }
     
     // If Yahoo fails, try Alpha Vantage
     if (!result && apiKey) {

@@ -108,31 +108,22 @@ const Backtest = () => {
     }, 150);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-backtest`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            strategyId: strategy.id,
-            startDate: '2024-01-01',
-            endDate: '2024-12-31',
-            symbol: 'NIFTY',
-            initialCapital: 1000000
-          }),
+      const { data, error } = await supabase.functions.invoke('run-backtest', {
+        body: {
+          strategyId: strategy.id,
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          symbol: 'NIFTY',
+          initialCapital: 1000000
         }
-      );
+      });
 
       clearInterval(interval);
       setProgress(100);
 
-      const data = await response.json();
-
-      if (data.error) {
-        toast.error(data.error);
+      if (error) {
+        console.error('Backtest error:', error);
+        toast.error(error.message || 'Failed to run backtest');
         setIsRunning(false);
         return;
       }
