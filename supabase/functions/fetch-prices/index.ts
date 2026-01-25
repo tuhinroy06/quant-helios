@@ -27,420 +27,106 @@ interface CurrentPriceData {
   volume: number;
   timestamp: string;
   marketStatus: 'open' | 'closed' | 'pre-market' | 'post-market';
-  source: 'alpha_vantage' | 'cache';
+  source: 'alpha_vantage' | 'yahoo' | 'cache';
 }
 
-// Complete mapping of internal symbols to Alpha Vantage format
-const SYMBOL_MAP: Record<string, string> = {
-  // Indices
+// Symbol mapping for Alpha Vantage
+const ALPHA_SYMBOL_MAP: Record<string, string> = {
   'NIFTY': 'NIFTY50.NS',
   'BANKNIFTY': 'NIFTYBANK.NS',
-  'NIFTYIT': 'CNXIT.NS',
-  'NIFTYMIDCAP': 'NSEMDCP50.NS',
-  'NIFTYSMLCAP': 'CNXSC.NS',
-  'NIFTYPHARMA': 'CNXPHARMA.NS',
-  'NIFTYMETAL': 'CNXMETAL.NS',
-  'NIFTYAUTO': 'CNXAUTO.NS',
-  'NIFTYREALTY': 'CNXREALTY.NS',
-  'NIFTYFMCG': 'CNXFMCG.NS',
-  
-  // Banking
   'HDFCBANK': 'HDFCBANK.BSE',
   'ICICIBANK': 'ICICIBANK.BSE',
   'SBIN': 'SBIN.BSE',
   'KOTAKBANK': 'KOTAKBANK.BSE',
   'AXISBANK': 'AXISBANK.BSE',
-  'INDUSINDBK': 'INDUSINDBK.BSE',
-  'BANDHANBNK': 'BANDHANBNK.BSE',
-  'FEDERALBNK': 'FEDERALBNK.BSE',
-  'IDFCFIRSTB': 'IDFCFIRSTB.BSE',
-  'PNB': 'PNB.BSE',
-  'BANKBARODA': 'BANKBARODA.BSE',
-  'CANBK': 'CANBK.BSE',
-  'AUBANK': 'AUBANK.BSE',
-  'YESBANK': 'YESBANK.BSE',
-  'UNIONBANK': 'UNIONBANK.BSE',
-  'INDIANB': 'INDIANB.BSE',
-  'CENTRALBK': 'CENTRALBK.BSE',
-  'MAHABANK': 'MAHABANK.BSE',
-  'IOB': 'IOB.BSE',
-  'UCOBANK': 'UCOBANK.BSE',
-  'PSB': 'PSB.BSE',
-  'KARURVYSYA': 'KARURVYSYA.BSE',
-  'DCBBANK': 'DCBBANK.BSE',
-  'SOUTHBANK': 'SOUTHBANK.BSE',
-  'TMBANK': 'TMBANK.BSE',
-  'CSBBANK': 'CSBBANK.BSE',
-  'RBLBANK': 'RBLBANK.BSE',
-  'EQUITASBNK': 'EQUITASBNK.BSE',
-  'UJJIVANSFB': 'UJJIVANSFB.BSE',
-  'SURYODAY': 'SURYODAY.BSE',
-  'ESAFSFB': 'ESAFSFB.BSE',
-
-  // IT
   'TCS': 'TCS.BSE',
   'INFY': 'INFY.BSE',
   'WIPRO': 'WIPRO.BSE',
   'HCLTECH': 'HCLTECH.BSE',
-  'TECHM': 'TECHM.BSE',
-  'LTIM': 'LTIM.BSE',
-  'MPHASIS': 'MPHASIS.BSE',
-  'COFORGE': 'COFORGE.BSE',
-  'PERSISTENT': 'PERSISTENT.BSE',
-  'LTTS': 'LTTS.BSE',
-  'OFSS': 'OFSS.BSE',
-  'CYIENT': 'CYIENT.BSE',
-  'ECLERX': 'ECLERX.BSE',
-  'TATAELXSI': 'TATAELXSI.BSE',
-  'BIRLASOFT': 'BIRLASOFT.BSE',
-  'ZENSAR': 'ZENSAR.BSE',
-  'SONATSOFTW': 'SONATSOFTW.BSE',
-  'NEWGEN': 'NEWGEN.BSE',
-  'HAPPSTMNDS': 'HAPPSTMNDS.BSE',
-  'ROUTE': 'ROUTE.BSE',
-  'INTELLECT': 'INTELLECT.BSE',
-  'KPITTECH': 'KPITTECH.BSE',
-  'MASTEK': 'MASTEK.BSE',
-  'RATEGAIN': 'RATEGAIN.BSE',
-  'TANLA': 'TANLA.BSE',
-  'REDINGTON': 'REDINGTON.BSE',
-  'MAPMYINDIA': 'MAPMYINDIA.BSE',
-  'LATENTVIEW': 'LATENTVIEW.BSE',
-
-  // Oil & Gas
   'RELIANCE': 'RELIANCE.BSE',
-  'ONGC': 'ONGC.BSE',
-  'BPCL': 'BPCL.BSE',
-  'IOC': 'IOC.BSE',
-  'HINDPETRO': 'HINDPETRO.BSE',
-  'GAIL': 'GAIL.BSE',
-  'PETRONET': 'PETRONET.BSE',
-  'OIL': 'OIL.BSE',
-  'MGL': 'MGL.BSE',
-  'IGL': 'IGL.BSE',
-  'GUJGAS': 'GUJGAS.BSE',
-  'MRPL': 'MRPL.BSE',
-  'CHENNPETRO': 'CHENNPETRO.BSE',
-  'CASTROLIND': 'CASTROLIND.BSE',
-  'AEGISCHEM': 'AEGISCHEM.BSE',
-  'GSPL': 'GSPL.BSE',
-
-  // FMCG
-  'HINDUNILVR': 'HINDUNILVR.BSE',
   'ITC': 'ITC.BSE',
-  'NESTLEIND': 'NESTLEIND.BSE',
-  'BRITANNIA': 'BRITANNIA.BSE',
-  'DABUR': 'DABUR.BSE',
-  'MARICO': 'MARICO.BSE',
-  'GODREJCP': 'GODREJCP.BSE',
-  'COLPAL': 'COLPAL.BSE',
-  'TATACONSUM': 'TATACONSUM.BSE',
-  'VBL': 'VBL.BSE',
-  'PGHH': 'PGHH.BSE',
-  'GILLETTE': 'GILLETTE.BSE',
-  'EMAMILTD': 'EMAMILTD.BSE',
-  'JYOTHYLAB': 'JYOTHYLAB.BSE',
-  'RADICO': 'RADICO.BSE',
-  'UNITDSPR': 'UNITDSPR.BSE',
-  'MCDOWELL-N': 'MCDOWELL-N.BSE',
-  'ZYDUSWELL': 'ZYDUSWELL.BSE',
-  'BIKAJI': 'BIKAJI.BSE',
-  'CCL': 'CCL.BSE',
-  'GODFRYPHLP': 'GODFRYPHLP.BSE',
-
-  // Pharma
-  'SUNPHARMA': 'SUNPHARMA.BSE',
-  'DRREDDY': 'DRREDDY.BSE',
-  'CIPLA': 'CIPLA.BSE',
-  'DIVISLAB': 'DIVISLAB.BSE',
-  'APOLLOHOSP': 'APOLLOHOSP.BSE',
-  'LUPIN': 'LUPIN.BSE',
-  'BIOCON': 'BIOCON.BSE',
-  'TORNTPHARM': 'TORNTPHARM.BSE',
-  'ALKEM': 'ALKEM.BSE',
-  'AUROPHARMA': 'AUROPHARMA.BSE',
-  'ZYDUSLIFE': 'ZYDUSLIFE.BSE',
-  'GLENMARK': 'GLENMARK.BSE',
-  'IPCALAB': 'IPCALAB.BSE',
-  'ABBOTINDIA': 'ABBOTINDIA.BSE',
-  'SANOFI': 'SANOFI.BSE',
-  'GLAND': 'GLAND.BSE',
-  'LALPATHLAB': 'LALPATHLAB.BSE',
-  'METROPOLIS': 'METROPOLIS.BSE',
-  'NATCOPHARM': 'NATCOPHARM.BSE',
-  'GRANULES': 'GRANULES.BSE',
-  'LAURUSLABS': 'LAURUSLABS.BSE',
-  'SYNGENE': 'SYNGENE.BSE',
-  'ASTRAZEN': 'ASTRAZEN.BSE',
-  'PFIZER': 'PFIZER.BSE',
-  'GLAXO': 'GLAXO.BSE',
-  'MANKIND': 'MANKIND.BSE',
-  'JBCHEPHARM': 'JBCHEPHARM.BSE',
-  'ERIS': 'ERIS.BSE',
-
-  // Auto
-  'TATAMOTORS': 'TATAMOTORS.BSE',
-  'MARUTI': 'MARUTI.BSE',
-  'M&M': 'M&M.BSE',
-  'BAJAJ-AUTO': 'BAJAJ-AUTO.BSE',
-  'EICHERMOT': 'EICHERMOT.BSE',
-  'HEROMOTOCO': 'HEROMOTOCO.BSE',
-  'TVSMOTOR': 'TVSMOTOR.BSE',
-  'ASHOKLEY': 'ASHOKLEY.BSE',
-  'MOTHERSON': 'MOTHERSON.BSE',
-  'BHARATFORG': 'BHARATFORG.BSE',
-  'MRF': 'MRF.BSE',
-  'APOLLOTYRE': 'APOLLOTYRE.BSE',
-  'BALKRISIND': 'BALKRISIND.BSE',
-  'BOSCHLTD': 'BOSCHLTD.BSE',
-  'EXIDEIND': 'EXIDEIND.BSE',
-  'AMARAJABAT': 'AMARAJABAT.BSE',
-  'CEATLTD': 'CEATLTD.BSE',
-  'SUNDRMFAST': 'SUNDRMFAST.BSE',
-  'ENDURANCE': 'ENDURANCE.BSE',
-  'SWARAJENG': 'SWARAJENG.BSE',
-  'FORCEMOT': 'FORCEMOT.BSE',
-  'OLECTRA': 'OLECTRA.BSE',
-
-  // Metals
-  'TATASTEEL': 'TATASTEEL.BSE',
-  'JSWSTEEL': 'JSWSTEEL.BSE',
-  'HINDALCO': 'HINDALCO.BSE',
-  'VEDL': 'VEDL.BSE',
-  'COALINDIA': 'COALINDIA.BSE',
-  'NMDC': 'NMDC.BSE',
-  'SAIL': 'SAIL.BSE',
-  'JINDALSTEL': 'JINDALSTEL.BSE',
-  'NATIONALUM': 'NATIONALUM.BSE',
-  'HINDCOPPER': 'HINDCOPPER.BSE',
-  'MOIL': 'MOIL.BSE',
-  'WELCORP': 'WELCORP.BSE',
-  'APLAPOLLO': 'APLAPOLLO.BSE',
-  'RATNAMANI': 'RATNAMANI.BSE',
-  'JSLHISAR': 'JSLHISAR.BSE',
-  'GMRINFRA': 'GMRINFRA.BSE',
-
-  // Power & Utilities
-  'NTPC': 'NTPC.BSE',
-  'POWERGRID': 'POWERGRID.BSE',
-  'ADANIGREEN': 'ADANIGREEN.BSE',
-  'TATAPOWER': 'TATAPOWER.BSE',
-  'ADANIPOWER': 'ADANIPOWER.BSE',
-  'NHPC': 'NHPC.BSE',
-  'SJVN': 'SJVN.BSE',
-  'CESC': 'CESC.BSE',
-  'TORNTPOWER': 'TORNTPOWER.BSE',
-  'JSL': 'JSL.BSE',
-  'NLCINDIA': 'NLCINDIA.BSE',
-  'JSWENERGY': 'JSWENERGY.BSE',
-
-  // Infra & Construction
   'LT': 'LT.BSE',
-  'ADANIENT': 'ADANIENT.BSE',
-  'ADANIPORTS': 'ADANIPORTS.BSE',
-  'ULTRACEMCO': 'ULTRACEMCO.BSE',
-  'GRASIM': 'GRASIM.BSE',
-  'SHREECEM': 'SHREECEM.BSE',
-  'AMBUJACEM': 'AMBUJACEM.BSE',
-  'ACC': 'ACC.BSE',
-  'DALMIACEM': 'DALMIACEM.BSE',
-  'JKCEMENT': 'JKCEMENT.BSE',
-  'RAMCOCEM': 'RAMCOCEM.BSE',
-  'BIRLACORPN': 'BIRLACORPN.BSE',
-  'HEIDELBCEM': 'HEIDELBCEM.BSE',
-  'DLF': 'DLF.BSE',
-  'GODREJPROP': 'GODREJPROP.BSE',
-  'OBEROIRLTY': 'OBEROIRLTY.BSE',
-  'PRESTIGE': 'PRESTIGE.BSE',
-  'LODHA': 'LODHA.BSE',
-  'BRIGADE': 'BRIGADE.BSE',
-  'PHOENIXLTD': 'PHOENIXLTD.BSE',
-  'SOBHA': 'SOBHA.BSE',
-  'SUNTECK': 'SUNTECK.BSE',
-  'KOLTEPATIL': 'KOLTEPATIL.BSE',
-  'ASHIANA': 'ASHIANA.BSE',
-
-  // Consumer Durables
-  'TITAN': 'TITAN.BSE',
-  'HAVELLS': 'HAVELLS.BSE',
-  'VOLTAS': 'VOLTAS.BSE',
-  'BLUESTARCO': 'BLUESTARCO.BSE',
-  'CROMPTON': 'CROMPTON.BSE',
-  'WHIRLPOOL': 'WHIRLPOOL.BSE',
-  'BATAINDIA': 'BATAINDIA.BSE',
-  'RELAXO': 'RELAXO.BSE',
-  'RAJESHEXPO': 'RAJESHEXPO.BSE',
-  'VGUARD': 'VGUARD.BSE',
-  'ORIENTELEC': 'ORIENTELEC.BSE',
-  'POLYCAB': 'POLYCAB.BSE',
-  'DIXON': 'DIXON.BSE',
-  'AMBER': 'AMBER.BSE',
-  'KAJARIACER': 'KAJARIACER.BSE',
-
-  // NBFC/Finance
-  'BAJFINANCE': 'BAJFINANCE.BSE',
-  'BAJAJFINSV': 'BAJAJFINSV.BSE',
-  'SHRIRAMFIN': 'SHRIRAMFIN.BSE',
-  'MUTHOOTFIN': 'MUTHOOTFIN.BSE',
-  'MANAPPURAM': 'MANAPPURAM.BSE',
-  'CHOLAFIN': 'CHOLAFIN.BSE',
-  'M&MFIN': 'M&MFIN.BSE',
-  'LICHSGFIN': 'LICHSGFIN.BSE',
-  'CANFINHOME': 'CANFINHOME.BSE',
-  'AAVAS': 'AAVAS.BSE',
-  'HOMEFIRST': 'HOMEFIRST.BSE',
-  'APTUS': 'APTUS.BSE',
-  'POONAWALLA': 'POONAWALLA.BSE',
-  'JMFINANCIL': 'JMFINANCIL.BSE',
-  'CREDITACC': 'CREDITACC.BSE',
-  'PNBHOUSING': 'PNBHOUSING.BSE',
-
-  // Insurance
-  'LICI': 'LICI.BSE',
-  'SBILIFE': 'SBILIFE.BSE',
-  'HDFCLIFE': 'HDFCLIFE.BSE',
-  'ICICIPRULI': 'ICICIPRULI.BSE',
-  'ICICIGI': 'ICICIGI.BSE',
-  'BAJAJHFL': 'BAJAJHFL.BSE',
-  'STARHEALTH': 'STARHEALTH.BSE',
-  'MAXHEALTH': 'MAXHEALTH.BSE',
-  'NIACL': 'NIACL.BSE',
-  'GICRE': 'GICRE.BSE',
-
-  // Telecom
-  'BHARTIARTL': 'BHARTIARTL.BSE',
-  'IDEA': 'IDEA.BSE',
-  'TTML': 'TTML.BSE',
-  'INDUSTOWER': 'INDUSTOWER.BSE',
-
-  // Retail
-  'DMART': 'DMART.BSE',
-  'TRENT': 'TRENT.BSE',
-  'SHOPERSTOP': 'SHOPERSTOP.BSE',
-  'ABFRL': 'ABFRL.BSE',
-  'VMART': 'VMART.BSE',
-  'METRO': 'METRO.BSE',
-  'KALYANKJIL': 'KALYANKJIL.BSE',
-
-  // Capital Goods
-  'HONAUT': 'HONAUT.BSE',
-  'AIAENG': 'AIAENG.BSE',
-  'ELGIEQUIP': 'ELGIEQUIP.BSE',
-  'KAYNES': 'KAYNES.BSE',
-  'TRIVENI': 'TRIVENI.BSE',
-  'KENNAMET': 'KENNAMET.BSE',
-  'CARBORUNIV': 'CARBORUNIV.BSE',
-  'WENDT': 'WENDT.BSE',
-  'BEL': 'BEL.BSE',
-  'HAL': 'HAL.BSE',
-  'MAZDA': 'MAZDOCK.BSE',
-  'COCHINSHIP': 'COCHINSHIP.BSE',
-  'GRSE': 'GRSE.BSE',
-  'PARAS': 'PARAS.BSE',
-  'DATAPATT': 'DATAPATT.BSE',
-  'ZENTEC': 'ZENTEC.BSE',
-
-  // Chemicals
-  'PIDILITIND': 'PIDILITIND.BSE',
-  'SRF': 'SRF.BSE',
-  'ATUL': 'ATUL.BSE',
-  'NAVINFLUOR': 'NAVINFLUOR.BSE',
-  'DEEPAKFERT': 'DEEPAKFERT.BSE',
-  'DEEPAKNTR': 'DEEPAKNTR.BSE',
-  'FINEORG': 'FINEORG.BSE',
-  'CLEAN': 'CLEAN.BSE',
-  'TATACHEM': 'TATACHEM.BSE',
-  'BASF': 'BASF.BSE',
-  'ANURAS': 'ANURAS.BSE',
-  'GALAXYSURF': 'GALAXYSURF.BSE',
-  'PIIND': 'PIIND.BSE',
-  'AARTIIND': 'AARTIIND.BSE',
-  'SUMICHEM': 'SUMICHEM.BSE',
-  'ALKYLAMINE': 'ALKYLAMINE.BSE',
-  'BALAJI': 'BALAMINES.BSE',
-  'VINATI': 'VINATIORGA.BSE',
-  'IOLCP': 'IOLCP.BSE',
-  'ASIANPAINT': 'ASIANPAINT.BSE',
-  'BERGEPAINT': 'BERGEPAINT.BSE',
-  'KANSAINER': 'KANSAINER.BSE',
-  'AKZONOBEL': 'AKZONOBEL.BSE',
-
-  // Fintech
-  'PAYTM': 'PAYTM.BSE',
-  'POLICYBZR': 'POLICYBZR.BSE',
-  'CARTRADE': 'CARTRADE.BSE',
-  'EASEMYTRIP': 'EASEMYTRIP.BSE',
-  'INFIBEAM': 'INFIBEAM.BSE',
-  'ANGELONE': 'ANGELONE.BSE',
-  'CDSL': 'CDSL.BSE',
-  'BSE': 'BSE.BSE',
-  'CAMS': 'CAMS.BSE',
-  'KFINTECH': 'KFINTECH.BSE',
-  'MCX': 'MCX.BSE',
-  'IIFL': 'IIFL.BSE',
-  'MOTILALOFS': 'MOTILALOFS.BSE',
-  'HDFCAMC': 'HDFCAMC.BSE',
-  'NIPPONIND': 'NAM-INDIA.BSE',
-  'UTIAMC': 'UTIAMC.BSE',
-  'ABSLAMC': 'ABSLAMC.BSE',
-
-  // Textiles
-  'PAGEIND': 'PAGEIND.BSE',
-  'RAYMOND': 'RAYMOND.BSE',
-  'ARVIND': 'ARVIND.BSE',
-  'WELSPUNIND': 'WELSPUNIND.BSE',
-  'KPRMILL': 'KPRMILL.BSE',
-  'VARDHMAN': 'VTL.BSE',
-  'SOMANYCERA': 'SOMANYCERA.BSE',
-  'CERA': 'CERA.BSE',
-  'TRIDENT': 'TRIDENT.BSE',
-  'GOKEX': 'GOKEX.BSE',
-
-  // Media
-  'SUNTV': 'SUNTV.BSE',
-  'ZEEL': 'ZEEL.BSE',
-  'PVR': 'PVRINOX.BSE',
-  'NAZARA': 'NAZARA.BSE',
-  'TIPS': 'TIPSINDLTD.BSE',
-  'SAREGAMA': 'SAREGAMA.BSE',
-  'NETWORK18': 'NETWORK18.BSE',
-  'TV18BRDCST': 'TV18BRDCST.BSE',
-
-  // Agriculture
-  'UPL': 'UPL.BSE',
-  'COROMANDEL': 'COROMANDEL.BSE',
-  'CHAMBAL': 'CHAMBLFERT.BSE',
-  'GNFC': 'GNFC.BSE',
-  'GSFC': 'GSFC.BSE',
-  'RCF': 'RCF.BSE',
-  'FACT': 'FACT.BSE',
-  'ZUARI': 'ZUARIAGRO.BSE',
-  'KAVERI': 'KSCL.BSE',
-  'DHANUKA': 'DHANUKA.BSE',
-  'RALLIS': 'RALLIS.BSE',
-  'BAYER': 'BAYERCROP.BSE',
-
-  // Hotels & E-commerce
-  'INDIANHOTEL': 'INDHOTEL.BSE',
-  'LEMON': 'LEMONTREE.BSE',
-  'CHALET': 'CHALET.BSE',
-  'EIH': 'EIHOTEL.BSE',
-  'INDIAMART': 'INDIAMART.BSE',
-  'JUSTDIAL': 'JUSTDIAL.BSE',
-  'AFFLE': 'AFFLE.BSE',
-
-  // Finance
-  'IRFC': 'IRFC.BSE',
-  'RECLTD': 'RECLTD.BSE',
-  'PFC': 'PFC.BSE',
-  'HUDCO': 'HUDCO.BSE',
-  'IREDA': 'IREDA.BSE',
-  'CGCL': 'CGCL.BSE',
-  'SUNDARM': 'SUNDARMFIN.BSE',
-  'RITES': 'RITES.BSE',
 };
 
-// In-memory cache for quick lookups
+// Symbol mapping for Yahoo Finance (NSE suffix)
+const YAHOO_SYMBOL_MAP: Record<string, string> = {
+  'NIFTY': '^NSEI',
+  'BANKNIFTY': '^NSEBANK',
+  'HDFCBANK': 'HDFCBANK.NS',
+  'ICICIBANK': 'ICICIBANK.NS',
+  'SBIN': 'SBIN.NS',
+  'KOTAKBANK': 'KOTAKBANK.NS',
+  'AXISBANK': 'AXISBANK.NS',
+  'TCS': 'TCS.NS',
+  'INFY': 'INFY.NS',
+  'WIPRO': 'WIPRO.NS',
+  'HCLTECH': 'HCLTECH.NS',
+  'RELIANCE': 'RELIANCE.NS',
+  'ITC': 'ITC.NS',
+  'LT': 'LT.NS',
+  'TATAMOTORS': 'TATAMOTORS.NS',
+  'MARUTI': 'MARUTI.NS',
+  'BHARTIARTL': 'BHARTIARTL.NS',
+  'SUNPHARMA': 'SUNPHARMA.NS',
+  'TITAN': 'TITAN.NS',
+  'BAJFINANCE': 'BAJFINANCE.NS',
+  'HINDUNILVR': 'HINDUNILVR.NS',
+  'TATASTEEL': 'TATASTEEL.NS',
+  'NTPC': 'NTPC.NS',
+  'POWERGRID': 'POWERGRID.NS',
+  'COALINDIA': 'COALINDIA.NS',
+  'ONGC': 'ONGC.NS',
+  'BPCL': 'BPCL.NS',
+  'IOC': 'IOC.NS',
+  'ADANIENT': 'ADANIENT.NS',
+  'ADANIPORTS': 'ADANIPORTS.NS',
+  'ULTRACEMCO': 'ULTRACEMCO.NS',
+  'GRASIM': 'GRASIM.NS',
+  'CIPLA': 'CIPLA.NS',
+  'DRREDDY': 'DRREDDY.NS',
+  'APOLLOHOSP': 'APOLLOHOSP.NS',
+  'DIVISLAB': 'DIVISLAB.NS',
+  'TECHM': 'TECHM.NS',
+  'LTIM': 'LTIM.NS',
+  'BAJAJ-AUTO': 'BAJAJ-AUTO.NS',
+  'EICHERMOT': 'EICHERMOT.NS',
+  'HEROMOTOCO': 'HEROMOTOCO.NS',
+  'M&M': 'M%26M.NS',
+  'TATACONSUM': 'TATACONSUM.NS',
+  'NESTLEIND': 'NESTLEIND.NS',
+  'BRITANNIA': 'BRITANNIA.NS',
+  'ASIANPAINT': 'ASIANPAINT.NS',
+  'PIDILITIND': 'PIDILITIND.NS',
+  'DMART': 'DMART.NS',
+  'TRENT': 'TRENT.NS',
+  'INDUSINDBK': 'INDUSINDBK.NS',
+  'BANDHANBNK': 'BANDHANBNK.NS',
+  'FEDERALBNK': 'FEDERALBNK.NS',
+  'IDFCFIRSTB': 'IDFCFIRSTB.NS',
+  'PNB': 'PNB.NS',
+  'BANKBARODA': 'BANKBARODA.NS',
+  'CANBK': 'CANBK.NS',
+  'AUBANK': 'AUBANK.NS',
+  'YESBANK': 'YESBANK.NS',
+  'CENTRALBK': 'CENTRALBK.NS',
+  'CSBBANK': 'CSBBANK.NS',
+  'DCBBANK': 'DCBBANK.NS',
+  'COFORGE': 'COFORGE.NS',
+  'PERSISTENT': 'PERSISTENT.NS',
+  'MPHASIS': 'MPHASIS.NS',
+  'LTTS': 'LTTS.NS',
+  'CYIENT': 'CYIENT.NS',
+  'BIRLASOFT': 'BIRLASOFT.NS',
+  'TATAELXSI': 'TATAELXSI.NS',
+  'JSWSTEEL': 'JSWSTEEL.NS',
+  'HINDALCO': 'HINDALCO.NS',
+  'VEDL': 'VEDL.NS',
+  'NMDC': 'NMDC.NS',
+  'JINDALSTEL': 'JINDALSTEL.NS',
+  'SAIL': 'SAIL.NS',
+};
+
+// In-memory cache
 const priceCache: Map<string, { data: any; expiresAt: number }> = new Map();
 
 function isMarketOpen(): { status: 'open' | 'closed' | 'pre-market' | 'post-market'; message: string } {
@@ -478,17 +164,120 @@ function isMarketOpen(): { status: 'open' | 'closed' | 'pre-market' | 'post-mark
   return { status: 'closed', message: 'Market closed' };
 }
 
+// Fetch from Yahoo Finance (no API key needed)
+async function fetchFromYahoo(
+  symbol: string,
+  type: 'current' | 'historical'
+): Promise<any> {
+  const yahooSymbol = YAHOO_SYMBOL_MAP[symbol.toUpperCase()] || `${symbol}.NS`;
+  
+  try {
+    if (type === 'current') {
+      // Yahoo Finance quote endpoint
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=2d`;
+      console.log(`[Yahoo] Fetching current price for ${yahooSymbol}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      
+      if (!response.ok) {
+        console.warn(`[Yahoo] HTTP error for ${yahooSymbol}: ${response.status}`);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      if (data.chart?.result?.[0]) {
+        const result = data.chart.result[0];
+        const meta = result.meta;
+        const quote = result.indicators?.quote?.[0];
+        
+        if (meta && meta.regularMarketPrice) {
+          const previousClose = meta.chartPreviousClose || meta.previousClose || 0;
+          const currentPrice = meta.regularMarketPrice;
+          const change = currentPrice - previousClose;
+          const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+          
+          return {
+            symbol: symbol.toUpperCase(),
+            price: currentPrice,
+            change: Math.round(change * 100) / 100,
+            changePercent: Math.round(changePercent * 100) / 100,
+            open: meta.regularMarketOpen || quote?.open?.[quote.open.length - 1] || currentPrice,
+            high: meta.regularMarketDayHigh || quote?.high?.[quote.high.length - 1] || currentPrice,
+            low: meta.regularMarketDayLow || quote?.low?.[quote.low.length - 1] || currentPrice,
+            previousClose: previousClose,
+            volume: meta.regularMarketVolume || 0,
+            source: 'yahoo' as const,
+          };
+        }
+      }
+      
+      console.warn(`[Yahoo] No data returned for ${yahooSymbol}`);
+      return null;
+    } else {
+      // Historical data
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1y`;
+      console.log(`[Yahoo] Fetching historical data for ${yahooSymbol}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      
+      if (!response.ok) {
+        console.warn(`[Yahoo] HTTP error for historical ${yahooSymbol}: ${response.status}`);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      if (data.chart?.result?.[0]) {
+        const result = data.chart.result[0];
+        const timestamps = result.timestamp || [];
+        const quote = result.indicators?.quote?.[0] || {};
+        
+        const historicalData: PriceData[] = timestamps.map((ts: number, i: number) => ({
+          symbol: symbol.toUpperCase(),
+          date: new Date(ts * 1000).toISOString().split('T')[0],
+          open: quote.open?.[i] || 0,
+          high: quote.high?.[i] || 0,
+          low: quote.low?.[i] || 0,
+          close: quote.close?.[i] || 0,
+          volume: quote.volume?.[i] || 0,
+        })).filter((d: PriceData) => d.close > 0);
+        
+        return {
+          data: historicalData,
+          source: 'yahoo' as const,
+        };
+      }
+      
+      console.warn(`[Yahoo] No historical data for ${yahooSymbol}`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`[Yahoo] API error for ${symbol}:`, error);
+    return null;
+  }
+}
+
+// Fetch from Alpha Vantage
 async function fetchFromAlphaVantage(
-  symbol: string, 
+  symbol: string,
   type: 'current' | 'historical',
   apiKey: string
 ): Promise<any> {
-  const alphaSymbol = SYMBOL_MAP[symbol.toUpperCase()] || `${symbol}.BSE`;
+  const alphaSymbol = ALPHA_SYMBOL_MAP[symbol.toUpperCase()] || `${symbol}.BSE`;
   
   try {
     if (type === 'current') {
       const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${alphaSymbol}&apikey=${apiKey}`;
-      console.log(`Fetching current price for ${alphaSymbol}`);
+      console.log(`[Alpha] Fetching current price for ${alphaSymbol}`);
       
       const response = await fetch(url);
       const data = await response.json();
@@ -510,15 +299,14 @@ async function fetchFromAlphaVantage(
       }
       
       if (data['Note'] || data['Information']) {
-        console.warn('Alpha Vantage rate limit:', data['Note'] || data['Information']);
+        console.warn('[Alpha] Rate limit hit');
         return null;
       }
       
-      console.warn('No quote data returned for', alphaSymbol, data);
       return null;
     } else {
       const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${alphaSymbol}&outputsize=full&apikey=${apiKey}`;
-      console.log(`Fetching historical data for ${alphaSymbol}`);
+      console.log(`[Alpha] Fetching historical data for ${alphaSymbol}`);
       
       const response = await fetch(url);
       const data = await response.json();
@@ -544,15 +332,14 @@ async function fetchFromAlphaVantage(
       }
       
       if (data['Note'] || data['Information']) {
-        console.warn('Alpha Vantage rate limit:', data['Note'] || data['Information']);
+        console.warn('[Alpha] Rate limit hit for historical');
         return null;
       }
       
-      console.warn('No historical data returned for', alphaSymbol, data);
       return null;
     }
   } catch (error) {
-    console.error('Alpha Vantage API error:', error);
+    console.error('[Alpha] API error:', error);
     return null;
   }
 }
@@ -570,12 +357,12 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
     const marketStatus = isMarketOpen();
-    const cacheKey = `${symbol}-${type}`;
+    const cacheKey = `${symbol.toUpperCase()}-${type}`;
     
     // Check cache first
     const cached = priceCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
-      console.log(`Cache hit for ${cacheKey}`);
+      console.log(`[Cache] Hit for ${cacheKey}`);
       const cachedData = cached.data;
       if (type === 'current') {
         return new Response(
@@ -593,26 +380,18 @@ serve(async (req) => {
       );
     }
 
-    // Check if API key is configured
-    if (!apiKey) {
-      console.error('ALPHA_VANTAGE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Live data unavailable',
-          symbol: symbol.toUpperCase(),
-          reason: 'API key not configured',
-          marketStatus: marketStatus.status,
-        }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     if (type === 'current') {
-      const alphaData = await fetchFromAlphaVantage(symbol, 'current', apiKey);
+      // Try Yahoo Finance first (no rate limits)
+      let result = await fetchFromYahoo(symbol, 'current');
       
-      if (alphaData) {
+      // If Yahoo fails, try Alpha Vantage
+      if (!result && apiKey) {
+        result = await fetchFromAlphaVantage(symbol, 'current', apiKey);
+      }
+      
+      if (result) {
         const response: CurrentPriceData = {
-          ...alphaData,
+          ...result,
           timestamp: new Date().toISOString(),
           marketStatus: marketStatus.status,
         };
@@ -627,13 +406,13 @@ serve(async (req) => {
         );
       }
       
-      // No fallback - return error
-      console.error(`Unable to fetch live price for ${symbol}`);
+      // All sources failed
+      console.error(`[Error] No live data for ${symbol}`);
       return new Response(
         JSON.stringify({ 
           error: 'Live data unavailable',
           symbol: symbol.toUpperCase(),
-          reason: 'API rate limit or data unavailable',
+          reason: 'All data sources unavailable',
           marketStatus: marketStatus.status,
         }),
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -641,20 +420,26 @@ serve(async (req) => {
     }
 
     // Historical data
-    const alphaData = await fetchFromAlphaVantage(symbol, 'historical', apiKey);
+    // Try Yahoo first
+    let result = await fetchFromYahoo(symbol, 'historical');
     
-    if (alphaData) {
-      const filteredData = alphaData.data.slice(-days);
+    // If Yahoo fails, try Alpha Vantage
+    if (!result && apiKey) {
+      result = await fetchFromAlphaVantage(symbol, 'historical', apiKey);
+    }
+    
+    if (result) {
+      const filteredData = result.data.slice(-days);
       
       const response = {
         symbol: symbol.toUpperCase(),
         count: filteredData.length,
-        source: alphaData.source,
+        source: result.source,
         marketStatus: marketStatus.status,
         data: filteredData,
       };
       
-      // Cache historical data for 1 hour
+      // Cache historical for 1 hour
       priceCache.set(cacheKey, { data: response, expiresAt: Date.now() + 3600000 });
       
       return new Response(
@@ -663,13 +448,13 @@ serve(async (req) => {
       );
     }
     
-    // No fallback - return error
-    console.error(`Unable to fetch live historical data for ${symbol}`);
+    // All sources failed
+    console.error(`[Error] No historical data for ${symbol}`);
     return new Response(
       JSON.stringify({ 
         error: 'Live historical data unavailable',
         symbol: symbol.toUpperCase(),
-        reason: 'API rate limit or data unavailable',
+        reason: 'All data sources unavailable',
         marketStatus: marketStatus.status,
       }),
       { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -677,7 +462,7 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error("Price fetch error:", error);
-    const message = error instanceof Error ? error.message : "An error occurred fetching prices";
+    const message = error instanceof Error ? error.message : "An error occurred";
     return new Response(
       JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
