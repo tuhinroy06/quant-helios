@@ -108,6 +108,7 @@ const Backtest = () => {
     }, 150);
 
     try {
+      const { data, error } = await supabase.functions.invoke('run-backtest', {
       const { data, error } = await supabase.functions.invoke("run-backtest", {
         body: {
           strategyId: strategy.id,
@@ -122,6 +123,8 @@ const Backtest = () => {
       setProgress(100);
 
       if (error) {
+        console.error('Backtest error:', error);
+        toast.error(error.message || 'Failed to run backtest');
         const status = error.context?.status ?? error.status;
         const body = error.context?.body;
         const errorBody = typeof body === "string" ? body : body ? JSON.stringify(body) : "";
