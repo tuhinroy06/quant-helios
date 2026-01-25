@@ -659,6 +659,51 @@ export type Database = {
           },
         ]
       }
+      lesson_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          last_accessed_at: string | null
+          lesson_id: string
+          module_id: string
+          quiz_attempts: number | null
+          quiz_score: number | null
+          time_spent_seconds: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          lesson_id: string
+          module_id: string
+          quiz_attempts?: number | null
+          quiz_score?: number | null
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          lesson_id?: string
+          module_id?: string
+          quiz_attempts?: number | null
+          quiz_score?: number | null
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       live_orders: {
         Row: {
           average_price: number | null
