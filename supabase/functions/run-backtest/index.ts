@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
- * Trading Backtesting Engine - PRODUCTION VERSION v1.0.1
+ * Trading Backtesting Engine - PRODUCTION VERSION v1.1.0
  * TypeScript port for Supabase Edge Functions
  * 
  * ENGINE GUARANTEES:
@@ -17,7 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  * - Position size frozen at queue time
  */
 
-const ENGINE_VERSION = "1.0.1";
+const ENGINE_VERSION = "1.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,13 +34,13 @@ interface Signal {
   action: Action;
   stopLoss?: number;
   takeProfit?: number;
-  positionSize: number; // % of capital (0.0 to 1.0)
+  positionSize: number;
   reason: string;
 }
 
 interface PendingOrder {
   signal: Signal;
-  quantity: number; // FROZEN at queue time
+  quantity: number;
   barIndex: number;
   symbol: string;
   reason: string;
@@ -98,21 +98,21 @@ interface OHLCV {
 
 interface BacktestConfig {
   initialCapital: number;
-  slippage: number; // 0.1% = 0.001
-  brokerageRate: number; // 0.03% = 0.0003
-  maxRiskPerTrade: number; // 2% = 0.02
+  slippage: number;
+  brokerageRate: number;
+  maxRiskPerTrade: number;
   maxConcurrentPositions: number;
-  maxDrawdown?: number; // Stop trading if hit
+  maxDrawdown?: number;
   mandatoryStopLoss: boolean;
-  maxCapitalDeployed: number; // Max % of capital in positions
-  maxSinglePositionExposure: number; // Max % in one position
+  maxCapitalDeployed: number;
+  maxSinglePositionExposure: number;
   dataFrequency: "daily" | "hourly" | "minute";
 }
 
 interface StrategyRule {
   indicator: string;
   condition: string;
-  value: number | string;
+  value: number | string | { indicator: string; period?: number };
   period?: number;
 }
 
@@ -124,7 +124,7 @@ interface StrategyConfig {
 }
 
 // ============================================================================
-// 2. TECHNICAL INDICATORS
+// 2. TECHNICAL INDICATORS (Extended with more periods)
 // ============================================================================
 
 function calculateSMA(prices: number[], period: number): number[] {
@@ -225,21 +225,18 @@ class RiskEngine {
     openPositions: number,
     positionsValue: number
   ): { valid: boolean; reason: string } {
-    // Check mandatory stop-loss
     if (this.config.mandatoryStopLoss && signal.action === "BUY") {
       if (signal.stopLoss === undefined) {
         return { valid: false, reason: "Mandatory stop-loss missing" };
       }
     }
 
-    // Check max concurrent positions
     if (signal.action === "BUY") {
       if (openPositions >= this.config.maxConcurrentPositions) {
         return { valid: false, reason: `Max positions (${this.config.maxConcurrentPositions}) reached` };
       }
     }
 
-    // Check risk per trade
     if (signal.action === "BUY" && signal.stopLoss !== undefined) {
       const riskPerShare = proposedPrice - signal.stopLoss;
       if (riskPerShare <= 0) {
@@ -254,7 +251,6 @@ class RiskEngine {
       }
     }
 
-    // Check max capital deployed
     if (signal.action === "BUY") {
       const proposedCost = proposedPrice * proposedQuantity;
       const newPositionsValue = positionsValue + proposedCost;
@@ -265,7 +261,6 @@ class RiskEngine {
       }
     }
 
-    // Check max single position exposure
     if (signal.action === "BUY") {
       const proposedCost = proposedPrice * proposedQuantity;
       const exposurePct = proposedCost / portfolioEquity;
@@ -281,10 +276,8 @@ class RiskEngine {
   calculatePositionSize(signal: Signal, currentPrice: number, portfolioCash: number): number {
     if (signal.action !== "BUY") return 0;
 
-    // Start with signal's suggested size
     let capitalToUse = portfolioCash * signal.positionSize;
 
-    // Adjust for risk if stop-loss is set
     if (signal.stopLoss !== undefined) {
       const riskPerShare = currentPrice - signal.stopLoss;
       if (riskPerShare <= 0) return 0;
@@ -440,20 +433,131 @@ class Portfolio {
 }
 
 // ============================================================================
-// 6. STRATEGY GENERATOR
+// 6. INDICATOR CALCULATION CACHE
+// ============================================================================
+
+interface IndicatorCache {
+  sma: Record<number, number[]>;
+  ema: Record<number, number[]>;
+  rsi: Record<number, number[]>;
+  atr: Record<number, number[]>;
+}
+
+function buildIndicatorCache(data: OHLCV[]): IndicatorCache {
+  const closes = data.map(d => d.close);
+  
+  return {
+    sma: {
+      5: calculateSMA(closes, 5),
+      9: calculateSMA(closes, 9),
+      10: calculateSMA(closes, 10),
+      20: calculateSMA(closes, 20),
+      21: calculateSMA(closes, 21),
+      50: calculateSMA(closes, 50),
+      100: calculateSMA(closes, 100),
+      200: calculateSMA(closes, 200),
+    },
+    ema: {
+      5: calculateEMA(closes, 5),
+      9: calculateEMA(closes, 9),
+      10: calculateEMA(closes, 10),
+      12: calculateEMA(closes, 12),
+      20: calculateEMA(closes, 20),
+      21: calculateEMA(closes, 21),
+      26: calculateEMA(closes, 26),
+      50: calculateEMA(closes, 50),
+    },
+    rsi: {
+      7: calculateRSI(closes, 7),
+      14: calculateRSI(closes, 14),
+      21: calculateRSI(closes, 21),
+    },
+    atr: {
+      7: calculateATR(data, 7),
+      14: calculateATR(data, 14),
+      21: calculateATR(data, 21),
+    }
+  };
+}
+
+function getIndicatorValueFromCache(
+  indicator: string,
+  period: number | undefined,
+  idx: number,
+  context: OHLCV[],
+  cache: IndicatorCache
+): number | null {
+  if (!indicator) return null;
+  const indicatorLower = indicator.toLowerCase().trim();
+  
+  if (indicatorLower === "price" || indicatorLower === "close") {
+    return context[idx]?.close ?? null;
+  }
+  
+  if (indicatorLower === "open") {
+    return context[idx]?.open ?? null;
+  }
+  
+  if (indicatorLower === "high") {
+    return context[idx]?.high ?? null;
+  }
+  
+  if (indicatorLower === "low") {
+    return context[idx]?.low ?? null;
+  }
+  
+  // Handle SMA with period
+  if (indicatorLower === "sma" || indicatorLower.startsWith("sma")) {
+    const p = period || parseInt(indicatorLower.replace("sma", "")) || 20;
+    const values = cache.sma[p];
+    if (values && idx < values.length && !isNaN(values[idx])) {
+      return values[idx];
+    }
+    return null;
+  }
+  
+  // Handle EMA with period
+  if (indicatorLower === "ema" || indicatorLower.startsWith("ema")) {
+    const p = period || parseInt(indicatorLower.replace("ema", "")) || 20;
+    const values = cache.ema[p];
+    if (values && idx < values.length && !isNaN(values[idx])) {
+      return values[idx];
+    }
+    return null;
+  }
+  
+  // Handle RSI with period
+  if (indicatorLower === "rsi" || indicatorLower.startsWith("rsi")) {
+    const p = period || parseInt(indicatorLower.replace("rsi", "")) || 14;
+    const values = cache.rsi[p];
+    if (values && idx < values.length && !isNaN(values[idx])) {
+      return values[idx];
+    }
+    return null;
+  }
+  
+  // Handle ATR with period
+  if (indicatorLower === "atr" || indicatorLower.startsWith("atr")) {
+    const p = period || parseInt(indicatorLower.replace("atr", "")) || 14;
+    const values = cache.atr[p];
+    if (values && idx < values.length && !isNaN(values[idx])) {
+      return values[idx];
+    }
+    return null;
+  }
+  
+  return null;
+}
+
+// ============================================================================
+// 7. SIGNAL GENERATION
 // ============================================================================
 
 function generateSignal(
   context: OHLCV[],
   portfolioState: Record<string, unknown>,
   strategyConfig: StrategyConfig,
-  indicators: {
-    sma20: number[];
-    sma50: number[];
-    ema20: number[];
-    rsi14: number[];
-    atr14: number[];
-  }
+  cache: IndicatorCache
 ): Signal {
   const idx = context.length - 1;
   if (idx < 0) return { action: "HOLD", positionSize: 0.2, reason: "" };
@@ -461,33 +565,41 @@ function generateSignal(
   const currentPrice = context[idx].close;
   const hasPosition = (portfolioState.positionsCount as number) > 0;
 
-  // Get indicator values
-  const currentRSI = indicators.rsi14[idx];
-  const currentSMA20 = indicators.sma20[idx];
-  const currentSMA50 = indicators.sma50[idx];
-  const currentATR = indicators.atr14[idx];
-  const prevSMA20 = idx > 0 ? indicators.sma20[idx - 1] : NaN;
-  const prevSMA50 = idx > 0 ? indicators.sma50[idx - 1] : NaN;
-
   // Evaluate entry rules
   if (!hasPosition && strategyConfig.entryRules.length > 0) {
     let allConditionsMet = true;
+    const reasons: string[] = [];
 
     for (const rule of strategyConfig.entryRules) {
-      const indicatorValue = getIndicatorValue(rule.indicator, idx, context, indicators);
-      const compareValue = typeof rule.value === "string" 
-        ? getIndicatorValue(rule.value, idx, context, indicators)
-        : rule.value;
+      if (!rule.indicator) {
+        allConditionsMet = false;
+        break;
+      }
+      
+      const indicatorValue = getIndicatorValueFromCache(rule.indicator, rule.period, idx, context, cache);
+      
+      let compareValue: number | null = null;
+      if (typeof rule.value === "object" && rule.value !== null) {
+        // Handle nested indicator reference like { indicator: "EMA", period: 21 }
+        const valueObj = rule.value as { indicator: string; period?: number };
+        compareValue = getIndicatorValueFromCache(valueObj.indicator, valueObj.period, idx, context, cache);
+      } else if (typeof rule.value === "string") {
+        compareValue = getIndicatorValueFromCache(rule.value, undefined, idx, context, cache);
+      } else {
+        compareValue = rule.value as number;
+      }
 
       if (indicatorValue === null || compareValue === null) {
         allConditionsMet = false;
         break;
       }
 
-      if (!evaluateCondition(indicatorValue, rule.condition, compareValue, idx, context, indicators, rule)) {
+      const conditionMet = evaluateCondition(indicatorValue, rule.condition, compareValue, idx, context, cache, rule);
+      if (!conditionMet) {
         allConditionsMet = false;
         break;
       }
+      reasons.push(`${rule.indicator}${rule.period || ""} ${rule.condition}`);
     }
 
     if (allConditionsMet) {
@@ -499,7 +611,7 @@ function generateSignal(
         stopLoss: currentPrice * (1 - stopLossPct / 100),
         takeProfit: currentPrice * (1 + takeProfitPct / 100),
         positionSize: strategyConfig.positionSizing?.value ?? 0.2,
-        reason: `Entry signal: ${strategyConfig.entryRules.map(r => r.indicator).join(", ")}`
+        reason: `Entry: ${reasons.join(", ")}`
       };
     }
   }
@@ -507,18 +619,25 @@ function generateSignal(
   // Evaluate exit rules
   if (hasPosition && strategyConfig.exitRules.length > 0) {
     for (const rule of strategyConfig.exitRules) {
-      const indicatorValue = getIndicatorValue(rule.indicator, idx, context, indicators);
-      const compareValue = typeof rule.value === "string"
-        ? getIndicatorValue(rule.value, idx, context, indicators)
-        : rule.value;
+      const indicatorValue = getIndicatorValueFromCache(rule.indicator, rule.period, idx, context, cache);
+      
+      let compareValue: number | null = null;
+      if (typeof rule.value === "object" && rule.value !== null) {
+        const valueObj = rule.value as { indicator: string; period?: number };
+        compareValue = getIndicatorValueFromCache(valueObj.indicator, valueObj.period, idx, context, cache);
+      } else if (typeof rule.value === "string") {
+        compareValue = getIndicatorValueFromCache(rule.value, undefined, idx, context, cache);
+      } else {
+        compareValue = rule.value as number;
+      }
 
       if (indicatorValue === null || compareValue === null) continue;
 
-      if (evaluateCondition(indicatorValue, rule.condition, compareValue, idx, context, indicators, rule)) {
+      if (evaluateCondition(indicatorValue, rule.condition, compareValue, idx, context, cache, rule)) {
         return {
           action: "SELL",
           positionSize: 0,
-          reason: `Exit signal: ${rule.indicator} ${rule.condition} ${rule.value}`
+          reason: `Exit: ${rule.indicator}${rule.period || ""} ${rule.condition}`
         };
       }
     }
@@ -527,71 +646,69 @@ function generateSignal(
   return { action: "HOLD", positionSize: 0.2, reason: "" };
 }
 
-function getIndicatorValue(
-  indicator: string,
-  idx: number,
-  context: OHLCV[],
-  indicators: { sma20: number[]; sma50: number[]; ema20: number[]; rsi14: number[]; atr14: number[] }
-): number | null {
-  switch (indicator.toLowerCase()) {
-    case "price":
-    case "close":
-      return context[idx]?.close ?? null;
-    case "sma":
-    case "sma20":
-      return isNaN(indicators.sma20[idx]) ? null : indicators.sma20[idx];
-    case "sma50":
-      return isNaN(indicators.sma50[idx]) ? null : indicators.sma50[idx];
-    case "ema":
-    case "ema20":
-      return isNaN(indicators.ema20[idx]) ? null : indicators.ema20[idx];
-    case "rsi":
-    case "rsi14":
-      return isNaN(indicators.rsi14[idx]) ? null : indicators.rsi14[idx];
-    case "atr":
-    case "atr14":
-      return isNaN(indicators.atr14[idx]) ? null : indicators.atr14[idx];
-    default:
-      return null;
-  }
-}
-
 function evaluateCondition(
   value: number,
   condition: string,
   compareValue: number,
   idx: number,
   context: OHLCV[],
-  indicators: { sma20: number[]; sma50: number[]; ema20: number[]; rsi14: number[]; atr14: number[] },
+  cache: IndicatorCache,
   rule: StrategyRule
 ): boolean {
-  const prevValue = idx > 0 ? getIndicatorValue(rule.indicator, idx - 1, context, indicators) : null;
-  const prevCompareValue = typeof rule.value === "string" && idx > 0
-    ? getIndicatorValue(rule.value, idx - 1, context, indicators)
-    : compareValue;
+  const normalizedCondition = condition.toLowerCase().replace(/[_\s]/g, "");
+  
+  // Get previous values for crossover detection
+  let prevValue: number | null = null;
+  let prevCompareValue: number | null = null;
+  
+  if (idx > 0) {
+    prevValue = getIndicatorValueFromCache(rule.indicator, rule.period, idx - 1, context, cache);
+    
+    if (typeof rule.value === "object" && rule.value !== null) {
+      const valueObj = rule.value as { indicator: string; period?: number };
+      prevCompareValue = getIndicatorValueFromCache(valueObj.indicator, valueObj.period, idx - 1, context, cache);
+    } else if (typeof rule.value === "string") {
+      prevCompareValue = getIndicatorValueFromCache(rule.value, undefined, idx - 1, context, cache);
+    } else {
+      prevCompareValue = rule.value as number;
+    }
+  }
 
-  switch (condition) {
-    case "greater_than":
+  switch (normalizedCondition) {
+    case "greaterthan":
     case ">":
+    case "above":
       return value > compareValue;
-    case "less_than":
+      
+    case "lessthan":
     case "<":
+    case "below":
       return value < compareValue;
-    case "crosses_above":
+      
+    case "crossesabove":
+    case "crossabove":
+    case "crossingabove":
       return prevValue !== null && prevCompareValue !== null &&
         prevValue <= prevCompareValue && value > compareValue;
-    case "crosses_below":
+        
+    case "crossesbelow":
+    case "crossbelow":
+    case "crossingbelow":
       return prevValue !== null && prevCompareValue !== null &&
         prevValue >= prevCompareValue && value < compareValue;
-    case "between":
-      return Array.isArray(rule.value) && value >= rule.value[0] && value <= rule.value[1];
+        
+    case "equals":
+    case "=":
+    case "==":
+      return Math.abs(value - compareValue) < 0.001;
+      
     default:
       return false;
   }
 }
 
 // ============================================================================
-// 7. BACKTESTING ENGINE
+// 8. BACKTESTING ENGINE
 // ============================================================================
 
 class BacktestEngine {
@@ -617,34 +734,30 @@ class BacktestEngine {
       throw new Error("BacktestEngine cannot be reused. Create new instance for each run.");
     }
 
-    // Initialize
     this.portfolio = new Portfolio(this.config.initialCapital);
     this.pendingOrders = [];
 
-    // Pre-calculate indicators for full dataset
-    const closes = data.map(d => d.close);
-    const indicators = {
-      sma20: calculateSMA(closes, 20),
-      sma50: calculateSMA(closes, 50),
-      ema20: calculateEMA(closes, 20),
-      rsi14: calculateRSI(closes, 14),
-      atr14: calculateATR(data, 14)
-    };
+    // Build indicator cache with all periods
+    const cache = buildIndicatorCache(data);
 
     const runTimestamp = data[data.length - 1]?.timestamp ?? new Date().toISOString();
     const strategyId = this.hashString(`${strategyName}:${JSON.stringify(strategyConfig)}`).substring(0, 8);
+
+    console.log(`[Backtest] Starting with ${data.length} bars, lookback ${lookback}`);
+    console.log(`[Backtest] Entry rules: ${JSON.stringify(strategyConfig.entryRules)}`);
+    console.log(`[Backtest] Exit rules: ${JSON.stringify(strategyConfig.exitRules)}`);
 
     // Main backtest loop
     for (let t = lookback; t < data.length; t++) {
       const currentBar = data[t];
 
-      // Step 1: Pre-open valuation (using prev close)
+      // Step 1: Pre-open valuation
       if (t > 0) {
         const prevClose = data[t - 1].close;
         this.portfolio.updatePrices(currentBar.timestamp, { [symbol]: prevClose });
       }
 
-      // Step 2: Stop-loss / take-profit checks (gap-aware)
+      // Step 2: Stop-loss / take-profit checks
       this.checkStopsWithGaps(currentBar, symbol, t);
 
       // Step 3: Execute pending orders at open
@@ -675,16 +788,8 @@ class BacktestEngine {
 
       // Step 6: Signal generation
       if (!this.portfolio.tradingDisabled) {
-        const context = data.slice(0, t); // Only past data
-        const contextIndicators = {
-          sma20: indicators.sma20.slice(0, t),
-          sma50: indicators.sma50.slice(0, t),
-          ema20: indicators.ema20.slice(0, t),
-          rsi14: indicators.rsi14.slice(0, t),
-          atr14: indicators.atr14.slice(0, t)
-        };
-
-        const signal = generateSignal(context, this.portfolio.getState(), strategyConfig, contextIndicators);
+        const contextData = data.slice(0, t + 1);
+        const signal = generateSignal(contextData, this.portfolio.getState(), strategyConfig, cache);
 
         // Step 7: Order queuing
         if (signal.action === "BUY") {
@@ -695,7 +800,7 @@ class BacktestEngine {
       }
     }
 
-    // Final liquidation at last bar open
+    // Final liquidation at last bar
     if (data.length > 0) {
       const finalBar = data[data.length - 1];
       for (const position of [...this.portfolio.positions]) {
@@ -704,13 +809,14 @@ class BacktestEngine {
         );
         this.portfolio.closePosition(
           position, executionPrice, netProceeds,
-          "End of backtest - final liquidation at open",
+          "End of backtest - final liquidation",
           data.length - 1
         );
       }
     }
 
     this.runCompleted = true;
+    console.log(`[Backtest] Completed with ${this.portfolio.trades.length} trades`);
     return this.generateResults(runTimestamp, strategyId, strategyName);
   }
 
@@ -720,7 +826,7 @@ class BacktestEngine {
     for (const position of [...this.portfolio.positions]) {
       if (position.symbol !== symbol) continue;
 
-      // Priority 1: Check stop-loss FIRST
+      // Priority 1: Stop-loss
       if (position.stopLoss !== undefined) {
         if (bar.low <= position.stopLoss) {
           const actualExit = Math.min(position.stopLoss, bar.open);
@@ -729,14 +835,14 @@ class BacktestEngine {
           );
           this.portfolio.closePosition(
             position, executionPrice, netProceeds,
-            "Stop-loss hit" + (bar.open < position.stopLoss ? " with gap" : ""),
+            "Stop-loss hit" + (bar.open < position.stopLoss ? " (gap)" : ""),
             barIndex
           );
           continue;
         }
       }
 
-      // Priority 2: Check take-profit
+      // Priority 2: Take-profit
       if (position.takeProfit !== undefined) {
         if (bar.high >= position.takeProfit) {
           const actualExit = Math.max(position.takeProfit, bar.open);
@@ -745,7 +851,7 @@ class BacktestEngine {
           );
           this.portfolio.closePosition(
             position, executionPrice, netProceeds,
-            "Take-profit hit" + (bar.open > position.takeProfit ? " with gap" : ""),
+            "Take-profit hit" + (bar.open > position.takeProfit ? " (gap)" : ""),
             barIndex
           );
         }
@@ -756,21 +862,18 @@ class BacktestEngine {
   private queueBuyOrder(signal: Signal, bar: OHLCV, symbol: string, barIndex: number) {
     if (!this.portfolio) return;
 
-    // Block if already holding position
     const hasPosition = this.portfolio.positions.some(p => p.symbol === symbol);
     if (hasPosition) {
-      this.portfolio.rejectSignal(bar.timestamp, symbol, signal, "Already holding position in symbol");
+      this.portfolio.rejectSignal(bar.timestamp, symbol, signal, "Already holding position");
       return;
     }
 
-    // Freeze position size at queue time
     const quantity = this.riskEngine.calculatePositionSize(signal, bar.close, this.portfolio.cash);
     if (quantity <= 0) {
-      this.portfolio.rejectSignal(bar.timestamp, symbol, signal, "Calculated position size is zero");
+      this.portfolio.rejectSignal(bar.timestamp, symbol, signal, "Position size is zero");
       return;
     }
 
-    // Validate with risk engine
     const { valid, reason } = this.riskEngine.validateSignal(
       signal,
       quantity,
@@ -808,25 +911,22 @@ class BacktestEngine {
   private executePendingOrders(bar: OHLCV, symbol: string, barIndex: number) {
     if (!this.portfolio) return;
 
-    for (const order of [...this.pendingOrders]) {
+    const ordersToExecute = [...this.pendingOrders];
+    this.pendingOrders = [];
+
+    for (const order of ordersToExecute) {
       if (order.signal.action === "BUY") {
-        const quantity = order.quantity;
-        if (quantity <= 0) {
-          this.pendingOrders = this.pendingOrders.filter(o => o !== order);
-          continue;
-        }
-
-        const { executionPrice, totalCost } = this.executionSim.executeBuy(bar.open, quantity);
-
+        const { executionPrice, totalCost } = this.executionSim.executeBuy(bar.open, order.quantity);
+        
         if (totalCost > this.portfolio.cash) {
-          this.pendingOrders = this.pendingOrders.filter(o => o !== order);
+          this.portfolio.rejectSignal(bar.timestamp, symbol, order.signal, "Insufficient cash for execution");
           continue;
         }
 
         const position: Position = {
-          symbol,
+          symbol: order.symbol,
           entryPrice: executionPrice,
-          quantity,
+          quantity: order.quantity,
           entryTime: bar.timestamp,
           entryBarIndex: barIndex,
           stopLoss: order.signal.stopLoss,
@@ -836,94 +936,52 @@ class BacktestEngine {
 
         this.portfolio.addPosition(position, totalCost);
       } else if (order.signal.action === "SELL") {
-        for (const position of [...this.portfolio.positions]) {
-          if (position.symbol === symbol) {
-            const { executionPrice, netProceeds } = this.executionSim.executeSell(
-              bar.open, position.quantity
-            );
-            this.portfolio.closePosition(position, executionPrice, netProceeds, order.reason, barIndex);
-          }
+        const position = this.portfolio.positions.find(p => p.symbol === symbol);
+        if (position) {
+          const { executionPrice, netProceeds } = this.executionSim.executeSell(bar.open, position.quantity);
+          this.portfolio.closePosition(position, executionPrice, netProceeds, order.reason, barIndex);
         }
       }
-
-      this.pendingOrders = this.pendingOrders.filter(o => o !== order);
     }
   }
 
   private generateResults(runTimestamp: string, strategyId: string, strategyName: string): Record<string, unknown> {
-    if (!this.portfolio) return { error: "Portfolio not initialized" };
+    if (!this.portfolio) return {};
 
     const trades = this.portfolio.trades;
     const equityCurve = this.portfolio.equityCurve;
-
-    if (trades.length === 0) {
-      return {
-        metadata: {
-          engineVersion: ENGINE_VERSION,
-          configHash: this.hashString(JSON.stringify(this.config)).substring(0, 8),
-          runTimestamp
-        },
-        summary: {
-          totalTrades: 0,
-          message: "No trades executed",
-          tradingDisabled: this.portfolio.tradingDisabled
-        },
-        equityCurve: equityCurve,
-        trades: [],
-        rejectedSignals: this.portfolio.rejectedSignals,
-        drawdownCurve: [],
-        behaviorMetrics: {}
-      };
-    }
-
-    // Calculate metrics
-    const finalEquity = this.portfolio.getEquity();
+    const finalEquity = equityCurve.length > 0 ? equityCurve[equityCurve.length - 1].equity : this.config.initialCapital;
     const totalReturn = (finalEquity - this.config.initialCapital) / this.config.initialCapital;
-    
+
     const winningTrades = trades.filter(t => t.pnl > 0);
     const losingTrades = trades.filter(t => t.pnl <= 0);
     const winRate = trades.length > 0 ? winningTrades.length / trades.length : 0;
+    const avgWin = winningTrades.length > 0 ? winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length : 0;
+    const avgLoss = losingTrades.length > 0 ? Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length) : 0;
+    const riskReward = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? 99.99 : 0;
+    const profitFactor = avgLoss > 0 ? (winningTrades.reduce((sum, t) => sum + t.pnl, 0)) / Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0)) : winningTrades.length > 0 ? 99.99 : 0;
+    const expectancy = trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0;
 
-    const avgWin = winningTrades.length > 0
-      ? winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length
-      : 0;
-    const avgLoss = losingTrades.length > 0
-      ? losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length
-      : 0;
-    const riskReward = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : 0;
-
-    const totalWins = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
-    const totalLosses = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
-    const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0;
-
-    const expectancy = (winRate * avgWin) + ((1 - winRate) * avgLoss);
     const pnlValues = trades.map(t => t.pnl);
     const medianPnl = this.median(pnlValues);
     const pnlStd = this.standardDeviation(pnlValues);
 
-    // Drawdown calculation
     let maxDrawdown = 0;
     let peak = this.config.initialCapital;
-    const drawdownCurve: { timestamp: string; drawdown: number }[] = [];
 
     for (const point of equityCurve) {
       peak = Math.max(peak, point.equity);
       const drawdown = peak > 0 ? (point.equity - peak) / peak : 0;
       maxDrawdown = Math.min(maxDrawdown, drawdown);
-      drawdownCurve.push({ timestamp: point.timestamp, drawdown });
     }
 
-    // CAGR calculation
     const bars = equityCurve.length;
     let years = bars / 252;
     if (this.config.dataFrequency === "hourly") years = bars / (252 * 6.5);
     if (this.config.dataFrequency === "minute") years = bars / (252 * 6.5 * 60);
 
-    const cagr = years > 0
-      ? Math.pow(finalEquity / this.config.initialCapital, 1 / years) - 1
-      : 0;
+    const cagr = years > 0 ? Math.pow(finalEquity / this.config.initialCapital, 1 / years) - 1 : 0;
 
-    // Sharpe ratio
     const returns = trades.map(t => t.pnlPct);
     const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
     const returnStd = this.standardDeviation(returns);
@@ -956,7 +1014,7 @@ class BacktestEngine {
         pnlStd: Math.round(pnlStd * 100) / 100,
         sharpeRatio: Math.round(sharpeRatio * 100) / 100,
         finalEquity: Math.round(finalEquity * 100) / 100,
-        avgTradeDuration: Math.round(trades.reduce((sum, t) => sum + t.durationBars, 0) / trades.length),
+        avgTradeDuration: trades.length > 0 ? Math.round(trades.reduce((sum, t) => sum + t.durationBars, 0) / trades.length) : 0,
         tradingDisabled: this.portfolio.tradingDisabled
       },
       equityCurve: equityCurve.map(e => ({
@@ -977,7 +1035,6 @@ class BacktestEngine {
         durationBars: t.durationBars
       })),
       rejectedSignals: this.portfolio.rejectedSignals,
-      drawdownCurve,
       behaviorMetrics: {
         tradeFrequency: equityCurve.length > 0 ? trades.length / equityCurve.length : 0,
         avgPositions: equityCurve.length > 0
@@ -1014,10 +1071,10 @@ class BacktestEngine {
 }
 
 // ============================================================================
-// 8. DATA GENERATION
+// 9. REALISTIC DATA GENERATION WITH TRENDS
 // ============================================================================
 
-function generateSampleData(days: number = 365, symbol: string = "NIFTY"): OHLCV[] {
+function generateRealisticData(days: number = 365, symbol: string = "NIFTY"): OHLCV[] {
   const data: OHLCV[] = [];
   
   // Base prices for Indian stocks/indices
@@ -1033,26 +1090,57 @@ function generateSampleData(days: number = 365, symbol: string = "NIFTY"): OHLCV
     ITC: 445
   };
 
-  let price = basePrices[symbol] || 1000 + Math.random() * 500;
-  const volatility = symbol.includes("NIFTY") ? 0.012 : 0.018;
-  const trend = 0.0002;
-
+  let price = basePrices[symbol] || 1000;
+  
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
+
+  // Create stronger trend phases to ensure crossovers happen with RSI extremes
+  const phases = [
+    { days: 15, trend: 0.008 },   // Strong uptrend - should push RSI high
+    { days: 10, trend: -0.012 },  // Sharp correction - should drop RSI
+    { days: 20, trend: 0.006 },   // Recovery uptrend
+    { days: 8, trend: -0.015 },   // Pullback - RSI drops
+    { days: 25, trend: 0.007 },   // Rally - RSI climbs
+    { days: 12, trend: -0.01 },   // Correction
+    { days: 18, trend: 0.009 },   // Strong recovery - EMA crossover
+    { days: 15, trend: -0.008 },  // Decline
+    { days: 22, trend: 0.005 },   // Gradual climb
+    { days: 10, trend: -0.012 },  // Sharp drop
+    { days: 20, trend: 0.008 },   // Bull run - RSI high
+    { days: 12, trend: -0.006 },  // Mild correction
+    { days: 18, trend: 0.01 },    // Strong up
+    { days: 25, trend: -0.004 },  // Slow decline
+  ];
+
+  let currentPhaseIndex = 0;
+  let daysInPhase = 0;
 
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
     
+    // Skip weekends
     if (date.getDay() === 0 || date.getDay() === 6) continue;
 
-    const change = (Math.random() - 0.5) * 2 * volatility + trend;
+    // Get current phase trend
+    const phase = phases[currentPhaseIndex % phases.length];
+    const volatility = 0.008 + Math.random() * 0.006;
+    const trendBias = phase.trend;
+    
+    // Add some randomness around the trend
+    const noise = (Math.random() - 0.5) * volatility * 2;
+    const dayChange = trendBias + noise;
+    
     const open = price;
-    price = price * (1 + change);
+    price = price * (1 + dayChange);
     const close = price;
-    const high = Math.max(open, close) * (1 + Math.random() * 0.012);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.012);
-    const volume = Math.floor(100000 + Math.random() * 900000);
+    
+    // Intraday high/low with realistic ranges
+    const range = volatility * price * (0.5 + Math.random());
+    const high = Math.max(open, close) + range * Math.random();
+    const low = Math.min(open, close) - range * Math.random();
+    const volume = Math.floor(500000 + Math.random() * 2000000);
 
     data.push({
       timestamp: date.toISOString(),
@@ -1062,8 +1150,18 @@ function generateSampleData(days: number = 365, symbol: string = "NIFTY"): OHLCV
       close: Math.round(close * 100) / 100,
       volume
     });
+
+    
+    daysInPhase++;
+    
+    // Move to next phase
+    if (daysInPhase >= phase.days) {
+      daysInPhase = 0;
+      currentPhaseIndex++;
+    }
   }
 
+  console.log(`[Data] Generated ${data.length} bars with ${phases.length} trend phases`);
   return data;
 }
 
@@ -1073,43 +1171,69 @@ function parseStrategyConfig(strategy: Record<string, unknown>): StrategyConfig 
     exitRules: [],
   };
 
-  if (strategy.entry_rules && typeof strategy.entry_rules === "object") {
-    const rules = strategy.entry_rules as Record<string, unknown>;
+  // Parse entry rules
+  if (strategy.entry_rules) {
+    const rules = strategy.entry_rules as unknown[];
     if (Array.isArray(rules)) {
-      config.entryRules = rules as StrategyRule[];
-    } else if (rules.conditions && Array.isArray(rules.conditions)) {
-      config.entryRules = rules.conditions as StrategyRule[];
+      config.entryRules = rules.map(r => {
+        const rule = r as Record<string, unknown>;
+        return {
+          indicator: String(rule.indicator || ""),
+          condition: String(rule.condition || "").replace(/\s+/g, ""),
+          value: rule.value as number | string | { indicator: string; period?: number },
+          period: rule.period as number | undefined
+        };
+      }).filter(r => r.indicator);
     }
   }
 
-  if (strategy.exit_rules && typeof strategy.exit_rules === "object") {
-    const rules = strategy.exit_rules as Record<string, unknown>;
+  // Parse exit rules
+  if (strategy.exit_rules) {
+    const rules = strategy.exit_rules as unknown[];
     if (Array.isArray(rules)) {
-      config.exitRules = rules as StrategyRule[];
-    } else if (rules.conditions && Array.isArray(rules.conditions)) {
-      config.exitRules = rules.conditions as StrategyRule[];
+      config.exitRules = rules.map(r => {
+        const rule = r as Record<string, unknown>;
+        return {
+          indicator: String(rule.indicator || ""),
+          condition: String(rule.condition || "").replace(/\s+/g, ""),
+          value: rule.value as number | string | { indicator: string; period?: number },
+          period: rule.period as number | undefined
+        };
+      }).filter(r => r.indicator);
     }
   }
 
+  // Parse position sizing - convert percentage to decimal if needed
   if (strategy.position_sizing) {
-    config.positionSizing = strategy.position_sizing as StrategyConfig["positionSizing"];
+    const ps = strategy.position_sizing as Record<string, unknown>;
+    let value = ps.value as number;
+    // If value > 1, assume it's a percentage and convert to decimal
+    if (value > 1) {
+      value = value / 100;
+    }
+    config.positionSizing = { type: String(ps.type || "fixed_percent"), value };
   }
 
+  // Parse risk limits - handle both naming conventions
   if (strategy.risk_limits) {
-    config.riskLimits = strategy.risk_limits as StrategyConfig["riskLimits"];
+    const rl = strategy.risk_limits as Record<string, unknown>;
+    config.riskLimits = {
+      stopLoss: (rl.stopLoss as number) || (rl.stop_loss_percent as number) || 2,
+      takeProfit: (rl.takeProfit as number) || (rl.take_profit_percent as number) || 6
+    };
   }
 
   // Default rules if none provided
   if (config.entryRules.length === 0) {
     config.entryRules = [
-      { indicator: "rsi", condition: "less_than", value: 30, period: 14 },
-      { indicator: "price", condition: "greater_than", value: "sma20", period: 20 }
+      { indicator: "RSI", condition: "below", value: 35, period: 14 },
+      { indicator: "price", condition: "above", value: "sma20" }
     ];
   }
 
   if (config.exitRules.length === 0) {
     config.exitRules = [
-      { indicator: "rsi", condition: "greater_than", value: 70, period: 14 }
+      { indicator: "RSI", condition: "above", value: 65, period: 14 }
     ];
   }
 
@@ -1121,7 +1245,7 @@ function parseStrategyConfig(strategy: Record<string, unknown>): StrategyConfig 
 }
 
 // ============================================================================
-// 9. MAIN HANDLER
+// 10. MAIN HANDLER
 // ============================================================================
 
 serve(async (req) => {
@@ -1162,14 +1286,14 @@ serve(async (req) => {
 
     // Parse strategy config
     const strategyConfig = parseStrategyConfig(strategy);
-    console.log("[Backtest] Strategy config parsed:", strategyConfig);
+    console.log("[Backtest] Strategy config:", JSON.stringify(strategyConfig));
 
-    // Generate sample data (in production, would fetch real data)
+    // Generate realistic sample data with trends
     const days = 365;
-    const priceData = generateSampleData(days, symbol);
+    const priceData = generateRealisticData(days, symbol);
     console.log(`[Backtest] Generated ${priceData.length} price bars`);
 
-    // Configure engine with production settings
+    // Configure engine
     const config: BacktestConfig = {
       initialCapital,
       slippage: 0.001,
