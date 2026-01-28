@@ -62,6 +62,42 @@ interface StrategyTrade {
   closed_at: string | null;
 }
 
+interface BacktestTrade {
+  id: string;
+  type: 'ENTRY' | 'EXIT';
+  side: 'buy' | 'sell' | 'long' | 'short';
+  price: number;
+  timestamp: string;
+  pnl?: number;
+  pnlPercent?: number;
+  reason?: string;
+  symbol?: string;
+}
+
+interface BacktestResult {
+  id: string;
+  strategy_id: string;
+  status: string;
+  metrics: {
+    totalTrades?: number;
+    winningTrades?: number;
+    losingTrades?: number;
+    totalReturn?: number;
+    winRate?: number;
+    avgWin?: number;
+    avgLoss?: number;
+    maxDrawdown?: number;
+    sharpeRatio?: number;
+  } | null;
+  trade_log: BacktestTrade[] | null;
+  parameters: {
+    symbol?: string;
+    startDate?: string;
+    endDate?: string;
+  };
+  completed_at: string | null;
+}
+
 interface TradeExplanation {
   trade_id: string;
   attribution: {
@@ -76,6 +112,7 @@ interface TradeExplanation {
 interface StrategyPerformanceData {
   strategy: Strategy;
   trades: StrategyTrade[];
+  backtests: BacktestResult[];
   explanations: Map<string, TradeExplanation>;
   stats: {
     totalTrades: number;
@@ -91,6 +128,7 @@ interface StrategyPerformanceData {
     maxLoss: number;
     streakCurrent: number;
     streakBest: number;
+    backtestCount: number;
   };
   causeCounts: Map<string, number>;
   topLossCauses: { cause: string; count: number; totalLoss: number }[];
@@ -111,70 +149,115 @@ const formatINR = (value: number) => {
   }).format(value);
 };
 
-const calculateStats = (trades: StrategyTrade[]) => {
-  if (trades.length === 0) {
+const calculateStats = (trades: StrategyTrade[], backtests: BacktestResult[]) => {
+  // If we have paper trades, use them
+  if (trades.length > 0) {
+    const pnls = trades.map(t => t.pnl || 0);
+    const wins = pnls.filter(p => p > 0);
+    const losses = pnls.filter(p => p < 0);
+    
+    const totalWins = wins.reduce((a, b) => a + b, 0);
+    const totalLosses = Math.abs(losses.reduce((a, b) => a + b, 0));
+
+    // Calculate streaks
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let tempStreak = 0;
+    
+    for (const pnl of pnls.reverse()) {
+      if (pnl > 0) {
+        tempStreak++;
+        bestStreak = Math.max(bestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+    
+    // Current streak from most recent
+    for (const pnl of [...pnls].reverse()) {
+      if (pnl > 0) {
+        currentStreak++;
+      } else if (pnl < 0) {
+        currentStreak = -1;
+        break;
+      }
+    }
+
     return {
-      totalTrades: 0,
-      wins: 0,
-      losses: 0,
-      winRate: 0,
-      totalPnl: 0,
-      avgPnl: 0,
-      avgWin: 0,
-      avgLoss: 0,
-      profitFactor: 0,
-      maxWin: 0,
-      maxLoss: 0,
-      streakCurrent: 0,
-      streakBest: 0
+      totalTrades: trades.length,
+      wins: wins.length,
+      losses: losses.length,
+      winRate: (wins.length / trades.length) * 100,
+      totalPnl: pnls.reduce((a, b) => a + b, 0),
+      avgPnl: pnls.reduce((a, b) => a + b, 0) / trades.length,
+      avgWin: wins.length > 0 ? totalWins / wins.length : 0,
+      avgLoss: losses.length > 0 ? totalLosses / losses.length : 0,
+      profitFactor: totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0,
+      maxWin: Math.max(...pnls, 0),
+      maxLoss: Math.min(...pnls, 0),
+      streakCurrent: currentStreak,
+      streakBest: bestStreak,
+      backtestCount: backtests.length
     };
   }
 
-  const pnls = trades.map(t => t.pnl || 0);
-  const wins = pnls.filter(p => p > 0);
-  const losses = pnls.filter(p => p < 0);
-  
-  const totalWins = wins.reduce((a, b) => a + b, 0);
-  const totalLosses = Math.abs(losses.reduce((a, b) => a + b, 0));
-
-  // Calculate streaks
-  let currentStreak = 0;
-  let bestStreak = 0;
-  let tempStreak = 0;
-  
-  for (const pnl of pnls.reverse()) {
-    if (pnl > 0) {
-      tempStreak++;
-      bestStreak = Math.max(bestStreak, tempStreak);
-    } else {
-      tempStreak = 0;
+  // Otherwise, use backtest results
+  if (backtests.length > 0) {
+    let totalTradesFromBT = 0;
+    let totalWinsFromBT = 0;
+    let totalPnlFromBT = 0;
+    let avgWinSum = 0;
+    let avgLossSum = 0;
+    let maxWin = 0;
+    let maxLoss = 0;
+    
+    for (const bt of backtests) {
+      if (bt.metrics) {
+        totalTradesFromBT += bt.metrics.totalTrades || 0;
+        totalWinsFromBT += bt.metrics.winningTrades || 0;
+        totalPnlFromBT += bt.metrics.totalReturn || 0;
+        avgWinSum += bt.metrics.avgWin || 0;
+        avgLossSum += bt.metrics.avgLoss || 0;
+      }
     }
-  }
-  
-  // Current streak from most recent
-  for (const pnl of [...pnls].reverse()) {
-    if (pnl > 0) {
-      currentStreak++;
-    } else if (pnl < 0) {
-      currentStreak = -1;
-      break;
-    }
+    
+    const totalLosses = totalTradesFromBT - totalWinsFromBT;
+    const avgWin = backtests.length > 0 ? avgWinSum / backtests.length : 0;
+    const avgLoss = backtests.length > 0 ? avgLossSum / backtests.length : 0;
+    
+    return {
+      totalTrades: totalTradesFromBT,
+      wins: totalWinsFromBT,
+      losses: totalLosses,
+      winRate: totalTradesFromBT > 0 ? (totalWinsFromBT / totalTradesFromBT) * 100 : 0,
+      totalPnl: totalPnlFromBT,
+      avgPnl: totalTradesFromBT > 0 ? totalPnlFromBT / totalTradesFromBT : 0,
+      avgWin,
+      avgLoss,
+      profitFactor: avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0,
+      maxWin,
+      maxLoss,
+      streakCurrent: 0,
+      streakBest: 0,
+      backtestCount: backtests.length
+    };
   }
 
   return {
-    totalTrades: trades.length,
-    wins: wins.length,
-    losses: losses.length,
-    winRate: (wins.length / trades.length) * 100,
-    totalPnl: pnls.reduce((a, b) => a + b, 0),
-    avgPnl: pnls.reduce((a, b) => a + b, 0) / trades.length,
-    avgWin: wins.length > 0 ? totalWins / wins.length : 0,
-    avgLoss: losses.length > 0 ? totalLosses / losses.length : 0,
-    profitFactor: totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0,
-    maxWin: Math.max(...pnls, 0),
-    maxLoss: Math.min(...pnls, 0),
-    streakCurrent: currentStreak,
-    streakBest: bestStreak
+    totalTrades: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    totalPnl: 0,
+    avgPnl: 0,
+    avgWin: 0,
+    avgLoss: 0,
+    profitFactor: 0,
+    maxWin: 0,
+    maxLoss: 0,
+    streakCurrent: 0,
+    streakBest: 0,
+    backtestCount: 0
   };
 };
 
@@ -380,17 +463,22 @@ const StrategyPerformance = () => {
           return;
         }
 
+        // Fetch backtest results for all strategies
+        const strategyIds = strategiesData.map(s => s.id);
+        const { data: backtestData, error: backtestError } = await supabase
+          .from('backtest_results')
+          .select('id, strategy_id, status, metrics, trade_log, parameters, completed_at')
+          .in('strategy_id', strategyIds)
+          .eq('status', 'completed');
+
+        if (backtestError) throw backtestError;
+
         // Get user's paper account
         const { data: accountData } = await supabase
           .from('paper_accounts')
           .select('id')
           .eq('user_id', user.id)
-          .single();
-
-        if (!accountData) {
-          setIsLoading(false);
-          return;
-        }
+          .maybeSingle();
 
         // Calculate date range
         let dateCondition = '';
@@ -400,23 +488,27 @@ const StrategyPerformance = () => {
           dateCondition = startDate;
         }
 
-        // Fetch all trades with strategy_id
-        let tradesQuery = supabase
-          .from('paper_trades')
-          .select('id, strategy_id, symbol, side, pnl, pnl_pct, reason, closed_at')
-          .eq('account_id', accountData.id)
-          .eq('status', 'closed')
-          .not('strategy_id', 'is', null);
+        // Fetch all trades with strategy_id if account exists
+        let tradesData: StrategyTrade[] = [];
+        if (accountData) {
+          let tradesQuery = supabase
+            .from('paper_trades')
+            .select('id, strategy_id, symbol, side, pnl, pnl_pct, reason, closed_at')
+            .eq('account_id', accountData.id)
+            .eq('status', 'closed')
+            .not('strategy_id', 'is', null);
 
-        if (dateCondition) {
-          tradesQuery = tradesQuery.gte('closed_at', dateCondition);
+          if (dateCondition) {
+            tradesQuery = tradesQuery.gte('closed_at', dateCondition);
+          }
+
+          const { data, error: tradesError } = await tradesQuery;
+          if (tradesError) throw tradesError;
+          tradesData = (data || []) as StrategyTrade[];
         }
 
-        const { data: tradesData, error: tradesError } = await tradesQuery;
-        if (tradesError) throw tradesError;
-
         // Fetch explanations for these trades
-        const tradeIds = (tradesData || []).map(t => t.id);
+        const tradeIds = tradesData.map(t => t.id);
         let explanationsMap = new Map<string, TradeExplanation>();
         
         if (tradeIds.length > 0) {
@@ -436,8 +528,16 @@ const StrategyPerformance = () => {
         const perfMap = new Map<string, StrategyPerformanceData>();
         
         for (const strategy of strategiesData) {
-          const strategyTrades = (tradesData || []).filter(t => t.strategy_id === strategy.id) as StrategyTrade[];
-          const stats = calculateStats(strategyTrades);
+          const strategyTrades = tradesData.filter(t => t.strategy_id === strategy.id);
+          const strategyBacktests = (backtestData || [])
+            .filter(b => b.strategy_id === strategy.id)
+            .map(b => ({
+              ...b,
+              metrics: b.metrics as unknown as BacktestResult['metrics'],
+              trade_log: (Array.isArray(b.trade_log) ? b.trade_log : []) as unknown as BacktestTrade[] | null,
+              parameters: b.parameters as unknown as BacktestResult['parameters']
+            })) as BacktestResult[];
+          const stats = calculateStats(strategyTrades, strategyBacktests);
           
           // Count causes for losses
           const causeCounts = new Map<string, number>();
@@ -466,6 +566,7 @@ const StrategyPerformance = () => {
           perfMap.set(strategy.id, {
             strategy,
             trades: strategyTrades,
+            backtests: strategyBacktests,
             explanations: explanationsMap,
             stats,
             causeCounts,

@@ -24,13 +24,17 @@ export const LessonViewer = () => {
   const isCompleted = isLessonCompleted(lessonId || "");
 
   useEffect(() => {
+    const currentModuleId = moduleId;
+    const currentLessonId = lessonId;
+    const currentStartTime = startTime;
+    
     return () => {
-      const timeSpent = Math.round((Date.now() - startTime) / 1000);
-      if (timeSpent > 5 && moduleId && lessonId) {
-        updateTimeSpent.mutate({ lessonId, moduleId, seconds: timeSpent });
+      const timeSpent = Math.round((Date.now() - currentStartTime) / 1000);
+      if (timeSpent > 5 && currentModuleId && currentLessonId) {
+        updateTimeSpent.mutate({ lessonId: currentLessonId, moduleId: currentModuleId, seconds: timeSpent });
       }
     };
-  }, []);
+  }, [moduleId, lessonId, startTime, updateTimeSpent]);
 
   if (!module || !lesson) {
     return (
