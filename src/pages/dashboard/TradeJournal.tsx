@@ -70,6 +70,30 @@ interface JournalTrade {
   closed_at: string | null;
   // Joined data
   strategy_name?: string;
+  source?: 'paper' | 'backtest';
+}
+
+interface BacktestTrade {
+  type: 'ENTRY' | 'EXIT';
+  side: 'buy' | 'sell' | 'long' | 'short';
+  price: number;
+  timestamp: string;
+  pnl?: number;
+  pnlPercent?: number;
+  reason?: string;
+  symbol?: string;
+}
+
+interface BacktestResult {
+  id: string;
+  strategy_id: string;
+  status: string;
+  metrics: Record<string, unknown> | null;
+  trade_log: BacktestTrade[] | null;
+  parameters: {
+    symbol?: string;
+  };
+  completed_at: string | null;
 }
 
 interface TradeExplanationData {
@@ -95,6 +119,7 @@ interface JournalStats {
 
 type DateFilter = 'all' | '7d' | '30d' | '90d';
 type OutcomeFilter = 'all' | 'profit' | 'loss';
+type SourceFilter = 'all' | 'paper' | 'backtest';
 
 // ==========================================
 // HELPERS
@@ -393,6 +418,7 @@ const TradeJournal = () => {
   const [dateFilter, setDateFilter] = useState<DateFilter>('30d');
   const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
   const [causeFilter, setCauseFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
   // Fetch trades and explanations
   useEffect(() => {
@@ -401,49 +427,121 @@ const TradeJournal = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Get strategies for mapping names
+        const { data: strategiesData } = await supabase
+          .from('strategies')
+          .select('id, name')
+          .eq('user_id', user.id);
+        
+        const strategyMap = new Map<string, string>();
+        (strategiesData || []).forEach(s => strategyMap.set(s.id, s.name));
+
         // Get user's paper account
-        const { data: accountData, error: accountError } = await supabase
+        const { data: accountData } = await supabase
           .from('paper_accounts')
           .select('id')
           .eq('user_id', user.id)
-          .single();
-        
-        if (accountError) {
-          if (accountError.code !== 'PGRST116') {
-            throw accountError;
-          }
-          setTrades([]);
-          return;
+          .maybeSingle();
+
+        let allTrades: JournalTrade[] = [];
+
+        // Fetch all closed paper trades if account exists
+        if (accountData) {
+          const { data: tradesData, error: tradesError } = await supabase
+            .from('paper_trades')
+            .select(`
+              *,
+              strategies:strategy_id (name)
+            `)
+            .eq('account_id', accountData.id)
+            .eq('status', 'closed')
+            .order('closed_at', { ascending: false });
+          
+          if (tradesError) throw tradesError;
+          
+          // Map paper trades
+          const paperTrades = (tradesData || []).map(t => ({
+            ...t,
+            strategy_name: t.strategies?.name,
+            source: 'paper' as const
+          })) as JournalTrade[];
+          
+          allTrades = [...allTrades, ...paperTrades];
         }
 
-        // Fetch all closed trades
-        const { data: tradesData, error: tradesError } = await supabase
-          .from('paper_trades')
-          .select(`
-            *,
-            strategies:strategy_id (name)
-          `)
-          .eq('account_id', accountData.id)
-          .eq('status', 'closed')
-          .order('closed_at', { ascending: false });
+        // Fetch backtest results with trade logs
+        const { data: backtestData } = await supabase
+          .from('backtest_results')
+          .select('id, strategy_id, trade_log, parameters, completed_at, metrics')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false });
+
+        // Convert backtest trades to journal format
+        if (backtestData) {
+          for (const backtest of backtestData) {
+            const tradeLog = Array.isArray(backtest.trade_log) ? backtest.trade_log as unknown as BacktestTrade[] : [];
+            const params = backtest.parameters as { symbol?: string };
+            const symbol = params?.symbol || 'NIFTY';
+            
+            // Pair entry/exit trades
+            const entries: BacktestTrade[] = [];
+            const exits: BacktestTrade[] = [];
+            
+            for (const trade of tradeLog) {
+              if (trade.type === 'ENTRY') {
+                entries.push(trade);
+              } else if (trade.type === 'EXIT') {
+                exits.push(trade);
+              }
+            }
+            
+            // Create journal entries from paired trades
+            for (let i = 0; i < Math.min(entries.length, exits.length); i++) {
+              const entry = entries[i];
+              const exit = exits[i];
+              
+              const side = entry.side === 'long' || entry.side === 'buy' ? 'buy' : 'sell';
+              
+              allTrades.push({
+                id: `${backtest.id}-${i}`,
+                account_id: '',
+                strategy_id: backtest.strategy_id,
+                symbol: entry.symbol || symbol,
+                side,
+                quantity: 1,
+                entry_price: entry.price,
+                exit_price: exit.price,
+                pnl: exit.pnl || (exit.price - entry.price) * (side === 'buy' ? 1 : -1),
+                pnl_pct: exit.pnlPercent || null,
+                market: 'equity',
+                reason: exit.reason || 'backtest',
+                status: 'closed',
+                opened_at: entry.timestamp,
+                closed_at: exit.timestamp,
+                strategy_name: strategyMap.get(backtest.strategy_id) || 'Unknown Strategy',
+                source: 'backtest'
+              });
+            }
+          }
+        }
+
+        // Sort all trades by date
+        allTrades.sort((a, b) => {
+          const dateA = new Date(a.closed_at || a.opened_at).getTime();
+          const dateB = new Date(b.closed_at || b.opened_at).getTime();
+          return dateB - dateA;
+        });
+
+        setTrades(allTrades);
         
-        if (tradesError) throw tradesError;
-        
-        // Map strategy names
-        const mappedTrades = (tradesData || []).map(t => ({
-          ...t,
-          strategy_name: t.strategies?.name
-        })) as JournalTrade[];
-        
-        setTrades(mappedTrades);
-        
-        // Fetch explanations for these trades
-        if (mappedTrades.length > 0) {
-          const tradeIds = mappedTrades.map(t => t.id);
+        // Fetch explanations for paper trades
+        const paperTradeIds = allTrades.filter(t => t.source === 'paper').map(t => t.id);
+        if (paperTradeIds.length > 0) {
           const { data: explanationsData } = await supabase
             .from('trade_explanations')
             .select('*')
-            .in('trade_id', tradeIds);
+            .in('trade_id', paperTradeIds);
           
           if (explanationsData) {
             const expMap = new Map<string, TradeExplanationData>();
@@ -467,6 +565,11 @@ const TradeJournal = () => {
   // Filter trades
   const filteredTrades = useMemo(() => {
     let filtered = [...trades];
+    
+    // Source filter
+    if (sourceFilter !== 'all') {
+      filtered = filtered.filter(t => t.source === sourceFilter);
+    }
     
     // Date filter
     if (dateFilter !== 'all') {
@@ -505,7 +608,7 @@ const TradeJournal = () => {
     }
     
     return filtered;
-  }, [trades, dateFilter, outcomeFilter, searchQuery, causeFilter, explanations]);
+  }, [trades, dateFilter, outcomeFilter, searchQuery, causeFilter, sourceFilter, explanations]);
 
   // Calculate stats
   const stats = useMemo(() => calculateStats(filteredTrades), [filteredTrades]);

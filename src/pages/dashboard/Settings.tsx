@@ -1,22 +1,40 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { User, CreditCard, Bell, Shield, Check, ChevronRight, ShieldCheck, ShieldOff } from "lucide-react";
+import { User, CreditCard, Bell, Shield, Check, ChevronRight, ShieldCheck, ShieldOff, Camera, Phone, MapPin, Building } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PRICING_PLANS, formatPrice } from "@/lib/pricing-config";
 import TwoFactorSetup from "@/components/settings/TwoFactorSetup";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Profile {
   display_name: string | null;
   avatar_url: string | null;
+  preferences: {
+    phone?: string;
+    location?: string;
+    company?: string;
+    bio?: string;
+  } | null;
 }
 
 const Settings = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile>({ display_name: "", avatar_url: null });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState<Profile>({ 
+    display_name: "", 
+    avatar_url: null,
+    preferences: {
+      phone: "",
+      location: "",
+      company: "",
+      bio: ""
+    }
+  });
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "billing" | "notifications" | "security">("profile");
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [has2FA, setHas2FA] = useState(false);
@@ -28,12 +46,21 @@ const Settings = () => {
 
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, preferences")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
-        setProfile(data);
+        setProfile({
+          display_name: data.display_name,
+          avatar_url: data.avatar_url,
+          preferences: (data.preferences as Profile['preferences']) || {
+            phone: "",
+            location: "",
+            company: "",
+            bio: ""
+          }
+        });
       }
     };
 
@@ -64,7 +91,10 @@ const Settings = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ display_name: profile.display_name })
+        .update({ 
+          display_name: profile.display_name,
+          preferences: profile.preferences
+        })
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -73,6 +103,45 @@ const Settings = () => {
       toast.error("Failed to update profile");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      // Create a data URL for the avatar (stored in preferences since no storage bucket)
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        
+        const { error } = await supabase
+          .from("profiles")
+          .update({ avatar_url: dataUrl })
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+        
+        setProfile(prev => ({ ...prev, avatar_url: dataUrl }));
+        toast.success("Avatar updated successfully");
+        setUploadingAvatar(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+      setUploadingAvatar(false);
     }
   };
 
@@ -163,8 +232,51 @@ const Settings = () => {
             {/* Profile Tab */}
             {activeTab === "profile" && (
               <div className="space-y-6">
+                {/* Avatar Section */}
                 <div className="bg-card border border-border rounded-2xl p-6">
-                  <h3 className="text-foreground font-medium mb-6">Profile Information</h3>
+                  <h3 className="text-foreground font-medium mb-6">Profile Picture</h3>
+                  <div className="flex items-center gap-6">
+                    <div className="relative group">
+                      <Avatar className="w-24 h-24 border-2 border-border">
+                        <AvatarImage src={profile.avatar_url || undefined} alt="Profile" />
+                        <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                          {profile.display_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Camera className="w-6 h-6 text-white" />
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium">
+                        {profile.display_name || user?.email?.split('@')[0] || 'User'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{user?.email}</p>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        className="mt-2 text-sm text-primary hover:underline"
+                      >
+                        {uploadingAvatar ? 'Uploading...' : 'Change photo'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Basic Info */}
+                <div className="bg-card border border-border rounded-2xl p-6">
+                  <h3 className="text-foreground font-medium mb-6">Basic Information</h3>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm text-muted-foreground mb-2">Email</label>
@@ -183,6 +295,69 @@ const Settings = () => {
                         onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
                         placeholder="Enter your name"
                         className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+                      />
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <Phone className="w-4 h-4" />
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={profile.preferences?.phone || ""}
+                          onChange={(e) => setProfile({ 
+                            ...profile, 
+                            preferences: { ...profile.preferences, phone: e.target.value }
+                          })}
+                          placeholder="+91 98765 43210"
+                          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <MapPin className="w-4 h-4" />
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          value={profile.preferences?.location || ""}
+                          onChange={(e) => setProfile({ 
+                            ...profile, 
+                            preferences: { ...profile.preferences, location: e.target.value }
+                          })}
+                          placeholder="Mumbai, India"
+                          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                        <Building className="w-4 h-4" />
+                        Company / Organization
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.preferences?.company || ""}
+                        onChange={(e) => setProfile({ 
+                          ...profile, 
+                          preferences: { ...profile.preferences, company: e.target.value }
+                        })}
+                        placeholder="Your company name"
+                        className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">Bio</label>
+                      <textarea
+                        value={profile.preferences?.bio || ""}
+                        onChange={(e) => setProfile({ 
+                          ...profile, 
+                          preferences: { ...profile.preferences, bio: e.target.value }
+                        })}
+                        placeholder="Tell us a bit about yourself and your trading experience..."
+                        rows={3}
+                        className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all resize-none"
                       />
                     </div>
                     <button
