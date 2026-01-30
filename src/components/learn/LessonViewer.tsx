@@ -23,18 +23,21 @@ export const LessonViewer = () => {
   
   const isCompleted = isLessonCompleted(lessonId || "");
 
+  // Track time spent on lesson - using ref to avoid dependency on mutation object
   useEffect(() => {
     const currentModuleId = moduleId;
     const currentLessonId = lessonId;
-    const currentStartTime = startTime;
+    const sessionStart = Date.now();
     
     return () => {
-      const timeSpent = Math.round((Date.now() - currentStartTime) / 1000);
+      const timeSpent = Math.round((Date.now() - sessionStart) / 1000);
       if (timeSpent > 5 && currentModuleId && currentLessonId) {
+        // Fire and forget - don't depend on updateTimeSpent in deps array
         updateTimeSpent.mutate({ lessonId: currentLessonId, moduleId: currentModuleId, seconds: timeSpent });
       }
     };
-  }, [moduleId, lessonId, startTime, updateTimeSpent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleId, lessonId]);
 
   if (!module || !lesson) {
     return (
