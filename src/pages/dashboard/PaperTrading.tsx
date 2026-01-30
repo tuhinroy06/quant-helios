@@ -1,58 +1,25 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, RefreshCw, X, Calculator, Brain, Sparkles, BookOpen } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, ArrowRight, Activity, RefreshCw, X, Brain, Sparkles, BookOpen, BarChart3, Target, Percent } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { INDIAN_STOCKS, formatINRSimple } from "@/lib/indian-stocks";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import { useTransactionCosts } from "@/hooks/useTransactionCosts";
 import { useTradeExplanation, TradeData } from "@/hooks/useTradeExplanation";
+import { usePaperTrading } from "@/hooks/usePaperTrading";
 import { TradeExplanationCard } from "@/components/trading/TradeExplanationCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
-// New components
+// Components
 import { MarketTicker } from "@/components/paper-trading/MarketTicker";
 import { Watchlist } from "@/components/paper-trading/Watchlist";
 import { PriceChart } from "@/components/paper-trading/PriceChart";
 import { QuickTradePanel } from "@/components/paper-trading/QuickTradePanel";
 import { SafetyModeStatus } from "@/components/trading/SafetyModeStatus";
-
-interface PaperAccount {
-  id: string;
-  name: string;
-  initial_balance: number;
-  current_balance: number;
-  currency: string;
-}
-
-interface PaperPosition {
-  id: string;
-  symbol: string;
-  side: "buy" | "sell";
-  quantity: number;
-  entry_price: number;
-  stop_loss: number;
-  take_profit: number | null;
-  status: string;
-  opened_at: string;
-}
-
-interface PaperTrade {
-  id: string;
-  symbol: string;
-  side: "buy" | "sell";
-  quantity: number;
-  entry_price: number;
-  exit_price: number | null;
-  status: string;
-  pnl: number | null;
-  opened_at: string;
-  closed_at: string | null;
-}
 
 interface ClosedTradeResult {
   tradeId: string;
@@ -70,11 +37,7 @@ interface ClosedTradeResult {
 }
 
 const PaperTrading = () => {
-  const { user } = useAuth();
-  const [account, setAccount] = useState<PaperAccount | null>(null);
-  const [positions, setPositions] = useState<PaperPosition[]>([]);
-  const [trades, setTrades] = useState<PaperTrade[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { account, positions, trades, stats, loading, refreshData } = usePaperTrading();
   const [selectedSymbol, setSelectedSymbol] = useState("RELIANCE");
   
   // AI Explanation state
@@ -85,67 +48,6 @@ const PaperTrading = () => {
   // Transaction costs hook
   const { calculateCosts } = useTransactionCosts();
 
-  const fetchData = async () => {
-    if (!user) return;
-
-    // Fetch or create account
-    let { data: accountData, error: accountError } = await supabase
-      .from("paper_accounts")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (accountError && accountError.code === "PGRST116") {
-      const { data: newAccount, error: createError } = await supabase
-        .from("paper_accounts")
-        .insert({
-          user_id: user.id,
-          name: "Default Account",
-          initial_balance: 1000000,
-          current_balance: 1000000,
-          currency: "INR",
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        toast.error("Failed to create paper account");
-        return;
-      }
-      accountData = newAccount;
-    }
-
-    setAccount(accountData);
-
-    if (accountData) {
-      // Fetch open positions
-      const { data: positionsData } = await supabase
-        .from("paper_positions")
-        .select("*")
-        .eq("account_id", accountData.id)
-        .eq("status", "open")
-        .order("opened_at", { ascending: false });
-
-      setPositions((positionsData as PaperPosition[]) || []);
-
-      // Fetch closed trades
-      const { data: tradesData } = await supabase
-        .from("paper_trades")
-        .select("*")
-        .eq("account_id", accountData.id)
-        .order("opened_at", { ascending: false })
-        .limit(20);
-
-      setTrades((tradesData as PaperTrade[]) || []);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [user]);
-
   // Live prices for open positions
   const openSymbols = useMemo(() => positions.map((p) => p.symbol), [positions]);
   const { prices: livePrices, lastUpdated, refresh: refreshPrices, loading: pricesLoading } = useLivePrices({
@@ -155,7 +57,7 @@ const PaperTrading = () => {
   });
 
   // Calculate unrealized P&L
-  const calculateUnrealizedPnL = (position: PaperPosition) => {
+  const calculateUnrealizedPnL = useCallback((position: { symbol: string; side: string; entry_price: number; quantity: number }) => {
     const livePrice = livePrices[position.symbol];
     const currentPrice = livePrice?.price || INDIAN_STOCKS.find((s) => s.symbol === position.symbol)?.price || position.entry_price;
 
@@ -164,14 +66,14 @@ const PaperTrading = () => {
     } else {
       return (position.entry_price - currentPrice) * position.quantity;
     }
-  };
+  }, [livePrices]);
 
   const totalUnrealizedPnL = positions.reduce((sum, p) => sum + calculateUnrealizedPnL(p), 0);
   const realizedPnL = account ? account.current_balance - account.initial_balance : 0;
   const totalPnL = realizedPnL + totalUnrealizedPnL;
   const totalPnLPercent = account ? ((totalPnL / account.initial_balance) * 100).toFixed(2) : "0.00";
 
-  const closePosition = async (position: PaperPosition) => {
+  const closePosition = async (position: { id: string; symbol: string; side: 'buy' | 'sell'; quantity: number; entry_price: number; stop_loss: number; take_profit: number | null; opened_at: string }) => {
     if (!account) return;
 
     const livePrice = livePrices[position.symbol];
@@ -214,9 +116,8 @@ const PaperTrading = () => {
 
       if (tradeError) throw tradeError;
 
-      // Update account balance (add back position value minus costs)
-      const tradeValue = position.side === "buy" ? exitPrice * position.quantity : 0;
-      const newBalance = account.current_balance + tradeValue - transactionCosts + (position.side === "sell" ? grossPnl : 0);
+      // Update account balance
+      const newBalance = account.current_balance + netPnl;
       
       const { error: balanceError } = await supabase
         .from("paper_accounts")
@@ -260,7 +161,7 @@ const PaperTrading = () => {
           </p>
         </div>
       );
-      fetchData();
+      refreshData();
     } catch (error) {
       console.error("Close position error:", error);
       toast.error("Failed to close position");
@@ -319,57 +220,10 @@ const PaperTrading = () => {
           
           {/* Main grid skeleton */}
           <div className="grid lg:grid-cols-3 gap-4">
-            {/* Chart skeleton */}
-            <div className="lg:col-span-2 bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="p-4 border-b border-border">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="space-y-2">
-                    <div className="h-5 w-32 bg-secondary rounded" />
-                    <div className="h-7 w-24 bg-secondary/70 rounded" />
-                  </div>
-                  <div className="h-8 w-8 bg-secondary rounded" />
-                </div>
-                <div className="flex gap-2">
-                  <div className="h-8 w-28 bg-secondary rounded-lg" />
-                  <div className="h-8 w-16 bg-secondary/70 rounded-lg" />
-                </div>
-              </div>
-              <div className="h-[350px] bg-secondary/20 flex items-center justify-center">
-                <div className="text-muted-foreground text-sm">Loading chart...</div>
-              </div>
-            </div>
-            
-            {/* Right panel skeleton */}
+            <div className="lg:col-span-2 bg-card border border-border rounded-2xl h-[400px]" />
             <div className="space-y-4">
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="space-y-4">
-                  <div className="h-5 w-20 bg-secondary rounded" />
-                  <div className="h-10 w-full bg-secondary/70 rounded-lg" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="h-10 bg-secondary rounded-lg" />
-                    <div className="h-10 bg-secondary rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-16 bg-secondary/70 rounded" />
-                    <div className="h-16 bg-secondary rounded-lg" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="h-10 bg-secondary rounded-lg" />
-                    <div className="h-10 bg-secondary rounded-lg" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="space-y-3">
-                  <div className="h-5 w-24 bg-secondary rounded" />
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex justify-between">
-                      <div className="h-4 w-20 bg-secondary/70 rounded" />
-                      <div className="h-4 w-16 bg-secondary rounded" />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <div className="bg-card border border-border rounded-2xl h-[200px]" />
+              <div className="bg-card border border-border rounded-2xl h-[150px]" />
             </div>
           </div>
         </div>
@@ -395,9 +249,19 @@ const PaperTrading = () => {
               Practice with virtual ₹10L • Learn risk management
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
-            <span className="w-2 h-2 bg-primary rounded-full pulse-dot" />
-            <span className="text-primary text-xs font-medium">PAPER</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={refreshData}
+              className="h-8 w-8"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+              <span className="w-2 h-2 bg-primary rounded-full pulse-dot" />
+              <span className="text-primary text-xs font-medium">PAPER</span>
+            </div>
           </div>
         </motion.div>
 
@@ -435,7 +299,7 @@ const PaperTrading = () => {
                 symbol={selectedSymbol}
                 accountId={account.id}
                 currentBalance={account.current_balance}
-                onTradeComplete={fetchData}
+                onTradeComplete={refreshData}
               />
             )}
 
@@ -449,19 +313,19 @@ const PaperTrading = () => {
           </motion.div>
         </div>
 
-        {/* Account Stats */}
+        {/* Account Stats - Dynamic from database */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3"
         >
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Wallet className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground text-xs">Virtual Balance</span>
+              <span className="text-muted-foreground text-xs">Balance</span>
             </div>
-            <p className="text-xl font-semibold text-foreground">
+            <p className="text-lg font-semibold text-foreground">
               {formatINRSimple(account?.current_balance || 1000000)}
             </p>
           </div>
@@ -475,9 +339,8 @@ const PaperTrading = () => {
               )}
               <span className="text-muted-foreground text-xs">Total P&L</span>
             </div>
-            <p className={`text-xl font-semibold ${totalPnL >= 0 ? "text-primary" : "text-destructive"}`}>
+            <p className={`text-lg font-semibold ${totalPnL >= 0 ? "text-primary" : "text-destructive"}`}>
               {totalPnL >= 0 ? "+" : ""}{formatINRSimple(totalPnL)}
-              <span className="text-sm ml-1">({totalPnLPercent}%)</span>
             </p>
           </div>
 
@@ -486,8 +349,38 @@ const PaperTrading = () => {
               <Activity className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground text-xs">Open Positions</span>
             </div>
-            <p className="text-xl font-semibold text-foreground">
+            <p className="text-lg font-semibold text-foreground">
               {positions.length}
+            </p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground text-xs">Total Trades</span>
+            </div>
+            <p className="text-lg font-semibold text-foreground">
+              {stats?.totalTrades || 0}
+            </p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground text-xs">Win Rate</span>
+            </div>
+            <p className={`text-lg font-semibold ${(stats?.winRate || 0) >= 50 ? "text-primary" : "text-destructive"}`}>
+              {stats?.winRate.toFixed(1) || 0}%
+            </p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Percent className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground text-xs">Return</span>
+            </div>
+            <p className={`text-lg font-semibold ${Number(totalPnLPercent) >= 0 ? "text-primary" : "text-destructive"}`}>
+              {Number(totalPnLPercent) >= 0 ? "+" : ""}{totalPnLPercent}%
             </p>
           </div>
         </motion.div>
@@ -566,16 +459,31 @@ const PaperTrading = () => {
           </motion.div>
         )}
 
-        {/* Trade History */}
+        {/* Trade History - Dynamic from database */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="bg-card border border-border rounded-xl overflow-hidden"
         >
-          <div className="p-4 border-b border-border flex items-center gap-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <h3 className="font-medium text-foreground text-sm">Trade History</h3>
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-medium text-foreground text-sm">Trade History</h3>
+              {trades.length > 0 && (
+                <span className="text-xs text-muted-foreground">({trades.length} trades)</span>
+              )}
+            </div>
+            {stats && stats.totalTrades > 0 && (
+              <div className="flex items-center gap-4 text-xs">
+                <span className="text-muted-foreground">
+                  Win: <span className="text-primary font-medium">{stats.winningTrades}</span>
+                </span>
+                <span className="text-muted-foreground">
+                  Loss: <span className="text-destructive font-medium">{stats.losingTrades}</span>
+                </span>
+              </div>
+            )}
           </div>
           {trades.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
@@ -591,11 +499,13 @@ const PaperTrading = () => {
                     <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3">Qty</th>
                     <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3">Entry</th>
                     <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3">Exit</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3">Fees</th>
                     <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3">P&L</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {trades.slice(0, 10).map((trade) => (
+                  {trades.slice(0, 20).map((trade) => (
                     <tr key={trade.id} className="hover:bg-secondary/30">
                       <td className="px-4 py-3 font-medium text-foreground">{trade.symbol}</td>
                       <td className="px-4 py-3">
@@ -608,6 +518,9 @@ const PaperTrading = () => {
                       <td className="px-4 py-3 text-muted-foreground">
                         {trade.exit_price ? formatINRSimple(trade.exit_price) : "—"}
                       </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {trade.fees ? formatINRSimple(trade.fees) : "—"}
+                      </td>
                       <td className="px-4 py-3">
                         {trade.pnl !== null ? (
                           <span className={trade.pnl >= 0 ? "text-primary" : "text-destructive"}>
@@ -617,6 +530,9 @@ const PaperTrading = () => {
                           "—"
                         )}
                       </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {trade.closed_at ? new Date(trade.closed_at).toLocaleDateString() : new Date(trade.opened_at).toLocaleDateString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -625,7 +541,7 @@ const PaperTrading = () => {
           )}
         </motion.div>
 
-        {/* F&O CTA */}
+        {/* Quick Links */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
