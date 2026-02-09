@@ -13,9 +13,13 @@ export const LessonViewer = () => {
   const { moduleId, lessonId } = useParams<{ moduleId: string; lessonId: string }>();
   const navigate = useNavigate();
   const [showQuiz, setShowQuiz] = useState(false);
-  const [startTime] = useState(Date.now());
   
   const { markComplete, saveQuizScore, updateTimeSpent, isLessonCompleted } = useLessonProgress();
+
+  // Reset quiz state when navigating between lessons
+  useEffect(() => {
+    setShowQuiz(false);
+  }, [lessonId]);
 
   const module = MODULES.find(m => m.id === moduleId);
   const lesson = getLesson(moduleId || "", lessonId || "");

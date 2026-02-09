@@ -355,7 +355,11 @@ serve(async (req) => {
           volume: Math.floor(Math.random() * 1000000),
         });
       }
-      return new Response(JSON.stringify(fallbackHistory), {
+      return new Response(JSON.stringify({
+        data: fallbackHistory,
+        source: 'simulated',
+        marketStatus: marketStatus.status,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

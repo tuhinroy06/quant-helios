@@ -80,7 +80,7 @@ export const useHistoricalPrices = ({
           volume: item.volume,
         }));
         setData(ohlcData);
-        setSource(result.source || null);
+        setSource(result.source || (Array.isArray(result) ? 'indian_api' : null));
         setMarketStatus(result.marketStatus || null);
       }
     } catch (err) {
