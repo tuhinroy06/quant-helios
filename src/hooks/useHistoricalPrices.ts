@@ -61,8 +61,10 @@ export const useHistoricalPrices = ({
 
       const result = await response.json();
 
-      if (result.data && Array.isArray(result.data)) {
-        const ohlcData: OHLCData[] = result.data.map((item: {
+      // Handle both wrapped { data: [...] } and flat array responses
+      const rawData = Array.isArray(result) ? result : (Array.isArray(result.data) ? result.data : null);
+      if (rawData && rawData.length > 0) {
+        const ohlcData: OHLCData[] = rawData.map((item: {
           date: string;
           open: number;
           high: number;
@@ -78,7 +80,7 @@ export const useHistoricalPrices = ({
           volume: item.volume,
         }));
         setData(ohlcData);
-        setSource(result.source || null);
+        setSource(result.source || (Array.isArray(result) ? 'indian_api' : null));
         setMarketStatus(result.marketStatus || null);
       }
     } catch (err) {

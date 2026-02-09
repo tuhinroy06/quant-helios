@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { MODULES } from "@/lib/learn-content";
 
 interface LessonProgress {
   id: string;
@@ -177,7 +178,9 @@ export const useLessonProgress = () => {
   const getModuleProgress = (moduleId: string) => {
     const moduleProgress = progress?.filter(p => p.module_id === moduleId) ?? [];
     const completed = moduleProgress.filter(p => p.completed).length;
-    return { completed, total: moduleProgress.length };
+    const module = MODULES.find(m => m.id === moduleId);
+    const total = module?.lessons.length ?? moduleProgress.length;
+    return { completed, total };
   };
 
   const getOverallStats = () => {
