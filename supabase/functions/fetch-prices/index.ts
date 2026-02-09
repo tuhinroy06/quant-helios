@@ -317,7 +317,13 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        return new Response(JSON.stringify(result), {
+        // Normalize historical data to always wrap in { data, source, marketStatus }
+        const historicalArray = Array.isArray(result) ? result : [];
+        return new Response(JSON.stringify({
+          data: historicalArray,
+          source: 'indian_api',
+          marketStatus: marketStatus.status,
+        }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
