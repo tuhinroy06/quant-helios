@@ -17,6 +17,12 @@ interface Profile {
     location?: string;
     company?: string;
     bio?: string;
+    notifications?: {
+      backtestCompleted?: boolean;
+      paperTradeAlerts?: boolean;
+      weeklyPerformance?: boolean;
+      productUpdates?: boolean;
+    };
   } | null;
 }
 
@@ -30,7 +36,13 @@ const Settings = () => {
       phone: "",
       location: "",
       company: "",
-      bio: ""
+      bio: "",
+      notifications: {
+        backtestCompleted: true,
+        paperTradeAlerts: true,
+        weeklyPerformance: false,
+        productUpdates: true,
+      }
     }
   });
   const [loading, setLoading] = useState(false);
@@ -39,6 +51,7 @@ const Settings = () => {
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [has2FA, setHas2FA] = useState(false);
   const [checking2FA, setChecking2FA] = useState(true);
+  const [strategyCount, setStrategyCount] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -51,20 +64,37 @@ const Settings = () => {
         .maybeSingle();
 
       if (data) {
+        const prefs = (data.preferences as Profile['preferences']) || {};
         setProfile({
           display_name: data.display_name,
           avatar_url: data.avatar_url,
-          preferences: (data.preferences as Profile['preferences']) || {
-            phone: "",
-            location: "",
-            company: "",
-            bio: ""
+          preferences: {
+            phone: prefs?.phone || "",
+            location: prefs?.location || "",
+            company: prefs?.company || "",
+            bio: prefs?.bio || "",
+            notifications: prefs?.notifications || {
+              backtestCompleted: true,
+              paperTradeAlerts: true,
+              weeklyPerformance: false,
+              productUpdates: true,
+            }
           }
         });
       }
     };
 
+    const fetchStrategyCount = async () => {
+      if (!user) return;
+      const { count } = await supabase
+        .from("strategies" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      setStrategyCount(count || 0);
+    };
+
     fetchProfile();
+    fetchStrategyCount();
   }, [user]);
 
   // Check if user has 2FA enabled
@@ -110,7 +140,6 @@ const Settings = () => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
@@ -122,7 +151,6 @@ const Settings = () => {
 
     setUploadingAvatar(true);
     try {
-      // Create a data URL for the avatar (stored in preferences since no storage bucket)
       const reader = new FileReader();
       reader.onloadend = async () => {
         const dataUrl = reader.result as string;
@@ -166,6 +194,36 @@ const Settings = () => {
     }
   };
 
+  const handleNotificationChange = (key: string, value: boolean) => {
+    setProfile(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        notifications: {
+          ...prev.preferences?.notifications,
+          [key]: value,
+        }
+      }
+    }));
+  };
+
+  const handleSaveNotifications = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ preferences: profile.preferences })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      toast.success("Notification preferences saved");
+    } catch {
+      toast.error("Failed to save preferences");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const tabs = [
     { id: "profile" as const, label: "Profile", icon: User },
     { id: "billing" as const, label: "Billing & Plans", icon: CreditCard },
@@ -173,8 +231,14 @@ const Settings = () => {
     { id: "security" as const, label: "Security", icon: Shield },
   ];
 
-  // Determine current user plan (hardcoded for now, would come from subscription data)
   const currentPlanId = "free";
+
+  const notificationItems = [
+    { key: "backtestCompleted", label: "Backtest completed", description: "Get notified when backtests finish" },
+    { key: "paperTradeAlerts", label: "Paper trade alerts", description: "Alerts for paper trading activity" },
+    { key: "weeklyPerformance", label: "Weekly performance summary", description: "Weekly email with performance metrics" },
+    { key: "productUpdates", label: "Product updates", description: "New features and improvements" },
+  ];
 
   return (
     <DashboardLayout>
@@ -192,7 +256,6 @@ const Settings = () => {
           </p>
         </motion.div>
 
-        {/* Tabs as side menu on desktop, horizontal on mobile */}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Tabs */}
           <motion.div
@@ -381,8 +444,7 @@ const Settings = () => {
                     You are currently on the <span className="text-foreground font-medium">Free</span> plan.
                   </p>
                   <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span className="px-3 py-1 bg-secondary rounded-full">3/3 strategies used</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full">2/5 backtests today</span>
+                    <span className="px-3 py-1 bg-secondary rounded-full">{strategyCount} strategies created</span>
                   </div>
                 </div>
 
@@ -438,24 +500,27 @@ const Settings = () => {
               <div className="bg-card border border-border rounded-2xl p-6">
                 <h3 className="text-foreground font-medium mb-6">Notification Preferences</h3>
                 <div className="space-y-4">
-                  {[
-                    { label: "Backtest completed", description: "Get notified when backtests finish", checked: true },
-                    { label: "Paper trade alerts", description: "Alerts for paper trading activity", checked: true },
-                    { label: "Weekly performance summary", description: "Weekly email with performance metrics", checked: false },
-                    { label: "Product updates", description: "New features and improvements", checked: true },
-                  ].map((item) => (
-                    <label key={item.label} className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl cursor-pointer hover:bg-secondary transition-colors">
+                  {notificationItems.map((item) => (
+                    <label key={item.key} className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl cursor-pointer hover:bg-secondary transition-colors">
                       <div>
                         <p className="text-foreground font-medium text-sm">{item.label}</p>
                         <p className="text-muted-foreground text-xs">{item.description}</p>
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked={item.checked}
+                        checked={!!(profile.preferences?.notifications as any)?.[item.key]}
+                        onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
                         className="w-5 h-5 rounded border-border bg-secondary text-primary focus:ring-primary/20" 
                       />
                     </label>
                   ))}
+                  <button
+                    onClick={handleSaveNotifications}
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 mt-4"
+                  >
+                    {loading ? "Saving..." : "Save Preferences"}
+                  </button>
                 </div>
               </div>
             )}
