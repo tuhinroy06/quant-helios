@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Shield, BarChart3, Zap } from "lucide-react";
 
@@ -24,7 +25,7 @@ const features = [
   },
 ];
 
-function FeaturesSection() {
+const FeaturesSection = forwardRef<HTMLElement>(function FeaturesSection(_, ref) {
   return (
     <section className="py-32 md:py-40 px-6 md:px-12 bg-background relative overflow-hidden">
       {/* Background accent */}
