@@ -86,6 +86,6 @@ const FeaturesSection = forwardRef<HTMLElement>(function FeaturesSection(_, ref)
       </div>
     </section>
   );
-}
+});
 
 export default FeaturesSection;

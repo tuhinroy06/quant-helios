@@ -46,7 +46,8 @@ export const QuizComponent = ({ questions, onComplete, lessonTitle }: QuizCompon
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      const finalScore = Math.round((correctAnswers / questions.length) * 100);
+      const currentCorrect = correctAnswers + (isCorrect ? 1 : 0);
+      const finalScore = Math.round((currentCorrect / questions.length) * 100);
       setIsComplete(true);
       onComplete(finalScore);
     }

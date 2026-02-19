@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Menu, Calendar as CalendarIcon, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { useAlphaVantagePrices } from '@/hooks/useAlphaVantagePrices';
 import { format } from 'date-fns';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { ChatInterface } from '@/components/stoxo/ChatInterface';
