@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Menu, Calendar as CalendarIcon, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { useAlphaVantagePrices } from '@/hooks/useAlphaVantagePrices';
 import { format } from 'date-fns';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { ChatInterface } from '@/components/stoxo/ChatInterface';
@@ -90,11 +91,17 @@ const StoxoAI = () => {
 
   const hasMessages = messages.length > 0;
 
-  // Market summary stats (can be fetched from API)
+  // Live market data via Alpha Vantage
+  const indexSymbols = ['NIFTY50', 'SENSEX', 'BANKNIFTY'];
+  const { prices: indexPrices, loading: indexLoading } = useAlphaVantagePrices({
+    symbols: indexSymbols,
+    enabled: true,
+  });
+
   const marketStats = [
-    { label: 'NIFTY 50', value: '24,250', change: '+1.2%', positive: true },
-    { label: 'SENSEX', value: '79,820', change: '+0.95%', positive: true },
-    { label: 'BANK NIFTY', value: '52,150', change: '-0.3%', positive: false },
+    { label: 'NIFTY 50', value: indexPrices['NIFTY50']?.price?.toLocaleString('en-IN') || '—', change: indexPrices['NIFTY50']?.changePercent ? `${indexPrices['NIFTY50'].changePercent >= 0 ? '+' : ''}${indexPrices['NIFTY50'].changePercent.toFixed(2)}%` : '—', positive: (indexPrices['NIFTY50']?.changePercent || 0) >= 0 },
+    { label: 'SENSEX', value: indexPrices['SENSEX']?.price?.toLocaleString('en-IN') || '—', change: indexPrices['SENSEX']?.changePercent ? `${indexPrices['SENSEX'].changePercent >= 0 ? '+' : ''}${indexPrices['SENSEX'].changePercent.toFixed(2)}%` : '—', positive: (indexPrices['SENSEX']?.changePercent || 0) >= 0 },
+    { label: 'BANK NIFTY', value: indexPrices['BANKNIFTY']?.price?.toLocaleString('en-IN') || '—', change: indexPrices['BANKNIFTY']?.changePercent ? `${indexPrices['BANKNIFTY'].changePercent >= 0 ? '+' : ''}${indexPrices['BANKNIFTY'].changePercent.toFixed(2)}%` : '—', positive: (indexPrices['BANKNIFTY']?.changePercent || 0) >= 0 },
   ];
 
   return (

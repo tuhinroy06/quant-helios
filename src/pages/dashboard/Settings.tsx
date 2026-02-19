@@ -86,8 +86,9 @@ const Settings = () => {
 
     const fetchStrategyCount = async () => {
       if (!user) return;
+      // strategies table exists in generated types
       const { count } = await supabase
-        .from("strategies" as any)
+        .from("strategies")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id);
       setStrategyCount(count || 0);

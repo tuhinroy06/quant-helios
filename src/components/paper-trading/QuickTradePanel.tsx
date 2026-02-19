@@ -209,16 +209,18 @@ export const QuickTradePanel = ({
 
       if (positionError) throw positionError;
 
-      // Update balance for buys (deduct trade value + costs)
-      if (side === "buy") {
-        const newBalance = currentBalance - (currentPrice * finalQuantity) - totalCharges;
-        const { error: balanceError } = await supabase
-          .from("paper_accounts")
-          .update({ current_balance: newBalance })
-          .eq("id", accountId);
+      // Update balance: deduct trade value + costs for buys, deduct margin (20%) + costs for sells
+      const deduction = side === "buy"
+        ? (currentPrice * finalQuantity) + totalCharges
+        : (currentPrice * finalQuantity * 0.2) + totalCharges; // 20% margin for shorts
 
-        if (balanceError) throw balanceError;
-      }
+      const newBalance = currentBalance - deduction;
+      const { error: balanceError } = await supabase
+        .from("paper_accounts")
+        .update({ current_balance: newBalance })
+        .eq("id", accountId);
+
+      if (balanceError) throw balanceError;
 
       // Log the trade with costs for paper_trades tracking
       await supabase.from("paper_trade_logs").insert({
