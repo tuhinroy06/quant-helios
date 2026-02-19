@@ -27,7 +27,7 @@ const features = [
 
 const FeaturesSection = forwardRef<HTMLElement>(function FeaturesSection(_, ref) {
   return (
-    <section className="py-32 md:py-40 px-6 md:px-12 bg-background relative overflow-hidden">
+    <section ref={ref} className="py-32 md:py-40 px-6 md:px-12 bg-background relative overflow-hidden">
       {/* Background accent */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-warm-500/[0.02] to-transparent" />
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
