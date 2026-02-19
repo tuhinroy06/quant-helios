@@ -1,72 +1,94 @@
 
 
-# Plan: Fix Strategy Creation, Paper Trading Charts, and Learn Section
+# Comprehensive Bug Fix Plan
 
-## 1. Remove AI Chat Tab from Create Strategy
+## Bug 1: Console Ref Warnings on Landing Page (Active Error)
 
-**File:** `src/pages/dashboard/StrategyCreate.tsx`
+**Problem:** Console shows "Function components cannot be given refs" errors for `FeaturesSection`, `CTASection`, and `Footer` in the `Index` page. These are plain function components that need to accept refs.
 
-Remove the "AI Chat" tab from the `TabsList` (line 331-334) and remove the entire `TabsContent value="ai"` block (lines 372-477). This leaves only "Smart Compiler" and "Manual" tabs. Also clean up unused state variables (`aiPrompt`, `aiGenerating`, `messages`, `parsedStrategy`, `messagesEndRef`) and the `handleAiSubmit`, `handleCreateFromAI`, `parseStrategyFromResponse`, `formatDisplayContent` functions. Remove unused imports (`Send`, `Brain`).
+**Fix:** Wrap `FeaturesSection`, `CTASection`, and `Footer` with `React.forwardRef` so they can accept refs without warnings.
 
----
-
-## 2. Fix Paper Trading Charts with Live Data
-
-### Problem
-The `PriceChart` component fetches historical data from the `fetch-prices` edge function. When the Indian API returns historical data, it comes back as a flat array (not wrapped in `{data: [...]}`) but the `useHistoricalPrices` hook expects `result.data` to be an array (line 64). This mismatch means chart data may not render.
-
-### Fix
-
-**File:** `src/hooks/useHistoricalPrices.ts`
-- Update the response parsing to handle both formats: `result.data` (wrapped) and flat array `result` (direct from Indian API historical endpoint).
-- The edge function returns historical data directly as an array when from Indian API (line 320-323 of fetch-prices), so the hook should check `Array.isArray(result)` as well.
-
-**File:** `supabase/functions/fetch-prices/index.ts`
-- Normalize the historical data response to always wrap in `{ data: [...], source: '...', marketStatus: '...' }` so the frontend receives a consistent shape regardless of source (Indian API, cache, or fallback).
+**Files:**
+- `src/components/landing/FeaturesSection.tsx`
+- `src/components/landing/CTASection.tsx`
+- `src/components/landing/Footer.tsx`
 
 ---
 
-## 3. Ensure Trade History and Balance Use Live Data Only
+## Bug 2: Quiz Score Off-By-One (Still Present)
 
-### Current State
-The Paper Trading page (`PaperTrading.tsx`) already uses the `usePaperTrading` hook which fetches from Supabase tables (`paper_accounts`, `paper_positions`, `paper_trades`). The trade history table and balance display are driven by this live data. **No mock data detected** in the current implementation -- it's already fully dynamic.
+**Problem:** In `QuizComponent.tsx` line 49, `handleNext` calculates `finalScore` using `correctAnswers` before the `setCorrectAnswers` state update from `handleSubmit` has taken effect. If the last answer is correct, it gets counted by `setCorrectAnswers` (async) but the `finalScore` calculation on line 49 uses the stale value. Result: scoring 3/3 reports as 66%.
 
-### Verification
-- Balance comes from `account.current_balance` (line 329)
-- Trade history comes from `trades` array fetched from DB (line 508)
-- Stats come from `calculateStats(tradesData)` on real closed trades
-- Real-time subscriptions are active for positions, trades, and account updates
+**Fix:** Change line 49 from:
+```
+const finalScore = Math.round((correctAnswers / questions.length) * 100);
+```
+to:
+```
+const currentCorrect = correctAnswers + (isCorrect ? 1 : 0);
+const finalScore = Math.round((currentCorrect / questions.length) * 100);
+```
 
-No changes needed here -- the implementation is already live-data driven.
-
----
-
-## 4. Debug Learn Section - Journey Tracking
-
-### Issues Found
-
-**Issue A: `getModuleProgress` returns wrong total count**
-In `useLessonProgress.ts` line 178-181, `getModuleProgress` counts `total` as `moduleProgress.length` (number of progress records for that module). But the actual total should be the number of lessons in the module from `MODULES`. If a user hasn't visited all lessons, the progress records won't exist yet, making `total` lower than the actual lesson count. This makes the `CourseCard` progress bar incorrect.
-
-**Fix:** `getModuleProgress` should accept the total lesson count or look it up from `MODULES`.
-
-**Issue B: Quiz score calculation in `getOverallStats` is wrong**
-Line 187-188 uses `.reduce((sum, p, _, arr) => sum + (p.quiz_score || 0) / arr.length, 0)` which divides each score by arr.length and sums them. This is mathematically correct for average but accumulates floating point errors. More importantly, the `QuizComponent` has a subtle bug at line 49: when calculating the final score on the last question, it checks `isCorrect` based on the current render's `selectedAnswer === question?.correctIndex`, but `correctAnswers` state may not have been updated yet (since `setCorrectAnswers` in `handleSubmit` is async). However, the workaround at line 49 `(correctAnswers + (isCorrect ? 1 : 0))` handles this correctly. The display score at line 64 (`correctAnswers / questions.length`) is consistent.
-
-**Issue C: Navigation state not resetting between lessons**
-In `LessonViewer.tsx`, when navigating between lessons, `showQuiz` state persists because React reuses the component (same route pattern). The `showQuiz` state should reset when `lessonId` changes.
-
-**Fix:** Add a `useEffect` to reset `showQuiz` to `false` when `lessonId` changes.
+**File:** `src/components/learn/QuizComponent.tsx`
 
 ---
 
-## Technical Implementation Summary
+## Bug 3: Helios AI Hardcoded Market Data
 
-| File | Change |
-|------|--------|
-| `src/pages/dashboard/StrategyCreate.tsx` | Remove AI Chat tab, related state, and functions |
-| `supabase/functions/fetch-prices/index.ts` | Normalize historical response to `{ data: [...], source, marketStatus }` |
-| `src/hooks/useHistoricalPrices.ts` | Handle both wrapped and flat array responses |
-| `src/hooks/useLessonProgress.ts` | Fix `getModuleProgress` to use actual lesson count from MODULES |
-| `src/components/learn/LessonViewer.tsx` | Reset `showQuiz` state on lesson change |
+**Problem:** `StoxoAI.tsx` lines 94-98 show static hardcoded values for NIFTY 50 (24,250), SENSEX (79,820), and BANK NIFTY (52,150) that never update.
+
+**Fix:** Replace static `marketStats` array with live data fetched via the `useAlphaVantagePrices` hook (already used elsewhere in the app).
+
+**File:** `src/pages/dashboard/StoxoAI.tsx`
+
+---
+
+## Bug 4: Unused `Brain` Import in StrategyCreate
+
+**Problem:** `Brain` is imported on line 3 of `StrategyCreate.tsx` but is used on lines 138 and 164. Wait -- it IS still used (for the compiler tab icon and the "About" section). This is NOT a bug. Keeping as-is.
+
+---
+
+## Bug 5: Settings `as any` Type Cast
+
+**Problem:** Line 90 of `Settings.tsx` uses `.from("strategies" as any)` which suppresses type checking. The `strategies` table may not be in the generated types, so this cast was added as a workaround.
+
+**Fix:** Keep the cast but add a comment explaining why, OR check if `strategies` exists in the types file and remove the cast if it does.
+
+**File:** `src/pages/dashboard/Settings.tsx`
+
+---
+
+## Bug 6: Paper Trading Sell Orders Don't Deduct Balance
+
+**Problem:** In `QuickTradePanel.tsx` lines 213-221, only buy orders deduct from the account balance. Sell (short) orders have no balance impact, allowing unlimited short positions without capital requirements.
+
+**Fix:** For sell orders, deduct at minimum the transaction costs from the balance. This ensures shorts are not "free" and maintains accounting consistency.
+
+**File:** `src/components/paper-trading/QuickTradePanel.tsx`
+
+---
+
+## Bug 7: PriceChart Shows No Error State
+
+**Problem:** When `useHistoricalPrices` returns an error, the chart component does not display any error feedback to the user -- it just shows an empty chart area.
+
+**Fix:** Add an error state with a message and retry button when `error` is truthy.
+
+**File:** `src/components/paper-trading/PriceChart.tsx`
+
+---
+
+## Summary of Changes
+
+| File | Change | Severity |
+|------|--------|----------|
+| `FeaturesSection.tsx` | Wrap with `forwardRef` | Medium (console spam) |
+| `CTASection.tsx` | Wrap with `forwardRef` | Medium (console spam) |
+| `Footer.tsx` | Wrap with `forwardRef` | Medium (console spam) |
+| `QuizComponent.tsx` | Fix final score calculation | High (wrong score) |
+| `StoxoAI.tsx` | Replace hardcoded market stats with live data | Medium (misleading data) |
+| `Settings.tsx` | Clean up `as any` cast | Low (code quality) |
+| `QuickTradePanel.tsx` | Deduct costs for sell orders | Medium (accounting) |
+| `PriceChart.tsx` | Add error state UI | Low (UX improvement) |
 
